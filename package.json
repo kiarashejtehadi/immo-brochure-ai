@@ -1,0 +1,33 @@
+{
+  "name": "immo-brochure-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1",
+    "dev:clean": "node ./scripts/clean-next.mjs && next dev -H 127.0.0.1",
+    "dev:turbo": "next dev --turbopack -H 127.0.0.1",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
+    "clsx": "^2.1.1",
+    "next": "^15.5.0",
+    "openai": "^5.12.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^22.17.0",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "eslint": "^9.32.0",
+    "eslint-config-next": "^15.5.0",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.2"
+  }
+}
