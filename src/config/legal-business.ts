@@ -41,6 +41,6 @@ export function getLegalBusinessConfig(): LegalBusinessConfig {
       "[Name and address of responsible person per § 18 Abs. 2 MStV]",
     ),
     jurisdictionCity: env("LEGAL_JURISDICTION_CITY", "[Your city, Germany]"),
-    lastUpdated: env("LEGAL_LAST_UPDATED", "2026-07-25"),
+    lastUpdated: env("LEGAL_LAST_UPDATED", "2026-07-26"),
   };
 }
