@@ -244,7 +244,7 @@ export default function ListingStudio() {
     legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
   }));
 
-  function handleTargetLanguageChange(lang: OutputLanguage) {
+  function handleExposeLanguageChange(lang: OutputLanguage) {
     setTargetLanguage(lang);
   }
 
@@ -475,53 +475,29 @@ export default function ListingStudio() {
               {copy.pageTitle}
             </h1>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex flex-col gap-1">
-              <label
-                htmlFor="ui-language-header"
-                className="text-xs font-medium text-zinc-500"
-              >
-                {copy.uiLanguage}
-              </label>
-              <select
-                id="ui-language-header"
-                value={routeLocale}
-                onChange={(e) =>
-                  router.replace(pathname, {
-                    locale: e.target.value as UiLocale,
-                  })
-                }
-                className="min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              >
-                {UI_LOCALES.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {LOCALE_LABELS[loc]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label
-                htmlFor="target-language-header"
-                className="text-xs font-medium text-zinc-500"
-              >
-                {copy.targetLanguage}
-              </label>
-              <select
-                id="target-language-header"
-                value={targetLanguage}
-                onChange={(e) =>
-                  handleTargetLanguageChange(e.target.value as OutputLanguage)
-                }
-                className="min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              >
-                {TARGET_LANGUAGE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {LOCALE_LABELS[opt.locale]}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="flex flex-col gap-1 sm:items-end">
+            <label
+              htmlFor="ui-language-header"
+              className="text-xs font-medium text-zinc-500"
+            >
+              {copy.uiLanguage}
+            </label>
+            <select
+              id="ui-language-header"
+              value={routeLocale}
+              onChange={(e) =>
+                router.replace(pathname, {
+                  locale: e.target.value as UiLocale,
+                })
+              }
+              className="min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              {UI_LOCALES.map((loc) => (
+                <option key={loc} value={loc}>
+                  {LOCALE_LABELS[loc]}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </header>
@@ -1183,6 +1159,29 @@ export default function ListingStudio() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
+            <label htmlFor="expose-language" className={labelClassName()}>
+              {copy.exposeLanguage}
+            </label>
+            <p className="mb-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {copy.exposeLanguageHint}
+            </p>
+            <select
+              id="expose-language"
+              value={targetLanguage}
+              onChange={(e) =>
+                handleExposeLanguageChange(e.target.value as OutputLanguage)
+              }
+              className={inputClassName()}
+            >
+              {TARGET_LANGUAGE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {LOCALE_LABELS[opt.locale]}
+                </option>
+              ))}
+            </select>
           </div>
 
           {generateError && (

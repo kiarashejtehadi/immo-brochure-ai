@@ -1,7 +1,8 @@
 import type { UiLocale } from "@/lib/i18n";
 
 export type FormCopy = {
-  targetLanguage: string;
+  exposeLanguage: string;
+  exposeLanguageHint: string;
   forRent: string;
   forSale: string;
   transactionBadgeRent: string;
@@ -59,7 +60,9 @@ export type FormCopy = {
 };
 
 const en: FormCopy = {
-  targetLanguage: "Target language",
+  exposeLanguage: "Exposé language",
+  exposeLanguageHint:
+    "Language for AI-generated exposé text, social captions, and PDF output.",
   forRent: "For Rent",
   forSale: "For Sale",
   transactionBadgeRent: "FOR RENT",
@@ -119,7 +122,9 @@ const en: FormCopy = {
 
 const de: FormCopy = {
   ...en,
-  targetLanguage: "Zielsprache",
+  exposeLanguage: "Exposé-Sprache",
+  exposeLanguageHint:
+    "Sprache für KI-generiertes Exposé, Social-Media-Texte und PDF-Inhalt.",
   forRent: "Zur Miete",
   forSale: "Zum Kauf",
   transactionBadgeRent: "ZUR MIETE",
@@ -175,7 +180,9 @@ const de: FormCopy = {
 };
 
 const fr: FormCopy = {
-  targetLanguage: "Langue cible",
+  exposeLanguage: "Langue de l'exposé",
+  exposeLanguageHint:
+    "Langue du texte d'exposé, des légendes sociales et du contenu PDF générés par l'IA.",
   forRent: "À louer",
   forSale: "À vendre",
   transactionBadgeRent: "À LOUER",
@@ -234,7 +241,9 @@ const fr: FormCopy = {
 };
 
 const es: FormCopy = {
-  targetLanguage: "Idioma",
+  exposeLanguage: "Idioma del exposé",
+  exposeLanguageHint:
+    "Idioma del exposé, captions y contenido PDF generados por IA.",
   forRent: "Alquiler",
   forSale: "Venta",
   transactionBadgeRent: "EN ALQUILER",
@@ -293,7 +302,9 @@ const es: FormCopy = {
 };
 
 const it: FormCopy = {
-  targetLanguage: "Lingua",
+  exposeLanguage: "Lingua dell'exposé",
+  exposeLanguageHint:
+    "Lingua di testi exposé, caption social e PDF generati dall'IA.",
   forRent: "Affitto",
   forSale: "Vendita",
   transactionBadgeRent: "IN AFFITTO",
@@ -352,7 +363,9 @@ const it: FormCopy = {
 };
 
 const nl: FormCopy = {
-  targetLanguage: "Doeltaal",
+  exposeLanguage: "Exposé-taal",
+  exposeLanguageHint:
+    "Taal voor AI-gegenereerde exposétekst, social captions en PDF-inhoud.",
   forRent: "Huur",
   forSale: "Koop",
   transactionBadgeRent: "TE HUUR",
@@ -411,7 +424,9 @@ const nl: FormCopy = {
 };
 
 const fa: FormCopy = {
-  targetLanguage: "زبان هدف",
+  exposeLanguage: "زبان exposé",
+  exposeLanguageHint:
+    "زبان متن exposé، کپشن‌های شبکه اجتماعی و خروجی PDF تولیدشده با هوش مصنوعی.",
   forRent: "اجاره",
   forSale: "فروش",
   transactionBadgeRent: "برای اجاره",
@@ -470,7 +485,9 @@ const fa: FormCopy = {
 };
 
 const ar: FormCopy = {
-  targetLanguage: "اللغة المستهدفة",
+  exposeLanguage: "لغة الوصف",
+  exposeLanguageHint:
+    "لغة نص الوصف وتعليقات وسائل التواصل ومحتوى PDF المُنشأ بالذكاء الاصطناعي.",
   forRent: "للإيجار",
   forSale: "للبيع",
   transactionBadgeRent: "للإيجار",
@@ -529,7 +546,9 @@ const ar: FormCopy = {
 };
 
 const pl: FormCopy = {
-  targetLanguage: "Język docelowy",
+  exposeLanguage: "Język exposé",
+  exposeLanguageHint:
+    "Język wygenerowanego exposé, opisów social media i treści PDF.",
   forRent: "Wynajem",
   forSale: "Sprzedaż",
   transactionBadgeRent: "DO WYNAJĘCIA",
