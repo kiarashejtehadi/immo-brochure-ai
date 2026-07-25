@@ -1,9 +1,24 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+import path from "node:path";
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@react-pdf/renderer"],
-  webpack: (config, { dev }) => {
-    if (dev) {
+  webpack: (config, { dev, isServer }) => {
+    config.resolve.modules = [
+      path.join(process.cwd(), "node_modules"),
+      ...(config.resolve.modules ?? []),
+    ];
+
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        canvas: false,
+      };
+    }
+    if (dev && process.env.NEXT_DEV_WEBPACK_POLL === "1") {
       config.watchOptions = {
         poll: 2000,
         aggregateTimeout: 500,
@@ -13,4 +28,5 @@ const nextConfig: NextConfig = {
     return config;
   },
 };
-export default nextConfig;
+
+export default withNextIntl(nextConfig);

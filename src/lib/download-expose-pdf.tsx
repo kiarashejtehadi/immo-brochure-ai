@@ -1,8 +1,6 @@
 import { pdf } from "@react-pdf/renderer";
-import {
-  ExposePdfDocument,
-  type ExposePdfDocumentProps,
-} from "@/components/expose-pdf-document";
+import { ExposePdfDocument } from "@/components/expose-pdf-document";
+import type { BrochurePdfProps } from "@/types/brochure-pdf";
 import { compressImageForUpload } from "@/lib/prepare-images";
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -19,21 +17,22 @@ async function fileToDataUrl(file: File): Promise<string> {
 }
 
 export async function downloadExposePdf(
-  props: Omit<ExposePdfDocumentProps, "photoDataUrls"> & { photoFiles: File[] },
+  props: BrochurePdfProps & {
+    photoFiles: File[];
+    floorPlanFile?: File | null;
+  },
 ) {
   const photoDataUrls = await Promise.all(
     props.photoFiles.map((file) => fileToDataUrl(file)),
   );
+  const floorPlanDataUrl = props.floorPlanFile
+    ? await fileToDataUrl(props.floorPlanFile)
+    : undefined;
 
-  const docProps: ExposePdfDocumentProps = {
-    address: props.address,
-    price: props.price,
-    size: props.size,
-    rooms: props.rooms,
-    features: props.features,
-    tone: props.tone,
-    exposeText: props.exposeText,
+  const docProps: BrochurePdfProps = {
+    ...props,
     photoDataUrls,
+    floorPlanDataUrl,
   };
 
   const blob = await pdf(<ExposePdfDocument {...docProps} />).toBlob();
@@ -43,7 +42,7 @@ export async function downloadExposePdf(
       .trim()
       .slice(0, 40)
       .replace(/[^\wäöüÄÖÜß\-]+/gi, "-")
-      .replace(/-+/g, "-") || "immobilie";
+      .replace(/-+/g, "-") || "expose";
 
   const link = document.createElement("a");
   link.href = url;

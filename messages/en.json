@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "siteName": "ImmoCaption AI"
+  },
+  "footer": {
+    "imprint": "Legal notice / Imprint",
+    "privacy": "Privacy policy",
+    "terms": "Terms & cancellation",
+    "cookies": "Cookie preferences",
+    "rights": "All rights reserved.",
+    "studio": "Studio"
+  },
+  "legal": {
+    "lastUpdated": "Last updated",
+    "backToStudio": "Back to studio"
+  },
+  "cookies": {
+    "bannerTitle": "Cookie preferences",
+    "bannerBody": "We only use strictly necessary storage for security and your session. Optional analytics is disabled unless you opt in.",
+    "acceptNecessary": "Necessary only",
+    "manage": "Manage preferences",
+    "preferencesTitle": "Cookie & storage preferences",
+    "necessaryTitle": "Strictly necessary",
+    "necessaryDesc": "Required for authentication, session security, and consent memory. Always active.",
+    "analyticsTitle": "Analytics (optional)",
+    "analyticsDesc": "Would enable privacy-friendly usage analytics. Not loaded until you opt in.",
+    "save": "Save preferences",
+    "analyticsOffNotice": "Analytics integrations are not enabled in this deployment. Your choice is stored for when they are added."
+  },
+  "checkout": {
+    "title": "Subscribe",
+    "subtitle": "Complete legal confirmations before payment.",
+    "termsCheckbox": "I agree to the Terms of Service and Privacy Policy.",
+    "withdrawalCheckbox": "I expressly request immediate execution of the digital service and acknowledge that I forfeit my 14-day right of withdrawal once generation or subscription performance begins.",
+    "payButton": "Continue to secure checkout",
+    "payDisabledHint": "Please confirm both checkboxes to continue.",
+    "stripeNotConfigured": "Stripe is not configured yet. Set STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to enable payments.",
+    "planLabel": "Pro plan (example)"
+  }
+}

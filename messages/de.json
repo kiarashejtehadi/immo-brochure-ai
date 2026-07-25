@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "siteName": "ImmoCaption AI"
+  },
+  "footer": {
+    "imprint": "Impressum",
+    "privacy": "Datenschutz",
+    "terms": "AGB & Widerruf",
+    "cookies": "Cookie-Einstellungen",
+    "rights": "Alle Rechte vorbehalten.",
+    "studio": "Studio"
+  },
+  "legal": {
+    "lastUpdated": "Stand",
+    "backToStudio": "Zurück zum Studio"
+  },
+  "cookies": {
+    "bannerTitle": "Cookie-Einstellungen",
+    "bannerBody": "Wir verwenden standardmäßig nur technisch notwendige Speicher für Sicherheit und Sitzung. Analytics nur nach Opt-in.",
+    "acceptNecessary": "Nur notwendige",
+    "manage": "Einstellungen",
+    "preferencesTitle": "Cookie- & Speicher-Einstellungen",
+    "necessaryTitle": "Unbedingt erforderlich",
+    "necessaryDesc": "Für Anmeldung, Sitzungssicherheit und Speicherung Ihrer Einwilligung. Immer aktiv.",
+    "analyticsTitle": "Analytics (optional)",
+    "analyticsDesc": "Nutzungsanalyse — wird erst nach Opt-in geladen.",
+    "save": "Speichern",
+    "analyticsOffNotice": "Analytics ist in dieser Umgebung nicht aktiv. Ihre Wahl wird für später gespeichert."
+  },
+  "checkout": {
+    "title": "Abonnement",
+    "subtitle": "Bitte bestätigen Sie die rechtlichen Hinweise vor der Zahlung.",
+    "termsCheckbox": "Ich stimme den AGB und der Datenschutzerklärung zu.",
+    "withdrawalCheckbox": "Ich verlange ausdrücklich die sofortige Ausführung der digitalen Leistung und weiß, dass mein 14-tägiges Widerrufsrecht mit Beginn der Leistung erlischt.",
+    "payButton": "Weiter zur sicheren Zahlung",
+    "payDisabledHint": "Bitte beide Kästchen bestätigen.",
+    "stripeNotConfigured": "Stripe ist noch nicht konfiguriert. STRIPE_SECRET_KEY und NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY setzen.",
+    "planLabel": "Pro-Tarif (Beispiel)"
+  }
+}

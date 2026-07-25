@@ -1,57 +1,124 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { formatPriceAmount, normalizeCurrency } from "@/lib/currency";
+import type { OutputLanguage } from "@/lib/i18n";
+import { getCaptionHashtags, normalizeOutputLanguage } from "@/lib/output-language";
+import type { GenerateResult, GenerateRequestPayload } from "@/types/listing";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 90;
 
-export type GenerateRequestBody = {
-  address?: string;
-  price?: string;
-  size?: string;
-  rooms?: string;
-  features?: string[];
-  tone?: string;
-  images?: { base64: string; mimeType: string }[];
-};
-
-export type GenerateResponseBody = {
-  expose: string;
-  instagramCaptions: [string, string];
-};
-
-const REQUIRED_HASHTAGS = ["#Immobilien", "#WohnungKaufen"] as const;
-
-function withHashtags(caption: string): string {
+function ensureHashtags(caption: string, tags: string[]): string {
   let text = caption.trim();
-  for (const tag of REQUIRED_HASHTAGS) {
-    if (!text.includes(tag)) {
-      text = `${text} ${tag}`;
-    }
+  for (const tag of tags) {
+    if (!text.includes(tag)) text = `${text} ${tag}`;
   }
   return text.trim();
 }
 
-function parseResult(raw: string): GenerateResponseBody {
+function parseGenerateResult(raw: string, instagramTags: string[]): GenerateResult {
   const parsed = JSON.parse(raw) as {
-    expose?: string;
-    instagramCaptions?: unknown;
+    title?: string;
+    summary?: unknown;
+    fullDescription?: string;
+    locationDescription?: string;
+    socialCaptions?: {
+      instagram?: string;
+      linkedin?: string;
+      facebook?: string;
+    };
   };
 
-  const expose = typeof parsed.expose === "string" ? parsed.expose.trim() : "";
-  const captions = Array.isArray(parsed.instagramCaptions)
-    ? parsed.instagramCaptions
-        .filter((c): c is string => typeof c === "string")
-        .map((c) => withHashtags(c.trim()))
+  const title = typeof parsed.title === "string" ? parsed.title.trim() : "";
+  const fullDescription =
+    typeof parsed.fullDescription === "string"
+      ? parsed.fullDescription.trim()
+      : "";
+  const locationDescription =
+    typeof parsed.locationDescription === "string"
+      ? parsed.locationDescription.trim()
+      : "";
+
+  const summary = Array.isArray(parsed.summary)
+    ? parsed.summary
+        .filter((s): s is string => typeof s === "string")
+        .map((s) => s.trim())
         .filter(Boolean)
     : [];
 
-  if (!expose || captions.length < 2) {
+  const sc = parsed.socialCaptions ?? {};
+  const instagram =
+    typeof sc.instagram === "string"
+      ? ensureHashtags(sc.instagram, instagramTags)
+      : "";
+  const linkedin = typeof sc.linkedin === "string" ? sc.linkedin.trim() : "";
+  const facebook = typeof sc.facebook === "string" ? sc.facebook.trim() : "";
+
+  if (!title || !fullDescription || !instagram || !linkedin || !facebook) {
     throw new Error("Invalid model response shape");
   }
 
   return {
-    expose,
-    instagramCaptions: [captions[0], captions[1]],
+    title,
+    summary: summary.length > 0 ? summary.slice(0, 8) : [fullDescription.slice(0, 120)],
+    fullDescription,
+    locationDescription: locationDescription || "—",
+    socialCaptions: { instagram, linkedin, facebook },
+  };
+}
+
+function buildPropertyPayload(body: GenerateRequestPayload, outputLanguage: OutputLanguage) {
+  const currency = normalizeCurrency(body.currency);
+  const format = (amount: string) =>
+    amount.trim()
+      ? formatPriceAmount(amount, currency)
+      : "Not specified";
+
+  const common = {
+    transactionType: body.transactionType,
+    targetLanguage: outputLanguage,
+    address: body.address?.trim() || "Not specified",
+    sizeSqm: body.size?.trim() || "Not specified",
+    rooms: body.rooms?.trim() || "Not specified",
+    features: body.features?.length ? body.features.join(", ") : "None selected",
+    tone: body.tone || "Professional",
+    currency,
+    energy: body.energy,
+    agent: {
+      name: body.agent.name || "Not specified",
+      agency: body.agent.agency || "Not specified",
+    },
+  };
+
+  if (body.transactionType === "rent") {
+    return {
+      ...common,
+      audience: "prospective tenants",
+      copyFocus:
+        "lifestyle, move-in terms, public transport, schools, daily amenities, pet policy, lease terms",
+      rent: {
+        netColdRent: format(body.rent.netColdRent),
+        utilityCharges: format(body.rent.utilityCharges),
+        totalRent: format(body.rent.totalRent),
+        securityDeposit: format(body.rent.securityDeposit),
+        availableFrom: body.rent.availableFrom || "Not specified",
+        minimumLeaseTerm: body.rent.minimumLeaseTerm || "Not specified",
+        petPolicy: body.rent.petPolicy || "Not specified",
+      },
+    };
+  }
+
+  return {
+    ...common,
+    audience: "buyers and investors",
+    copyFocus:
+      "build quality, floor plan flow, long-term value, location growth, yield, Hausgeld, commission terms",
+    sale: {
+      purchasePrice: format(body.sale.purchasePrice),
+      hoaFee: format(body.sale.hoaFee),
+      rentalYield: body.sale.rentalYield || "Not specified",
+      commissionTerms: body.sale.commissionTerms || "Not specified",
+    },
   };
 }
 
@@ -64,39 +131,43 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: GenerateRequestBody;
+  let body: GenerateRequestPayload;
   try {
-    body = (await request.json()) as GenerateRequestBody;
+    body = (await request.json()) as GenerateRequestPayload;
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const images = (body.images ?? []).slice(0, 3);
-  const propertySummary = {
-    address: body.address?.trim() || "Not specified",
-    priceEur: body.price?.trim() || "Not specified",
-    sizeSqm: body.size?.trim() || "Not specified",
-    rooms: body.rooms?.trim() || "Not specified",
-    features: body.features?.length ? body.features.join(", ") : "None selected",
-    tone: body.tone || "Professional",
-  };
+  const outputLanguage = normalizeOutputLanguage(body.targetLanguage);
+  const instagramTags = getCaptionHashtags(outputLanguage);
+  const propertyPayload = buildPropertyPayload(body, outputLanguage);
 
-  const openai = new OpenAI({ apiKey, timeout: 60_000, maxRetries: 1 });
+  const images = (body.images ?? []).slice(0, 5);
+  const openai = new OpenAI({ apiKey, timeout: 90_000, maxRetries: 1 });
 
-  const userText = `Property data (JSON):
-${JSON.stringify(propertySummary, null, 2)}
+  const userText = `You are creating a multi-page real estate exposé and social pack.
 
-Write marketing copy in German for this listing.
+Property data (JSON):
+${JSON.stringify(propertyPayload, null, 2)}
 
-1) expose: A formal German Exposé property description, approximately 200 words (180–220). Suitable for Immobilienportale and print. Match tone: "${propertySummary.tone}".
-2) instagramCaptions: Exactly TWO distinct Instagram captions in German. Each must include the hashtags #Immobilien and #WohnungKaufen (plus 2–4 other relevant German real estate hashtags if appropriate). Match tone: "${propertySummary.tone}".
+Write ALL output exclusively in ${outputLanguage}.
 
-Rules:
-- Use only facts from the data and visible photo details; do not invent amenities.
-- If address or price is "Not specified", write copy that still works without them.
+Return JSON with:
+- title: compelling marketing headline for cover page
+- summary: array of 4-6 short bullet highlights for specs sidebar
+- fullDescription: multi-paragraph narrative exposé (350-500 words), include room/flow descriptions where data allows
+- locationDescription: neighborhood & connectivity paragraph (120-180 words)
+- socialCaptions object with:
+  - instagram: engaging caption with hashtags (${instagramTags.join(" ")})
+  - linkedin: professional post (no hashtag spam)
+  - facebook: short teaser suitable for Facebook or WhatsApp (~2-3 sentences)
 
-Respond with JSON only, no markdown:
-{"expose":"...","instagramCaptions":["caption one","caption two"]}`;
+Audience: ${propertyPayload.audience}. Emphasize: ${propertyPayload.copyFocus}.
+Use only provided facts and visible photo cues; do not invent certificates or prices not in JSON.
+If energy certificate is "na", omit claiming specific energy class values.
+
+Schema:
+{"title":"...","summary":["..."],"fullDescription":"...","locationDescription":"...","socialCaptions":{"instagram":"...","linkedin":"...","facebook":"..."}}`;
 
   type ContentPart =
     | { type: "text"; text: string }
@@ -116,37 +187,24 @@ Respond with JSON only, no markdown:
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.7,
+      temperature: 0.65,
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          content:
-            "You are an expert German real estate copywriter. You write formal exposés and social captions. Output valid JSON only.",
+          content: `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}.`,
         },
-        {
-          role: "user",
-          content: userContent,
-        },
+        { role: "user", content: userContent },
       ],
     });
 
     const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Empty response from OpenAI");
-    }
+    if (!content) throw new Error("Empty response from OpenAI");
 
-    return NextResponse.json(parseResult(content));
+    return NextResponse.json(parseGenerateResult(content, instagramTags));
   } catch (err) {
     console.error("[api/generate]", err);
-    const message =
-      err instanceof Error ? err.message : "Failed to generate content";
-    const friendly =
-      message.includes("timed out") || message.includes("Timeout")
-        ? "OpenAI request timed out. Try again or use fewer/smaller photos."
-        : message.includes("401") || message.toLowerCase().includes("incorrect api key")
-          ? "Invalid OpenAI API key. Check OPENAI_API_KEY in .env.local and restart the server."
-          : message;
-    return NextResponse.json({ error: friendly }, { status: 502 });
+    const message = err instanceof Error ? err.message : "Failed to generate content";
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }

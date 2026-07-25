@@ -6,190 +6,224 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
+import { formatPriceAmount, type CurrencyCode } from "@/lib/currency";
+import type { BrochurePdfProps } from "@/types/brochure-pdf";
 
-export type ExposePdfDocumentProps = {
-  address: string;
-  price: string;
-  size: string;
-  rooms: string;
-  features: string[];
-  tone: string;
-  exposeText: string;
-  photoDataUrls: string[];
-};
+export type { BrochurePdfProps };
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   page: {
-    padding: 36,
+    padding: 32,
     fontFamily: "Helvetica",
     fontSize: 10,
-    color: "#171717",
+    color: "#18181b",
     backgroundColor: "#ffffff",
   },
-  brand: {
-    fontSize: 8,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    color: "#71717a",
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 18,
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#18181b",
+    color: "#fff",
+    fontSize: 9,
     fontWeight: 700,
-    marginBottom: 14,
-    color: "#09090b",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginBottom: 12,
   },
-  photoRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 14,
-  },
-  photo: {
-    flex: 1,
-    height: 118,
+  hero: {
+    width: "100%",
+    height: 260,
     objectFit: "cover",
-    borderRadius: 4,
+    borderRadius: 6,
+    marginBottom: 16,
     backgroundColor: "#f4f4f5",
   },
-  photoPlaceholder: {
-    flex: 1,
-    height: 118,
-    borderRadius: 4,
-    backgroundColor: "#f4f4f5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoPlaceholderText: {
-    fontSize: 8,
-    color: "#a1a1aa",
-  },
-  specsBox: {
+  title: { fontSize: 22, fontWeight: 700, marginBottom: 6 },
+  subtitle: { fontSize: 11, color: "#52525b", marginBottom: 14 },
+  row: { flexDirection: "row", gap: 12, marginBottom: 8 },
+  specChip: {
     borderWidth: 1,
     borderColor: "#e4e4e7",
     borderRadius: 6,
-    padding: 10,
-    marginBottom: 14,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  specItem: {
-    width: "48%",
+    padding: 8,
+    flex: 1,
   },
   specLabel: {
     fontSize: 7,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
     color: "#71717a",
     marginBottom: 2,
   },
-  specValue: {
-    fontSize: 10,
+  specValue: { fontSize: 11, fontWeight: 700 },
+  h2: {
+    fontSize: 11,
     fontWeight: 700,
-    color: "#18181b",
-  },
-  sectionTitle: {
-    fontSize: 9,
     textTransform: "uppercase",
     letterSpacing: 1,
-    color: "#52525b",
     marginBottom: 8,
-    fontWeight: 700,
+    marginTop: 4,
   },
-  expose: {
-    fontSize: 10,
-    lineHeight: 1.45,
-    color: "#27272a",
-    textAlign: "justify",
+  body: { fontSize: 10, lineHeight: 1.45, textAlign: "justify" },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  gridImg: {
+    width: "48%",
+    height: 100,
+    objectFit: "cover",
+    borderRadius: 4,
+    backgroundColor: "#f4f4f5",
   },
+  box: {
+    borderWidth: 1,
+    borderColor: "#e4e4e7",
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 10,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f4f4f5",
+    paddingVertical: 4,
+  },
+  tableLabel: { width: "45%", fontSize: 9, color: "#52525b" },
+  tableValue: { width: "55%", fontSize: 9, fontWeight: 700 },
+  bullet: { fontSize: 9, marginBottom: 3 },
   footer: {
     position: "absolute",
     bottom: 24,
-    left: 36,
-    right: 36,
+    left: 32,
+    right: 32,
     fontSize: 7,
     color: "#a1a1aa",
     textAlign: "center",
   },
+  floorPlan: {
+    width: "100%",
+    height: 180,
+    objectFit: "contain",
+    marginTop: 8,
+    marginBottom: 12,
+    backgroundColor: "#fafafa",
+  },
 });
 
-function formatPrice(price: string) {
-  const n = Number(price);
-  if (!price.trim() || Number.isNaN(n)) return "Auf Anfrage";
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(n);
+function fmt(amount: string, currency: CurrencyCode, fallback: string) {
+  return formatPriceAmount(amount, currency, fallback);
 }
 
-export function ExposePdfDocument({
-  address,
-  price,
-  size,
-  rooms,
-  features,
-  tone,
-  exposeText,
-  photoDataUrls,
-}: ExposePdfDocumentProps) {
-  const displayAddress = address.trim() || "Immobilie";
-  const photos = photoDataUrls.slice(0, 3);
+export function ExposePdfDocument(props: BrochurePdfProps) {
+  const hero = props.photoDataUrls[0];
+  const gallery = props.photoDataUrls.slice(1, 5);
 
   return (
-    <Document title={`Exposé – ${displayAddress}`}>
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.brand}>ImmoCaption AI · Exposé</Text>
-        <Text style={styles.title}>{displayAddress}</Text>
+    <Document title={`Exposé – ${props.title}`}>
+      <Page size="A4" style={s.page}>
+        <Text style={s.badge}>{props.transactionBadge}</Text>
+        {hero ? (
+          // eslint-disable-next-line jsx-a11y/alt-text
+          <Image style={s.hero} src={hero} />
+        ) : (
+          <View style={[s.hero, { alignItems: "center", justifyContent: "center" }]}>
+            <Text style={{ color: "#a1a1aa" }}>ImmoCaption AI</Text>
+          </View>
+        )}
+        <Text style={s.title}>{props.title}</Text>
+        <Text style={s.subtitle}>{props.address}</Text>
+        <View style={s.row}>
+          <View style={s.specChip}>
+            <Text style={s.specLabel}>{props.priceLabel}</Text>
+            <Text style={s.specValue}>
+              {props.priceAmount.trim()
+                ? fmt(props.priceAmount, props.currency, props.priceOnRequestLabel)
+                : props.priceOnRequestLabel}
+            </Text>
+          </View>
+          <View style={s.specChip}>
+            <Text style={s.specLabel}>Size</Text>
+            <Text style={s.specValue}>
+              {props.size.trim() ? `${props.size} m²` : "—"}
+            </Text>
+          </View>
+          <View style={s.specChip}>
+            <Text style={s.specLabel}>Rooms</Text>
+            <Text style={s.specValue}>{props.rooms.trim() || "—"}</Text>
+          </View>
+        </View>
+        {props.summary.map((line, i) => (
+          <Text key={i} style={s.bullet}>
+            • {line}
+          </Text>
+        ))}
+        <Text style={s.footer}>ImmoCaption AI · Page 1 — Cover</Text>
+      </Page>
 
-        <View style={styles.photoRow}>
-          {photos.length > 0 ? (
-            photos.map((src, index) => (
-              // @react-pdf Image has no alt prop
+      <Page size="A4" style={s.page}>
+        <Text style={s.h2}>Property story</Text>
+        <View style={s.grid}>
+          {gallery.length > 0 ? (
+            gallery.map((src, i) => (
               // eslint-disable-next-line jsx-a11y/alt-text
-              <Image key={index} style={styles.photo} src={src} />
+              <Image key={i} style={s.gridImg} src={src} />
             ))
           ) : (
-            <View style={styles.photoPlaceholder}>
-              <Text style={styles.photoPlaceholderText}>Keine Fotos</Text>
-            </View>
+            <Text style={{ color: "#a1a1aa" }}>Additional photos</Text>
           )}
         </View>
+        <Text style={s.body}>{props.fullDescription}</Text>
 
-        <View style={styles.specsBox}>
-          <View style={styles.specItem}>
-            <Text style={styles.specLabel}>Kaufpreis</Text>
-            <Text style={styles.specValue}>{formatPrice(price)}</Text>
-          </View>
-          <View style={styles.specItem}>
-            <Text style={styles.specLabel}>Wohnfläche</Text>
-            <Text style={styles.specValue}>
-              {size.trim() ? `${size} m²` : "—"}
-            </Text>
-          </View>
-          <View style={styles.specItem}>
-            <Text style={styles.specLabel}>Zimmer</Text>
-            <Text style={styles.specValue}>{rooms.trim() || "—"}</Text>
-          </View>
-          <View style={styles.specItem}>
-            <Text style={styles.specLabel}>Ton / Stil</Text>
-            <Text style={styles.specValue}>{tone}</Text>
-          </View>
-          <View style={{ width: "100%" }}>
-            <Text style={styles.specLabel}>Ausstattung</Text>
-            <Text style={styles.specValue}>
-              {features.length > 0 ? features.join(" · ") : "—"}
-            </Text>
-          </View>
+        <Text style={s.h2}>Energy certificate</Text>
+        <View style={s.box}>
+          {props.energyLines.map((line, i) => (
+            <View key={i} style={s.tableRow}>
+              <Text style={s.tableLabel}>{line.label}</Text>
+              <Text style={s.tableValue}>{line.value || "—"}</Text>
+            </View>
+          ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Objektbeschreibung</Text>
-        <Text style={styles.expose}>{exposeText}</Text>
+        <Text style={s.h2}>Specifications</Text>
+        <View style={s.box}>
+          {props.specsTable.map((row, i) => (
+            <View key={i} style={s.tableRow}>
+              <Text style={s.tableLabel}>{row.label}</Text>
+              <Text style={s.tableValue}>{row.value || "—"}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={s.footer}>ImmoCaption AI · Page 2 — Details</Text>
+      </Page>
 
-        <Text style={styles.footer}>
-          Erstellt mit ImmoCaption AI · Nur für interne Vermarktung
+      <Page size="A4" style={s.page}>
+        <Text style={s.h2}>Location & neighborhood</Text>
+        <Text style={[s.body, { marginBottom: 14 }]}>{props.locationDescription}</Text>
+
+        <Text style={s.h2}>Floor plan</Text>
+        {props.floorPlanDataUrl ? (
+          // eslint-disable-next-line jsx-a11y/alt-text
+          <Image style={s.floorPlan} src={props.floorPlanDataUrl} />
+        ) : (
+          <View style={[s.floorPlan, { alignItems: "center", justifyContent: "center" }]}>
+            <Text style={{ color: "#a1a1aa" }}>No floor plan uploaded</Text>
+          </View>
+        )}
+
+        <Text style={s.h2}>Your contact</Text>
+        <View style={s.box}>
+          <Text style={{ fontSize: 12, fontWeight: 700 }}>{props.agent.name || "—"}</Text>
+          <Text style={{ marginTop: 4 }}>{props.agent.agency}</Text>
+          <Text style={{ marginTop: 4 }}>{props.agent.phone}</Text>
+          <Text>{props.agent.email}</Text>
+        </View>
+
+        <Text style={s.h2}>Legal notice</Text>
+        <Text style={{ fontSize: 8, lineHeight: 1.35, color: "#52525b" }}>
+          {props.agent.legalDisclaimer.trim() ||
+            props.legalDisclaimerFallback}
         </Text>
+        <Text style={s.footer}>ImmoCaption AI · Page 3 — Contact & imprint</Text>
       </Page>
     </Document>
   );
 }
+
+// Backward export alias
+export type ExposePdfDocumentProps = BrochurePdfProps;
