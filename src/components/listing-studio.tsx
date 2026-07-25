@@ -584,6 +584,10 @@ export default function ListingStudio() {
                     key={photo.id}
                     className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800"
                   >
+                    {/*
+                      User upload preview (blob: URL, same origin — not a third-party CDN).
+                      next/image is unnecessary for ephemeral object URLs.
+                    */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={photo.url}
@@ -1079,7 +1083,10 @@ export default function ListingStudio() {
             />
             {floorPlanPreview && (
               <div className="relative mt-3 aspect-[4/3] max-w-xs overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+              {/*
+                Floor plan preview (blob: URL, same origin — not a third-party CDN).
+              */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={floorPlanPreview}
                   alt={copy.floorPlan}

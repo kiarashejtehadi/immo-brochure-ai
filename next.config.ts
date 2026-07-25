@@ -6,6 +6,10 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@react-pdf/renderer"],
+  /** Block remote image optimization/CDN fetches — UI assets are same-origin /public only. */
+  images: {
+    remotePatterns: [],
+  },
   webpack: (config, { dev, isServer }) => {
     config.resolve.modules = [
       path.join(process.cwd(), "node_modules"),
