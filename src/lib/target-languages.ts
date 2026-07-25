@@ -12,3 +12,9 @@ export function localeFromTargetLanguage(lang: OutputLanguage): UiLocale {
     OUTPUT_LANGUAGE_OPTIONS.find((o) => o.value === lang)?.locale ?? "en"
   );
 }
+
+export function outputLanguageFromLocale(locale: UiLocale): OutputLanguage {
+  return (
+    OUTPUT_LANGUAGE_OPTIONS.find((o) => o.locale === locale)?.value ?? "English"
+  );
+}

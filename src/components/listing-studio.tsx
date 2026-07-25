@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale } from "next-intl";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
 import {
   buildBrochurePdfProps,
@@ -8,15 +10,17 @@ import {
 } from "@/lib/listing-pdf";
 import {
   getUiCopy,
-  isRtlUiLocale,
+  LOCALE_LABELS,
+  UI_LOCALES,
   type FeatureKey,
   type ToneKey,
   type OutputLanguage,
+  type UiLocale,
 } from "@/lib/i18n";
-import { getFormCopy, resolveLegalDisclaimer } from "@/lib/i18n-form";
+import { getFormCopy, isKnownDefaultLegalDisclaimer, resolveLegalDisclaimer } from "@/lib/i18n-form";
 import {
   TARGET_LANGUAGE_OPTIONS,
-  localeFromTargetLanguage,
+  outputLanguageFromLocale,
 } from "@/lib/target-languages";
 import {
   getDefaultCurrencyForLocale,
@@ -179,9 +183,10 @@ export default function ListingStudio() {
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLElement>(null);
 
-  const [targetLanguage, setTargetLanguage] =
-    useState<OutputLanguage>("English");
-  const uiLocale = localeFromTargetLanguage(targetLanguage);
+  const routeLocale = useLocale() as UiLocale;
+  const uiLocale = routeLocale;
+  const pathname = usePathname();
+  const router = useRouter();
   const uiCopy = getUiCopy(uiLocale);
   const formCopy = getFormCopy(uiLocale);
   const copy = useMemo(
@@ -189,14 +194,23 @@ export default function ListingStudio() {
     [uiCopy, formCopy],
   );
 
+  const [targetLanguage, setTargetLanguage] = useState<OutputLanguage>(() =>
+    outputLanguageFromLocale(routeLocale),
+  );
+
+  useEffect(() => {
+    setTargetLanguage(outputLanguageFromLocale(routeLocale));
+    setAgent((prev) => ({
+      ...prev,
+      legalDisclaimer: isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)
+        ? getFormCopy(routeLocale).defaultLegalDisclaimer
+        : prev.legalDisclaimer,
+    }));
+  }, [routeLocale]);
+
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   const activeCurrency =
     uiLocale === "en" ? currency : getDefaultCurrencyForLocale(uiLocale);
-
-  useEffect(() => {
-    document.documentElement.lang = uiLocale;
-    document.documentElement.dir = isRtlUiLocale(uiLocale) ? "rtl" : "ltr";
-  }, [uiLocale]);
 
   useEffect(() => {
     if (uiLocale !== "en") {
@@ -227,18 +241,11 @@ export default function ListingStudio() {
   const [energy, setEnergy] = useState<EnergyFormData>({ ...DEFAULT_ENERGY });
   const [agent, setAgent] = useState<AgentFormData>(() => ({
     ...DEFAULT_AGENT,
-    legalDisclaimer: getFormCopy(
-      localeFromTargetLanguage("English"),
-    ).defaultLegalDisclaimer,
+    legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
   }));
 
   function handleTargetLanguageChange(lang: OutputLanguage) {
-    const locale = localeFromTargetLanguage(lang);
     setTargetLanguage(lang);
-    setAgent((prev) => ({
-      ...prev,
-      legalDisclaimer: getFormCopy(locale).defaultLegalDisclaimer,
-    }));
   }
 
   const agentForLocale = useMemo(
@@ -468,27 +475,53 @@ export default function ListingStudio() {
               {copy.pageTitle}
             </h1>
           </div>
-          <div className="flex flex-col gap-1 sm:items-end">
-            <label
-              htmlFor="target-language-header"
-              className="text-xs font-medium text-zinc-500"
-            >
-              {copy.targetLanguage}
-            </label>
-            <select
-              id="target-language-header"
-              value={targetLanguage}
-              onChange={(e) =>
-                handleTargetLanguageChange(e.target.value as OutputLanguage)
-              }
-              className="min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            >
-              {TARGET_LANGUAGE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.value}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="ui-language-header"
+                className="text-xs font-medium text-zinc-500"
+              >
+                {copy.uiLanguage}
+              </label>
+              <select
+                id="ui-language-header"
+                value={routeLocale}
+                onChange={(e) =>
+                  router.replace(pathname, {
+                    locale: e.target.value as UiLocale,
+                  })
+                }
+                className="min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                {UI_LOCALES.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {LOCALE_LABELS[loc]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="target-language-header"
+                className="text-xs font-medium text-zinc-500"
+              >
+                {copy.targetLanguage}
+              </label>
+              <select
+                id="target-language-header"
+                value={targetLanguage}
+                onChange={(e) =>
+                  handleTargetLanguageChange(e.target.value as OutputLanguage)
+                }
+                className="min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                {TARGET_LANGUAGE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {LOCALE_LABELS[opt.locale]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </header>

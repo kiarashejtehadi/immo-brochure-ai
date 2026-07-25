@@ -1,0 +1,26 @@
+{
+  "footer": {
+    "imprint": "Colofon / Impressum",
+    "privacy": "Privacyverklaring",
+    "terms": "Algemene voorwaarden",
+    "cookies": "Cookievoorkeuren",
+    "rights": "Alle rechten voorbehouden.",
+    "studio": "Studio"
+  },
+  "legal": {
+    "lastUpdated": "Laatst bijgewerkt",
+    "backToStudio": "Terug naar studio"
+  },
+  "cookies": {
+    "bannerTitle": "Cookievoorkeuren",
+    "bannerBody": "We gebruiken alleen strikt noodzakelijke opslag voor beveiliging en sessie. Optionele analytics vereist opt-in.",
+    "acceptNecessary": "Alleen noodzakelijk",
+    "manage": "Voorkeuren beheren",
+    "preferencesTitle": "Cookie- en opslagvoorkeuren",
+    "save": "Opslaan"
+  },
+  "checkout": {
+    "title": "Abonnement",
+    "subtitle": "Bevestig de juridische informatie vóór betaling."
+  }
+}

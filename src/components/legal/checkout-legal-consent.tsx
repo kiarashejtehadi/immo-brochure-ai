@@ -13,6 +13,7 @@ export function CheckoutLegalConsent({
   stripeConfigured: boolean;
 }) {
   const t = useTranslations("checkout");
+  const tf = useTranslations("footer");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [withdrawalAccepted, setWithdrawalAccepted] = useState(false);
   const canPay = termsAccepted && withdrawalAccepted;
@@ -43,11 +44,11 @@ export function CheckoutLegalConsent({
           <span>
             {t("termsCheckbox")}{" "}
             <Link href="/terms" className="underline">
-              Terms
+              {tf("terms")}
             </Link>{" "}
             /{" "}
             <Link href="/privacy" className="underline">
-              Privacy
+              {tf("privacy")}
             </Link>
           </span>
         </label>

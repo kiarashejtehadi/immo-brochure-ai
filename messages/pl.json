@@ -1,0 +1,26 @@
+{
+  "footer": {
+    "imprint": "Informacje prawne / Impressum",
+    "privacy": "Polityka prywatności",
+    "terms": "Regulamin",
+    "cookies": "Ustawienia plików cookie",
+    "rights": "Wszelkie prawa zastrzeżone.",
+    "studio": "Studio"
+  },
+  "legal": {
+    "lastUpdated": "Ostatnia aktualizacja",
+    "backToStudio": "Powrót do studia"
+  },
+  "cookies": {
+    "bannerTitle": "Ustawienia cookie",
+    "bannerBody": "Używamy wyłącznie niezbędnego storage dla bezpieczeństwa i sesji. Analityka opcjonalna wymaga opt-in.",
+    "acceptNecessary": "Tylko niezbędne",
+    "manage": "Zarządzaj preferencjami",
+    "preferencesTitle": "Preferencje cookie i storage",
+    "save": "Zapisz"
+  },
+  "checkout": {
+    "title": "Subskrypcja",
+    "subtitle": "Potwierdź informacje prawne przed płatnością."
+  }
+}
