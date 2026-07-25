@@ -1,5 +1,12 @@
 import type { LegalBusinessConfig } from "@/config/legal-business";
 import type { LegalDocument } from "@/types/legal-content";
+import {
+  choiceOfLawClauseDe,
+  choiceOfLawClauseEn,
+  controllerContactLines,
+  operatorAddressLine,
+  privacyContactTdddg,
+} from "@/content/legal/clauses";
 
 function baseMeta(
   cfg: LegalBusinessConfig,
@@ -18,16 +25,17 @@ function baseMeta(
 }
 
 export function buildImprintEn(cfg: LegalBusinessConfig): LegalDocument {
-  const address = `${cfg.streetAddress}, ${cfg.postalCode} ${cfg.city}, ${cfg.country}`;
+  const address = operatorAddressLine(cfg);
   return {
     kind: "imprint",
     title: "Legal Notice (Imprint)",
-    description: "Information pursuant to § 5 DDG (German Telemedia Act) and § 18 MStV.",
+    description:
+      "Information pursuant to § 5 DDG (German Digital Services Act), § 25 TDDDG, and § 18 MStV.",
     ...baseMeta(cfg, "en"),
     sections: [
       {
         id: "operator",
-        title: "Service provider",
+        title: "Service provider (§ 5 DDG)",
         paragraphs: [
           `${cfg.operatorName} (${cfg.legalForm})`,
           address,
@@ -39,6 +47,7 @@ export function buildImprintEn(cfg: LegalBusinessConfig): LegalDocument {
         paragraphs: [
           `Email: ${cfg.email}`,
           `Phone: ${cfg.phone}`,
+          privacyContactTdddg(cfg, "en"),
         ],
       },
       {
@@ -58,21 +67,27 @@ export function buildImprintEn(cfg: LegalBusinessConfig): LegalDocument {
           "The European Commission provides a platform for online dispute resolution (ODR): https://ec.europa.eu/consumers/odr/. We are not obliged or willing to participate in dispute resolution before a consumer arbitration board unless required by law.",
         ],
       },
+      {
+        id: "choice-of-law",
+        title: "Applicable law (international users)",
+        paragraphs: [choiceOfLawClauseEn()],
+      },
     ],
   };
 }
 
 export function buildImprintDe(cfg: LegalBusinessConfig): LegalDocument {
-  const address = `${cfg.streetAddress}, ${cfg.postalCode} ${cfg.city}, ${cfg.country}`;
+  const address = operatorAddressLine(cfg);
   return {
     kind: "imprint",
     title: "Impressum",
-    description: "Angaben gemäß § 5 DDG und § 18 Abs. 2 MStV.",
+    description:
+      "Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz), § 25 TDDDG und § 18 Abs. 2 MStV.",
     ...baseMeta(cfg, "de"),
     sections: [
       {
         id: "operator",
-        title: "Anbieter",
+        title: "Anbieter (§ 5 DDG)",
         paragraphs: [
           `${cfg.operatorName} (${cfg.legalForm})`,
           address,
@@ -84,6 +99,7 @@ export function buildImprintDe(cfg: LegalBusinessConfig): LegalDocument {
         paragraphs: [
           `E-Mail: ${cfg.email}`,
           `Telefon: ${cfg.phone}`,
+          privacyContactTdddg(cfg, "de"),
         ],
       },
       {
@@ -103,6 +119,11 @@ export function buildImprintDe(cfg: LegalBusinessConfig): LegalDocument {
           "Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: https://ec.europa.eu/consumers/odr/. Wir sind nicht verpflichtet und nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen, sofern gesetzlich nicht erforderlich.",
         ],
       },
+      {
+        id: "choice-of-law",
+        title: "Anwendbares Recht",
+        paragraphs: [choiceOfLawClauseDe()],
+      },
     ],
   };
 }
@@ -111,19 +132,14 @@ export function buildPrivacyEn(cfg: LegalBusinessConfig): LegalDocument {
   return {
     kind: "privacy",
     title: "Privacy Policy",
-    description: "Information under Art. 13/14 GDPR and supplemental disclosures for global users.",
+    description:
+      "Information under Art. 13/14 GDPR, § 25 TDDDG, and supplemental disclosures for global users.",
     ...baseMeta(cfg, "en"),
     sections: [
       {
         id: "controller",
         title: "1. Controller",
-        paragraphs: [
-          cfg.operatorName,
-          cfg.streetAddress,
-          `${cfg.postalCode} ${cfg.city}, ${cfg.country}`,
-          `Email: ${cfg.email}`,
-          `Phone: ${cfg.phone}`,
-        ],
+        paragraphs: controllerContactLines(cfg, "en"),
       },
       {
         id: "scope",
@@ -225,6 +241,11 @@ export function buildPrivacyEn(cfg: LegalBusinessConfig): LegalDocument {
           'We reserve the right to update this Privacy Policy to reflect technical, operational, or legal developments. Material updates will be published directly to this page with a revised "Last Updated" date.',
         ],
       },
+      {
+        id: "choice-of-law",
+        title: "11. Applicable law (international users)",
+        paragraphs: [choiceOfLawClauseEn()],
+      },
     ],
   };
 }
@@ -234,18 +255,15 @@ export function buildPrivacyDe(cfg: LegalBusinessConfig): LegalDocument {
     kind: "privacy",
     title: "Datenschutzerklärung",
     description:
-      "Informationen nach Art. 13/14 DSGVO und ergänzende Hinweise für Nutzer weltweit.",
+      "Informationen nach Art. 13/14 DSGVO, § 25 TDDDG und ergänzende Hinweise für Nutzer weltweit.",
     ...baseMeta(cfg, "de"),
     sections: [
       {
         id: "controller",
         title: "1. Verantwortlicher",
         paragraphs: [
-          cfg.operatorName,
-          cfg.streetAddress,
-          `${cfg.postalCode} ${cfg.city}, ${cfg.country}`,
-          `E-Mail: ${cfg.email}`,
-          `Telefon: ${cfg.phone}`,
+          ...controllerContactLines(cfg, "de"),
+          privacyContactTdddg(cfg, "de"),
         ],
       },
       {
@@ -348,6 +366,11 @@ export function buildPrivacyDe(cfg: LegalBusinessConfig): LegalDocument {
           "Wir können diese Datenschutzerklärung bei technischen, operativen oder rechtlichen Änderungen anpassen. Wesentliche Updates veröffentlichen wir hier mit neuem „Stand“-Datum.",
         ],
       },
+      {
+        id: "choice-of-law",
+        title: "11. Anwendbares Recht",
+        paragraphs: [choiceOfLawClauseDe()],
+      },
     ],
   };
 }
@@ -401,7 +424,8 @@ export function buildTermsEn(cfg: LegalBusinessConfig): LegalDocument {
         id: "law",
         title: "6. Governing law & jurisdiction",
         paragraphs: [
-          `These terms are governed by the laws of the Federal Republic of Germany, excluding the UN Convention on Contracts for the International Sale of Goods (CISG).`,
+          "These terms are governed by the laws of the Federal Republic of Germany, excluding the UN Convention on Contracts for the International Sale of Goods (CISG).",
+          choiceOfLawClauseEn(),
           `Exclusive place of jurisdiction for all disputes arising from or in connection with these terms is ${cfg.jurisdictionCity}, Germany, if you are a merchant, legal entity under public law, or special fund under public law; otherwise mandatory consumer jurisdictions remain unaffected.`,
         ],
       },
@@ -421,6 +445,13 @@ export function buildTermsEn(cfg: LegalBusinessConfig): LegalDocument {
           "Paid plans renew according to the billing interval shown at checkout until cancelled in the customer portal or via Stripe customer billing management. Statutory consumer cancellation rights remain unaffected.",
         ],
       },
+      {
+        id: "retention",
+        title: "9. Statutory retention (HGB / AO)",
+        paragraphs: [
+          "Billing and accounting records may be retained for up to ten years pursuant to § 257 HGB and § 147 AO (German Commercial and Fiscal Code).",
+        ],
+      },
     ],
   };
 }
@@ -428,43 +459,79 @@ export function buildTermsEn(cfg: LegalBusinessConfig): LegalDocument {
 export function buildTermsDe(cfg: LegalBusinessConfig): LegalDocument {
   return {
     kind: "terms",
-    title: "Allgemeine Geschäftsbedingungen & Widerruf",
-    description: "Vertragsbedingungen für ImmoCaption AI.",
+    title: "Allgemeine Geschäftsbedingungen (AGB)",
+    description:
+      "Vertragsbedingungen für ImmoCaption AI (SaaS), einschließlich Widerrufsbelehrung für digitale Inhalte.",
     ...baseMeta(cfg, "de"),
     sections: [
       {
         id: "subject",
         title: "1. Vertragsgegenstand",
         paragraphs: [
-          "ImmoCaption AI ist eine Cloud-Software zur KI-gestützten Erstellung von Exposés, Captions und PDFs für Immobilien.",
+          "ImmoCaption AI ist eine Cloud-Software zur KI-gestützten Erstellung von Immobilien-Exposés, Social-Media-Captions und PDF-Exporten. Vertragspartner ist der in unserem Impressum genannte Anbieter.",
+        ],
+      },
+      {
+        id: "account",
+        title: "2. Registrierung & zulässige Nutzung",
+        paragraphs: [
+          "Sie sind verpflichtet, wahrheitsgemäße Angaben zu machen und Zugangsdaten vertraulich zu behandeln. Missbrauch, unbefugter Zugriff und rechtswidrige Inhalte sind untersagt.",
         ],
       },
       {
         id: "user-content",
-        title: "2. Nutzerinhalte & Freistellung",
+        title: "3. Nutzerinhalte, Urheberrecht & Freistellung",
         paragraphs: [
-          "Sie garantieren, über alle erforderlichen Rechte an hochgeladenen Fotos und Daten zu verfügen und stellen uns von Ansprüchen Dritter frei.",
+          "An hochgeladenen Inhalten behalten Sie die Rechte. Sie räumen uns ein einfaches, auf Vertragserfüllung beschränktes Nutzungsrecht zum Hosten, Verarbeiten und Übermitteln ein.",
+          "Sie garantieren, über alle erforderlichen Urheber-, Persönlichkeits- und Nutzungsrechte an Fotos, Grundrissen und Listing-Daten zu verfügen.",
+          "Sie stellen uns von Ansprüchen Dritter frei, die aus Ihren Uploads oder einer rechtswidrigen Nutzung entstehen.",
+        ],
+      },
+      {
+        id: "ai",
+        title: "4. KI-generierte Inhalte",
+        paragraphs: [
+          "Ausgaben werden automatisiert erstellt und können fehlerhaft sein. Sie prüfen Exposé- und Marketingtexte vor Veröffentlichung. Keine Rechts-, Steuer- oder Maklerberatung.",
+        ],
+      },
+      {
+        id: "availability",
+        title: "5. Verfügbarkeit & Haftung",
+        paragraphs: [
+          "Wir streben hohe Verfügbarkeit an, garantieren jedoch keinen unterbrechungsfreien Betrieb.",
+          "Haftung nach BGB: Unbeschränkt bei Vorsatz, grober Fahrlässigkeit, Verletzung von Leben, Körper oder Gesundheit sowie nach Produkthaftungsgesetz. Bei leichter Fahrlässigkeit nur bei Verletzung wesentlicher Vertragspflichten (Kardinalpflichten), begrenzt auf den vorhersehbaren, typischen Schaden.",
         ],
       },
       {
         id: "law",
-        title: "3. Recht & Gerichtsstand",
+        title: "6. Recht, Gerichtsstand & international",
         paragraphs: [
-          "Es gilt deutsches Recht. Gerichtsstand für Kaufleute ist " + cfg.jurisdictionCity + ", soweit zulässig.",
+          "Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts (CISG).",
+          choiceOfLawClauseDe(),
+          `Gerichtsstand für Kaufleute, juristische Personen des öffentlichen Rechts und öffentlich-rechtliche Sondervermögen ist ${cfg.jurisdictionCity}, soweit zulässig; zwingende Verbrauchergerichtsstände bleiben unberührt.`,
         ],
       },
       {
         id: "withdrawal",
-        title: "4. Widerrufsrecht für digitale Inhalte",
+        title: "7. Widerrufsrecht (digitale Dienstleistungen)",
         paragraphs: [
-          "Verbrauchern steht grundsätzlich ein 14-tägiges Widerrufsrecht zu. Bei ausdrücklicher Zustimmung zur sofortigen Leistungsausführung erlischt das Widerrufsrecht mit Beginn der vollständigen Vertragserfüllung.",
+          "Verbraucher haben bei Fernabsatzverträgen grundsätzlich ein 14-tägiges Widerrufsrecht.",
+          "Verlangen Sie ausdrücklich den sofortigen Leistungsbeginn vor Ablauf der Widerrufsfrist, erlischt das Widerrufsrecht mit vollständiger Vertragserfüllung (z. B. nach digitaler Generierung oder Aktivierung des Abonnements), sofern Sie hierüber informiert wurden.",
+          "Muster-Widerrufsbelehrung und Formular werden im Checkout und in der Auftragsbestätigung bereitgestellt.",
         ],
       },
       {
-        id: "liability",
-        title: "5. Haftung",
+        id: "subscription",
+        title: "8. Abonnements & Kündigung",
         paragraphs: [
-          "Haftungsbeschränkung im gesetzlich zulässigen Umfang nach BGB; unbeschränkte Haftung bei Vorsatz, grober Fahrlässigkeit und bei Verletzung von Leben, Körper oder Gesundheit.",
+          "Entgeltliche Tarife verlängern sich entsprechend der im Checkout angezeigten Abrechnungsperiode, bis sie im Kundenportal oder über Stripe gekündigt werden. Gesetzliche Verbraucherrechte bleiben unberührt.",
+        ],
+      },
+      {
+        id: "retention",
+        title: "9. Aufbewahrung (HGB / AO)",
+        paragraphs: [
+          "Rechnungs- und buchhalterisch relevante Unterlagen können bis zu zehn Jahre gemäß § 257 HGB und § 147 AO aufbewahrt werden.",
         ],
       },
     ],

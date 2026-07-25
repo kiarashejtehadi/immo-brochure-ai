@@ -71,6 +71,6 @@ export function getConvenienceNotice(
   }
   return {
     title: "Convenience translation",
-    body: "This translated version is provided for convenience only. The English and German master texts are legally binding.",
+    body: "This page displays the English legally binding master text. The German version (Deutsch) is equally binding where you select locale “de”. Placeholder operator details are filled from the same configuration on all locales.",
   };
 }
