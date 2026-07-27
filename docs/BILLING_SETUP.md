@@ -7,8 +7,10 @@ Billing is **off** until `BILLING_ENABLED=true` and all required env vars are se
 1. Create a project at [supabase.com](https://supabase.com).
 2. **Authentication → Providers → Email**: enable Email; configure magic links as you prefer.
 3. **Authentication → URL configuration**:
-   - Site URL: your production URL (or `http://localhost:3000` locally)
-   - Redirect URLs: `{APP_URL}/auth/callback`
+   - **Site URL:** `https://immo-brochure-ai.vercel.app` (not `localhost` — otherwise magic links open locally)
+   - **Redirect URLs** (add both):
+     - `https://immo-brochure-ai.vercel.app/auth/callback`
+     - `http://localhost:3000/auth/callback` (local dev only)
 4. **SQL Editor**: run migrations in order:
    - `supabase/migrations/001_billing_schema.sql`
    - `supabase/migrations/002_lemonsqueezy.sql`

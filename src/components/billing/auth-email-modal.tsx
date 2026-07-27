@@ -4,6 +4,13 @@ import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
+function authCallbackOrigin(): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  if (configured) return configured;
+  if (typeof window !== "undefined") return window.location.origin;
+  return "http://localhost:3000";
+}
+
 export function AuthEmailModal({
   open,
   onClose,
@@ -27,7 +34,9 @@ export function AuthEmailModal({
     setMessage(null);
     try {
       const supabase = createSupabaseBrowserClient();
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname)}`;
+      const nextPath =
+        typeof window !== "undefined" ? window.location.pathname : "/de";
+      const redirectTo = `${authCallbackOrigin()}/auth/callback?next=${encodeURIComponent(nextPath)}`;
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: { emailRedirectTo: redirectTo },

@@ -4,6 +4,7 @@ import {
   hasValidBetaAccess,
   isBetaProtectionEnabled,
   isBetaPublicPath,
+  authCallbackRedirectUrl,
 } from "@/lib/beta-auth";
 import { routing } from "@/i18n/routing";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
@@ -12,6 +13,11 @@ const intlMiddleware = createMiddleware(routing);
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const authRedirect = authCallbackRedirectUrl(request);
+  if (authRedirect) {
+    return NextResponse.redirect(authRedirect);
+  }
 
   if (isBetaPublicPath(pathname)) {
     return NextResponse.next();

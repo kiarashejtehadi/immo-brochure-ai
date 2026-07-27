@@ -21,10 +21,34 @@ export function sanitizeBetaRedirect(path: string | null | undefined): string {
   if (!path || !path.startsWith("/") || path.startsWith("//")) {
     return "/";
   }
-  if (isBetaPublicPath(path)) {
+  if (isBetaPublicPath(path.split("?")[0] ?? path)) {
     return "/";
   }
+  // Supabase magic links must not be sent through beta redirect (/?code=…).
+  const qIndex = path.indexOf("?");
+  if (qIndex !== -1 && path.slice(qIndex + 1).includes("code=")) {
+    const pathname = path.slice(0, qIndex) || "/";
+    return pathname === "/" ? "/de" : pathname;
+  }
   return path;
+}
+
+/** If Supabase lands with ?code= on a non-callback path, rewrite to /auth/callback. */
+export function authCallbackRedirectUrl(request: NextRequest): URL | null {
+  const { pathname } = request.nextUrl;
+  if (pathname === "/auth/callback" || pathname.startsWith("/auth/callback/")) {
+    return null;
+  }
+  const code = request.nextUrl.searchParams.get("code");
+  if (!code) return null;
+
+  const url = request.nextUrl.clone();
+  url.pathname = "/auth/callback";
+  url.search = "";
+  url.searchParams.set("code", code);
+  const nextPath = pathname === "/" || pathname === "" ? "/de" : pathname;
+  url.searchParams.set("next", nextPath);
+  return url;
 }
 
 export async function computeBetaAccessToken(password: string): Promise<string> {
