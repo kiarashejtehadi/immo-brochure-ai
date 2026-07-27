@@ -1,4 +1,5 @@
 import { isBillingEnabled, planDisplayName } from "@/lib/billing/config";
+import { getBillingEnvChecks } from "@/lib/supabase/env";
 import {
   getActiveSubscription,
   getUserCredits,
@@ -71,6 +72,7 @@ export async function getBillingStatusForClient(): Promise<BillingStatusResponse
       planId: null,
       subscriptionStatus: null,
       currentPeriodEnd: null,
+      configChecks: getBillingEnvChecks(),
     };
   }
 

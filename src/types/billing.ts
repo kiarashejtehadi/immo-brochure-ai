@@ -44,4 +44,6 @@ export type BillingStatusResponse = {
   planId: string | null;
   subscriptionStatus: SubscriptionStatus | null;
   currentPeriodEnd: string | null;
+  /** Which required env vars are present (no secret values). Shown when billing is off. */
+  configChecks?: Record<string, boolean>;
 };

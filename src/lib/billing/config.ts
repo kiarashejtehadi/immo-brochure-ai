@@ -1,15 +1,8 @@
 import type { BillingPlanKey } from "@/types/billing";
+import { isBillingEnvComplete } from "@/lib/supabase/env";
 
 export function isBillingEnabled(): boolean {
-  return (
-    process.env.BILLING_ENABLED === "true" &&
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
-    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
-    Boolean(process.env.LEMONSQUEEZY_API_KEY?.trim()) &&
-    Boolean(process.env.LEMONSQUEEZY_STORE_ID?.trim()) &&
-    Boolean(process.env.LEMONSQUEEZY_WEBHOOK_SECRET?.trim())
-  );
+  return isBillingEnvComplete();
 }
 
 export function getAppUrl(): string {
