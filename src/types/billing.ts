@@ -1,0 +1,47 @@
+export type SubscriptionStatus =
+  | "active"
+  | "canceled"
+  | "past_due"
+  | "trialing"
+  | "incomplete";
+
+export type BillingPlanKey = "credits_pack" | "monthly" | "yearly";
+
+export type DbUser = {
+  id: string;
+  email: string;
+  payment_customer_id: string | null;
+  created_at: string;
+};
+
+export type DbSubscription = {
+  id: string;
+  user_id: string;
+  provider_subscription_id: string;
+  status: SubscriptionStatus;
+  plan_id: string;
+  current_period_end: string | null;
+};
+
+export type DbUserCredits = {
+  user_id: string;
+  remaining_credits: number;
+};
+
+export type BillingAccess = {
+  allowed: boolean;
+  reason?: "unauthenticated" | "payment_required" | "billing_disabled";
+  hasActiveSubscription: boolean;
+  remainingCredits: number;
+  planLabel?: string;
+};
+
+export type BillingStatusResponse = {
+  billingEnabled: boolean;
+  email: string | null;
+  hasActiveSubscription: boolean;
+  remainingCredits: number;
+  planId: string | null;
+  subscriptionStatus: SubscriptionStatus | null;
+  currentPeriodEnd: string | null;
+};

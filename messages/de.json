@@ -34,7 +34,7 @@
     "withdrawalCheckbox": "Ich verlange ausdrücklich die sofortige Ausführung der digitalen Leistung und weiß, dass mein 14-tägiges Widerrufsrecht mit Beginn der Leistung erlischt.",
     "payButton": "Weiter zur sicheren Zahlung",
     "payDisabledHint": "Bitte beide Kästchen bestätigen.",
-    "stripeNotConfigured": "Stripe ist noch nicht konfiguriert. STRIPE_SECRET_KEY und NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY setzen.",
+    "paymentNotConfigured": "Zahlungen sind noch nicht konfiguriert. LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID und Varianten-IDs setzen.",
     "planLabel": "Pro-Tarif (Beispiel)"
   }
 }

@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { AccountBar } from "@/components/billing/account-bar";
+import { AuthEmailModal } from "@/components/billing/auth-email-modal";
+import { Link } from "@/i18n/navigation";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
 import {
   buildBrochurePdfProps,
@@ -264,6 +267,8 @@ export default function ListingStudio() {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [billingHint, setBillingHint] = useState<"auth" | "checkout" | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
@@ -329,6 +334,7 @@ export default function ListingStudio() {
   async function handleGenerate() {
     setIsGenerating(true);
     setGenerateError(null);
+    setBillingHint(null);
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
     const controller = new AbortController();
@@ -367,7 +373,7 @@ export default function ListingStudio() {
       });
 
       const raw = await response.text();
-      let data: GenerateResult & { error?: string } = {
+      let data: GenerateResult & { error?: string; code?: string } = {
         title: "",
         summary: [],
         fullDescription: "",
@@ -393,6 +399,13 @@ export default function ListingStudio() {
       }
 
       if (!response.ok) {
+        const code = data.code;
+        if (response.status === 401 || code === "unauthenticated") {
+          setBillingHint("auth");
+          setAuthOpen(true);
+        } else if (response.status === 402 || code === "payment_required") {
+          setBillingHint("checkout");
+        }
         throw new Error(data.error ?? copy.errors.generationFailed);
       }
 
@@ -475,7 +488,9 @@ export default function ListingStudio() {
               {copy.pageTitle}
             </h1>
           </div>
-          <div className="flex flex-col gap-1 sm:items-end">
+          <div className="flex flex-col items-stretch gap-3 sm:items-end">
+            <AccountBar locale={routeLocale} />
+            <div className="flex flex-col gap-1 sm:items-end">
             <label
               htmlFor="ui-language-header"
               className="text-xs font-medium text-zinc-500"
@@ -498,6 +513,7 @@ export default function ListingStudio() {
                 </option>
               ))}
             </select>
+            </div>
           </div>
         </div>
       </header>
@@ -1185,9 +1201,23 @@ export default function ListingStudio() {
           </div>
 
           {generateError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
-              {generateError}
-            </p>
+            <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
+              <p>{generateError}</p>
+              {billingHint === "auth" ? (
+                <button
+                  type="button"
+                  onClick={() => setAuthOpen(true)}
+                  className="text-sm font-semibold underline"
+                >
+                  Sign in with email
+                </button>
+              ) : null}
+              {billingHint === "checkout" ? (
+                <Link href="/checkout" className="inline-block text-sm font-semibold underline">
+                  View pricing & buy credits
+                </Link>
+              ) : null}
+            </div>
           )}
 
           <button
@@ -1412,6 +1442,7 @@ export default function ListingStudio() {
           </div>
         </section>
       </main>
+      <AuthEmailModal open={authOpen} onClose={() => setAuthOpen(false)} onSent={() => setAuthOpen(false)} />
     </div>
   );
 }

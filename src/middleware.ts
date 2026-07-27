@@ -6,6 +6,7 @@ import {
   isBetaPublicPath,
 } from "@/lib/beta-auth";
 import { routing } from "@/i18n/routing";
+import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -28,7 +29,8 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  return intlMiddleware(request);
+  const intlResponse = intlMiddleware(request);
+  return updateSupabaseSession(request, intlResponse);
 }
 
 export const config = {

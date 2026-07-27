@@ -161,7 +161,7 @@ export function buildPrivacyEn(cfg: LegalBusinessConfig): LegalDocument {
           "Listing Content & Uploads: Property addresses, property specifications, floor plans, and uploaded interior/exterior property images.",
           "Generated Outputs: AI-generated exposé text narratives, room descriptions, social media captions, and exported PDF brochures.",
           "Technical & Usage Logs: IP addresses, timestamps, browser/device parameters, and HTTP request headers logged for security, abuse prevention, and rate-limiting purposes.",
-          "Payment Metadata: Transaction identifiers, subscription status, and billing addresses provided via Stripe. (Note: Full credit card numbers are processed directly by Stripe and never touch or store on our servers.)",
+          "Payment Metadata: Transaction identifiers, subscription status, and billing addresses provided via Lemon Squeezy. (Note: Full credit card numbers are processed by Lemon Squeezy and never stored on our servers.)",
         ],
         paragraphs: [],
       },
@@ -187,7 +187,7 @@ export function buildPrivacyEn(cfg: LegalBusinessConfig): LegalDocument {
         listItems: [
           "Vercel Inc. (Cloud Infrastructure & Hosting): Web hosting, serverless functions, and content delivery network (CDN). Data may be routed via servers in the EU and the US.",
           "OpenAI LLC (AI Text & Generation Engine): Processing of prompt inputs and image parameters to generate property descriptions via API. Data privacy guarantee: Per OpenAI's enterprise API terms, prompt data and image inputs submitted via the API are NOT used to train public OpenAI language models.",
-          "Stripe Inc. (Payment Service Provider): Processing payment cards, recurring subscriptions, and invoice generation in compliance with PCI-DSS standards.",
+          "Lemon Squeezy (Merchant of Record / Payment Service Provider): Processing payment cards, recurring subscriptions, and tax-compliant invoicing.",
         ],
       },
       {
@@ -286,7 +286,7 @@ export function buildPrivacyDe(cfg: LegalBusinessConfig): LegalDocument {
           "Exposé-Inhalte & Uploads: Immobilienadressen, Objektmerkmale, Grundrisse sowie hochgeladene Innen-/Außenfotos.",
           "Generierte Inhalte: KI-erstellte Exposé-Texte, Raumbeschreibungen, Social-Media-Captions und exportierte PDF-Broschüren.",
           "Technische & Nutzungsprotokolle: IP-Adressen, Zeitstempel, Browser-/Geräteparameter und HTTP-Header zu Sicherheit, Missbrauchsprävention und Rate-Limiting.",
-          "Zahlungsmetadaten: Transaktions-IDs, Abonnementstatus und Rechnungsadressen über Stripe. (Hinweis: Vollständige Kartennummern werden ausschließlich von Stripe verarbeitet und nicht auf unseren Servern gespeichert.)",
+          "Zahlungsmetadaten: Transaktions-IDs, Abonnementstatus und Rechnungsadressen über Lemon Squeezy. (Hinweis: Vollständige Kartennummern werden ausschließlich von Lemon Squeezy verarbeitet und nicht auf unseren Servern gespeichert.)",
         ],
         paragraphs: [],
       },
@@ -312,7 +312,7 @@ export function buildPrivacyDe(cfg: LegalBusinessConfig): LegalDocument {
         listItems: [
           "Vercel Inc. (Hosting & CDN): Webhosting, Serverless-Funktionen und Content Delivery; Verarbeitung in der EU und den USA möglich.",
           "OpenAI LLC (KI-Engine): Verarbeitung von Prompts und Bildparametern zur Textgenerierung per API. Garantie: API-Eingaben werden gemäß OpenAI-API-Bedingungen nicht zum Training öffentlicher Sprachmodelle verwendet.",
-          "Stripe Inc. (Zahlungsdienst): Kartenzahlungen, Abonnements und Rechnungen (PCI-DSS).",
+          "Lemon Squeezy (Merchant of Record / Zahlungsdienst): Kartenzahlungen, Abonnements und steuerkonforme Rechnungen.",
         ],
       },
       {
@@ -442,7 +442,7 @@ export function buildTermsEn(cfg: LegalBusinessConfig): LegalDocument {
         id: "subscription",
         title: "8. Subscriptions & cancellation",
         paragraphs: [
-          "Paid plans renew according to the billing interval shown at checkout until cancelled in the customer portal or via Stripe customer billing management. Statutory consumer cancellation rights remain unaffected.",
+          "Paid plans renew according to the billing interval shown at checkout until cancelled in the Lemon Squeezy customer portal. Statutory consumer cancellation rights remain unaffected.",
         ],
       },
       {
@@ -524,7 +524,7 @@ export function buildTermsDe(cfg: LegalBusinessConfig): LegalDocument {
         id: "subscription",
         title: "8. Abonnements & Kündigung",
         paragraphs: [
-          "Entgeltliche Tarife verlängern sich entsprechend der im Checkout angezeigten Abrechnungsperiode, bis sie im Kundenportal oder über Stripe gekündigt werden. Gesetzliche Verbraucherrechte bleiben unberührt.",
+          "Entgeltliche Tarife verlängern sich entsprechend der im Checkout angezeigten Abrechnungsperiode, bis sie im Lemon-Squeezy-Kundenportal gekündigt werden. Gesetzliche Verbraucherrechte bleiben unberührt.",
         ],
       },
       {

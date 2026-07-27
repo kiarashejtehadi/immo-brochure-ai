@@ -9,7 +9,12 @@ export function isBetaProtectionEnabled(): boolean {
 }
 
 export function isBetaPublicPath(pathname: string): boolean {
-  return pathname === "/beta-login" || pathname.startsWith("/beta-login/");
+  return (
+    pathname === "/beta-login" ||
+    pathname.startsWith("/beta-login/") ||
+    pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/callback/")
+  );
 }
 
 export function sanitizeBetaRedirect(path: string | null | undefined): string {

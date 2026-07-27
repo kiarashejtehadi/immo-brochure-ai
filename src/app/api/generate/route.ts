@@ -4,6 +4,9 @@ import { formatPriceAmount, normalizeCurrency } from "@/lib/currency";
 import type { OutputLanguage } from "@/lib/i18n";
 import { getCaptionHashtags, normalizeOutputLanguage } from "@/lib/output-language";
 import type { GenerateResult, GenerateRequestPayload } from "@/types/listing";
+import { isBillingEnabled } from "@/lib/billing/config";
+import { getSessionUser, resolveBillingAccess } from "@/lib/billing/access";
+import { decrementCredit, logGeneration } from "@/lib/billing/repository";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -131,6 +134,36 @@ export async function POST(request: Request) {
     );
   }
 
+  let billingUserId: string | null = null;
+  let useCreditForGeneration = false;
+
+  if (isBillingEnabled()) {
+    const access = await resolveBillingAccess();
+    if (!access.allowed) {
+      const status = access.reason === "unauthenticated" ? 401 : 402;
+      return NextResponse.json(
+        {
+          error:
+            access.reason === "unauthenticated"
+              ? "Sign in to generate exposés."
+              : "Active subscription or credits required.",
+          code: access.reason,
+        },
+        { status },
+      );
+    }
+
+    const authUser = await getSessionUser();
+    billingUserId = authUser?.id ?? null;
+    if (!billingUserId) {
+      return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+    }
+
+    if (!access.hasActiveSubscription) {
+      useCreditForGeneration = true;
+    }
+  }
+
   let body: GenerateRequestPayload;
   try {
     body = (await request.json()) as GenerateRequestPayload;
@@ -200,6 +233,19 @@ Schema:
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("Empty response from OpenAI");
+
+    if (billingUserId) {
+      if (useCreditForGeneration) {
+        const remaining = await decrementCredit(billingUserId);
+        if (remaining === null) {
+          return NextResponse.json(
+            { error: "No credits remaining.", code: "payment_required" },
+            { status: 402 },
+          );
+        }
+      }
+      await logGeneration(billingUserId, useCreditForGeneration);
+    }
 
     return NextResponse.json(parseGenerateResult(content, instagramTags));
   } catch (err) {

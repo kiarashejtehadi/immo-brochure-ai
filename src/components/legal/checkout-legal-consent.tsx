@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 
 export function CheckoutLegalConsent({
   onProceed,
-  stripeConfigured,
+  paymentConfigured,
 }: {
   onProceed?: () => void;
-  stripeConfigured: boolean;
+  paymentConfigured: boolean;
 }) {
   const t = useTranslations("checkout");
   const tf = useTranslations("footer");
@@ -69,13 +69,13 @@ export function CheckoutLegalConsent({
 
       <button
         type="button"
-        disabled={!canPay || !stripeConfigured}
+        disabled={!canPay || !paymentConfigured}
         onClick={() => {
-          if (canPay && stripeConfigured) onProceed?.();
+          if (canPay && paymentConfigured) onProceed?.();
         }}
         className={cn(
           "w-full rounded-lg py-3 text-sm font-semibold transition",
-          canPay && stripeConfigured
+          canPay && paymentConfigured
             ? "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
             : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800",
         )}
@@ -83,9 +83,9 @@ export function CheckoutLegalConsent({
         {t("payButton")}
       </button>
 
-      {!stripeConfigured ? (
+      {!paymentConfigured ? (
         <p className="text-xs text-amber-700 dark:text-amber-300">
-          {t("stripeNotConfigured")}
+          {t("paymentNotConfigured")}
         </p>
       ) : null}
     </div>
