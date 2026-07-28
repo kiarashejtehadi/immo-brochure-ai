@@ -20,7 +20,6 @@ export function originFromRedirectTo(redirectTo: string): string {
   }
 }
 
-/** Magic link hits our callback with token_hash (works in any browser / mail app). */
 export function buildAppMagicLinkUrl(emailData: {
   token_hash: string;
   email_action_type: string;
