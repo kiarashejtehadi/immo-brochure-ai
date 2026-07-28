@@ -7,30 +7,47 @@ export async function upsertUserFromAuth(user: {
   email: string;
 }): Promise<DbUser> {
   const supabase = createSupabaseServiceClient();
-  const { data, error } = await supabase
-    .from("users")
-    .upsert(
-      { id: user.id, email: user.email },
-      { onConflict: "id" },
-    )
-    .select("*")
-    .single();
 
-  if (error || !data) {
-    throw new Error(error?.message ?? "Failed to upsert user.");
+  const { error: rpcError } = await supabase.rpc("ensure_billing_user", {
+    p_user_id: user.id,
+    p_email: user.email,
+  });
+
+  if (rpcError) {
+    const { data, error } = await supabase
+      .from("users")
+      .upsert({ id: user.id, email: user.email }, { onConflict: "id" })
+      .select("*")
+      .single();
+
+    if (error || !data) {
+      const msg = error?.message ?? rpcError.message ?? "Failed to upsert user.";
+      if (/permission denied/i.test(msg)) {
+        throw new Error(
+          `${msg} Apply supabase/migrations/004_service_role_billing_writes.sql in Supabase SQL Editor and set SUPABASE_SERVICE_ROLE_KEY on Vercel to the service_role secret (not the anon key).`,
+        );
+      }
+      throw new Error(msg);
+    }
+
+    const { data: credits } = await supabase
+      .from("user_credits")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!credits) {
+      await supabase.from("user_credits").insert({ user_id: user.id, remaining_credits: 0 });
+    }
+
+    return data as DbUser;
   }
 
-  const { data: credits } = await supabase
-    .from("user_credits")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!credits) {
-    await supabase.from("user_credits").insert({ user_id: user.id, remaining_credits: 0 });
+  const dbUser = await getUserById(user.id);
+  if (!dbUser) {
+    throw new Error("Failed to load user after ensure_billing_user.");
   }
-
-  return data as DbUser;
+  return dbUser;
 }
 
 export async function getUserById(userId: string): Promise<DbUser | null> {

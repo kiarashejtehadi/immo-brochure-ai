@@ -14,11 +14,14 @@ Billing is **off** until `BILLING_ENABLED=true` and all required env vars are se
 4. **SQL Editor**: run migrations in order:
    - `supabase/migrations/001_billing_schema.sql`
    - `supabase/migrations/002_lemonsqueezy.sql`
+   - `supabase/migrations/004_service_role_billing_writes.sql` (fixes “permission denied for table users” at checkout)
 
    Both scripts are **idempotent** (safe to run more than once). If `001` failed on policies because you already ran it once, either re-run the updated `001` file or run only `002` — your tables from the first run are already in place.
 
    **Still on `stripe_customer_id`?** Run `002` — it renames that column to `payment_customer_id` and creates `payment_fulfillments`.
 5. Copy **Project URL**, **anon key**, and **service role key** into Vercel / `.env.local`.
+
+   **Important:** `SUPABASE_SERVICE_ROLE_KEY` must be the **service_role** secret from **Project Settings → API**, not the anon/public key. Using the anon key causes `permission denied for table users` when creating checkout.
 
 ## 2. Lemon Squeezy
 
