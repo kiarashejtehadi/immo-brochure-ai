@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { BillingStatusResponse } from "@/types/billing";
+import { readJsonResponse } from "@/lib/http/read-json-response";
 
 export function useBillingStatus(initial?: BillingStatusResponse | null) {
   const [status, setStatus] = useState<BillingStatusResponse | null>(initial ?? null);
@@ -11,7 +12,7 @@ export function useBillingStatus(initial?: BillingStatusResponse | null) {
     try {
       const res = await fetch("/api/billing/status", { cache: "no-store", credentials: "same-origin" });
       if (!res.ok) return;
-      setStatus((await res.json()) as BillingStatusResponse);
+      setStatus(await readJsonResponse<BillingStatusResponse>(res));
     } catch {
       /* ignore */
     } finally {

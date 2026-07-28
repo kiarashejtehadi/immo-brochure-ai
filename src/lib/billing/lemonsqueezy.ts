@@ -110,7 +110,6 @@ export async function createLemonSqueezyCheckout(params: {
         test_mode: isLemonSqueezyTestMode(),
         product_options: {
           redirect_url: checkoutSuccessUrl(params.locale),
-          enabled_variants: [Number.parseInt(params.variantId, 10)],
         },
         checkout_data: {
           email: params.email,

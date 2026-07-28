@@ -13,46 +13,49 @@ type Body = {
 };
 
 export async function POST(request: Request) {
+  const jsonError = (message: string, status: number) =>
+    NextResponse.json({ error: message }, { status });
+
   try {
     if (!isBillingEnabled()) {
-      return NextResponse.json(
-        { error: "Billing is not configured on this deployment." },
-        { status: 503 },
-      );
-    }
-
-    const authUser = await getSupabaseAuthUser();
-    if (!authUser?.email) {
-      return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+      return jsonError("Billing is not configured on this deployment.", 503);
     }
 
     let body: Body;
     try {
       body = (await request.json()) as Body;
     } catch {
-      return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+      return jsonError("Invalid JSON body.", 400);
     }
 
     const plan = body.plan;
     if (!plan || !["credits_pack", "monthly", "yearly"].includes(plan)) {
-      return NextResponse.json({ error: "Invalid plan." }, { status: 400 });
+      return jsonError("Invalid plan.", 400);
     }
 
     const planConfig = getPlanConfig(plan);
     if (!planConfig) {
-      return NextResponse.json(
-        {
-          error: `Plan "${plan}" is not configured. Set LEMONSQUEEZY_VARIANT_${plan === "credits_pack" ? "CREDITS_PACK" : plan.toUpperCase()} on the server.`,
-        },
-        { status: 503 },
+      const envKey =
+        plan === "credits_pack"
+          ? "LEMONSQUEEZY_VARIANT_CREDITS_PACK"
+          : `LEMONSQUEEZY_VARIANT_${plan.toUpperCase()}`;
+      return jsonError(
+        `Plan "${plan}" is not configured. Set ${envKey} in Vercel (numeric variant ID from Lemon Squeezy).`,
+        503,
       );
     }
 
     const locale = body.locale?.trim() || "en";
+
+    const authUser = await getSupabaseAuthUser();
+    if (!authUser?.email) {
+      return jsonError("Sign in required.", 401);
+    }
+
     await upsertUserFromAuth({ id: authUser.id, email: authUser.email });
     const dbUser = await getUserById(authUser.id);
     if (!dbUser) {
-      return NextResponse.json({ error: "User profile missing." }, { status: 500 });
+      return jsonError("User profile missing.", 500);
     }
 
     const url = await createLemonSqueezyCheckout({
@@ -63,11 +66,12 @@ export async function POST(request: Request) {
       creditsToGrant: planConfig.creditsToGrant ?? 0,
       locale,
     });
+
     return NextResponse.json({ url });
   } catch (err) {
     console.error("[checkout/create]", err);
     const message =
       err instanceof Error ? err.message : "Failed to create checkout.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return jsonError(message, 502);
   }
 }

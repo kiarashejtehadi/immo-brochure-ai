@@ -67,7 +67,7 @@ export function getPlanConfig(plan: BillingPlanKey): PlanConfig | null {
     yearly: process.env.LEMONSQUEEZY_VARIANT_YEARLY,
   };
   const variantId = map[plan]?.trim();
-  if (!variantId) return null;
+  if (!variantId || !/^\d+$/.test(variantId)) return null;
 
   if (plan === "credits_pack") {
     return {

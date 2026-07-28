@@ -22,7 +22,10 @@ export type BillingEnvCheckKey =
   | "SUPABASE_SERVICE_ROLE_KEY"
   | "LEMONSQUEEZY_API_KEY"
   | "LEMONSQUEEZY_STORE_ID"
-  | "LEMONSQUEEZY_WEBHOOK_SECRET";
+  | "LEMONSQUEEZY_WEBHOOK_SECRET"
+  | "LEMONSQUEEZY_VARIANT_CREDITS_PACK"
+  | "LEMONSQUEEZY_VARIANT_MONTHLY"
+  | "LEMONSQUEEZY_VARIANT_YEARLY";
 
 export function getBillingEnvChecks(): Record<BillingEnvCheckKey, boolean> {
   return {
@@ -33,6 +36,11 @@ export function getBillingEnvChecks(): Record<BillingEnvCheckKey, boolean> {
     LEMONSQUEEZY_API_KEY: Boolean(process.env.LEMONSQUEEZY_API_KEY?.trim()),
     LEMONSQUEEZY_STORE_ID: Boolean(process.env.LEMONSQUEEZY_STORE_ID?.trim()),
     LEMONSQUEEZY_WEBHOOK_SECRET: Boolean(process.env.LEMONSQUEEZY_WEBHOOK_SECRET?.trim()),
+    LEMONSQUEEZY_VARIANT_CREDITS_PACK: Boolean(
+      process.env.LEMONSQUEEZY_VARIANT_CREDITS_PACK?.trim(),
+    ),
+    LEMONSQUEEZY_VARIANT_MONTHLY: Boolean(process.env.LEMONSQUEEZY_VARIANT_MONTHLY?.trim()),
+    LEMONSQUEEZY_VARIANT_YEARLY: Boolean(process.env.LEMONSQUEEZY_VARIANT_YEARLY?.trim()),
   };
 }
 
