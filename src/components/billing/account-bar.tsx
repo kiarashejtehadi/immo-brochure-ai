@@ -6,6 +6,8 @@ import { planDisplayName } from "@/lib/billing/config";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
+import { readJsonResponse } from "@/lib/http/read-json-response";
+import { CreditPackUsage, shouldShowCreditPackUsage } from "@/components/billing/credit-pack-usage";
 
 const supabaseConfigured = Boolean(
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_SUPABASE_URL?.trim(),
@@ -17,6 +19,7 @@ export function AccountBar({ locale }: { locale: string }) {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
@@ -47,14 +50,22 @@ export function AccountBar({ locale }: { locale: string }) {
 
   async function handlePortal() {
     setPortalLoading(true);
+    setPortalError(null);
     try {
       const res = await fetch("/api/billing/portal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ locale }),
       });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (data.url) window.location.href = data.url;
+      const data = await readJsonResponse<{ url?: string; error?: string }>(res);
+      if (!res.ok || !data.url) {
+        setPortalError(data.error ?? "Could not open subscription portal.");
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setPortalError(err instanceof Error ? err.message : "Could not open subscription portal.");
     } finally {
       setPortalLoading(false);
     }
@@ -72,9 +83,11 @@ export function AccountBar({ locale }: { locale: string }) {
     email && billingEnabled
       ? status?.hasActiveSubscription
         ? planDisplayName(status.planId)
-        : (status?.remainingCredits ?? 0) > 0
-          ? `${status.remainingCredits} credits`
-          : "No plan"
+        : shouldShowCreditPackUsage(status)
+          ? null
+          : (status?.remainingCredits ?? 0) > 0
+            ? `${status.remainingCredits} credits`
+            : "No plan"
       : null;
 
   const needsPlan =
@@ -100,6 +113,7 @@ export function AccountBar({ locale }: { locale: string }) {
                   {planLabel}
                 </span>
               ) : null}
+              {billingEnabled ? <CreditPackUsage status={status} variant="compact" /> : null}
               {billingEnabled ? (
                 needsPlan ? (
                   <Link
@@ -118,15 +132,28 @@ export function AccountBar({ locale }: { locale: string }) {
                 )
               ) : null}
               {billingEnabled && status?.hasActiveSubscription ? (
-                <button
-                  type="button"
-                  onClick={() => void handlePortal()}
-                  disabled={portalLoading}
-                  className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                >
-                  {portalLoading ? "…" : "Manage subscription"}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void handlePortal()}
+                    disabled={portalLoading}
+                    className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  >
+                    {portalLoading ? "…" : "Manage subscription"}
+                  </button>
+                  {portalError ? (
+                    <p className="w-full text-right text-xs text-red-600 dark:text-red-400" role="alert">
+                      {portalError}
+                    </p>
+                  ) : null}
+                </>
               ) : null}
+              <Link
+                href="/settings"
+                className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                Branding
+              </Link>
               <button
                 type="button"
                 onClick={() => void handleSignOut()}

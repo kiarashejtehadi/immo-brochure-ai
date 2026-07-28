@@ -44,6 +44,12 @@ export function buildBrochurePdfProps(input: {
   energy: EnergyFormData;
   agent: GenerateRequestPayload["agent"];
   result: GenerateResult;
+  branding?: {
+    brandColor?: string;
+    logoDataUrl?: string;
+    website?: string;
+    showWatermark?: boolean;
+  };
 }): Omit<BrochurePdfProps, "photoDataUrls" | "floorPlanDataUrl"> {
   const badge =
     input.transactionType === "rent"
@@ -105,5 +111,9 @@ export function buildBrochurePdfProps(input: {
     energyLines,
     agent: input.agent,
     legalDisclaimerFallback: input.form.defaultLegalDisclaimer,
+    brandColor: input.branding?.brandColor,
+    logoDataUrl: input.branding?.logoDataUrl,
+    website: input.branding?.website,
+    showWatermark: input.branding?.showWatermark,
   };
 }

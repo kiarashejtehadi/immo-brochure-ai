@@ -6,7 +6,7 @@ import { getCaptionHashtags, normalizeOutputLanguage } from "@/lib/output-langua
 import type { GenerateResult, GenerateRequestPayload } from "@/types/listing";
 import { isBillingEnabled } from "@/lib/billing/config";
 import { getSessionUser, resolveBillingAccess } from "@/lib/billing/access";
-import { decrementCredit, logGeneration } from "@/lib/billing/repository";
+import { decrementCredit, getActiveSubscription, logGeneration } from "@/lib/billing/repository";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -236,18 +236,30 @@ Schema:
 
     if (billingUserId) {
       if (useCreditForGeneration) {
-        const remaining = await decrementCredit(billingUserId);
-        if (remaining === null) {
+        const dec = await decrementCredit(billingUserId);
+        if (dec === null) {
           return NextResponse.json(
             { error: "No credits remaining.", code: "payment_required" },
             { status: 402 },
           );
         }
+        const sub = await getSessionUser();
+        const subscription = sub ? await getActiveSubscription(sub.id) : null;
+        const isPro = Boolean(subscription);
+        await logGeneration(billingUserId, true);
+        const parsed = parseGenerateResult(content, instagramTags);
+        return NextResponse.json({
+          ...parsed,
+          watermarkPdf: !isPro && dec.usedTrialCredit,
+        });
       }
-      await logGeneration(billingUserId, useCreditForGeneration);
+      await logGeneration(billingUserId, false);
     }
 
-    return NextResponse.json(parseGenerateResult(content, instagramTags));
+    return NextResponse.json({
+      ...parseGenerateResult(content, instagramTags),
+      watermarkPdf: false,
+    });
   } catch (err) {
     console.error("[api/generate]", err);
     const message = err instanceof Error ? err.message : "Failed to generate content";

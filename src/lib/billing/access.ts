@@ -2,6 +2,8 @@ import { isBillingEnabled, planDisplayName } from "@/lib/billing/config";
 import { getBillingEnvChecks } from "@/lib/supabase/env";
 import {
   getActiveSubscription,
+  getCreditsUsedCount,
+  getTrialCredits,
   getUserCredits,
   upsertUserFromAuth,
 } from "@/lib/billing/repository";
@@ -71,43 +73,56 @@ export async function resolveBillingAccess(): Promise<BillingAccess> {
   };
 }
 
+function emptyBillingStatus(
+  partial: Partial<BillingStatusResponse> & Pick<BillingStatusResponse, "billingEnabled">,
+): BillingStatusResponse {
+  return {
+    email: null,
+    hasActiveSubscription: false,
+    remainingCredits: 0,
+    trialCredits: 0,
+    isPro: false,
+    creditsUsed: 0,
+    creditsTotal: 0,
+    planId: null,
+    subscriptionStatus: null,
+    currentPeriodEnd: null,
+    ...partial,
+  };
+}
+
 export async function getBillingStatusForClient(): Promise<BillingStatusResponse> {
   const authUser = await getSupabaseAuthUser();
 
   if (!isBillingEnabled()) {
-    return {
+    return emptyBillingStatus({
       billingEnabled: false,
       email: authUser?.email ?? null,
-      hasActiveSubscription: false,
-      remainingCredits: 0,
-      planId: null,
-      subscriptionStatus: null,
-      currentPeriodEnd: null,
       configChecks: getBillingEnvChecks(),
-    };
+    });
   }
 
   if (!authUser?.email) {
-    return {
-      billingEnabled: true,
-      email: null,
-      hasActiveSubscription: false,
-      remainingCredits: 0,
-      planId: null,
-      subscriptionStatus: null,
-      currentPeriodEnd: null,
-    };
+    return emptyBillingStatus({ billingEnabled: true });
   }
 
   await upsertUserFromAuth({ id: authUser.id, email: authUser.email });
   const subscription = await getActiveSubscription(authUser.id);
   const remainingCredits = await getUserCredits(authUser.id);
+  const trialCredits = await getTrialCredits(authUser.id);
+  const creditsUsed = await getCreditsUsedCount(authUser.id);
+  const creditsTotal = creditsUsed + remainingCredits;
+  const hasActiveSubscription = Boolean(subscription);
 
   return {
     billingEnabled: true,
     email: authUser.email,
-    hasActiveSubscription: Boolean(subscription),
+    hasActiveSubscription,
     remainingCredits,
+    trialCredits,
+    isPro: hasActiveSubscription,
+    creditsUsed,
+    creditsTotal,
     planId: subscription?.plan_id ?? (remainingCredits > 0 ? "credits_pack" : null),
     subscriptionStatus: subscription?.status ?? null,
     currentPeriodEnd: subscription?.current_period_end ?? null,

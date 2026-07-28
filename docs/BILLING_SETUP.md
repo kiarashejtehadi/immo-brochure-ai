@@ -14,7 +14,7 @@ Billing is **off** until `BILLING_ENABLED=true` and all required env vars are se
 4. **SQL Editor**: run migrations in order:
    - `supabase/migrations/001_billing_schema.sql`
    - `supabase/migrations/002_lemonsqueezy.sql`
-   - `supabase/migrations/004_service_role_billing_writes.sql` (fixes “permission denied for table users” at checkout)
+   - `supabase/migrations/005_branding_trial.sql` (branding columns, 2 trial credits, logo storage)
 
    Both scripts are **idempotent** (safe to run more than once). If `001` failed on policies because you already ran it once, either re-run the updated `001` file or run only `002` — your tables from the first run are already in place.
 
@@ -47,6 +47,8 @@ Billing is **off** until `BILLING_ENABLED=true` and all required env vars are se
      - `subscription_cancelled`
      - `subscription_expired`
 8. Enable **Customer portal** for subscriptions (Store → Subscriptions settings) so **Manage subscription** works.
+
+9. **Activate your store** in Lemon Squeezy when you want the hosted billing portal (`[store].lemonsqueezy.com/billing`) to work. Until activation, checkout can work in **test mode**, but customers may see *“This store has not been activated”* on **Manage subscription**. As store owner, cancel or edit test subscriptions in the [Lemon Squeezy dashboard](https://app.lemonsqueezy.com/) → **Subscriptions**.
 
 For local checkout testing, set `LEMONSQUEEZY_TEST_MODE=true` and use Lemon Squeezy test mode.
 

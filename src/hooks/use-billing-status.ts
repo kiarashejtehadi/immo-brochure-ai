@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { BillingStatusResponse } from "@/types/billing";
 import { readJsonResponse } from "@/lib/http/read-json-response";
 
+export const BILLING_REFRESH_EVENT = "immo:billing-refresh";
+
 export function useBillingStatus(initial?: BillingStatusResponse | null) {
   const [status, setStatus] = useState<BillingStatusResponse | null>(initial ?? null);
   const [loading, setLoading] = useState(!initial);
@@ -23,8 +25,13 @@ export function useBillingStatus(initial?: BillingStatusResponse | null) {
   useEffect(() => {
     void refresh();
     const onFocus = () => void refresh();
+    const onBillingRefresh = () => void refresh();
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener(BILLING_REFRESH_EVENT, onBillingRefresh);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener(BILLING_REFRESH_EVENT, onBillingRefresh);
+    };
   }, [refresh]);
 
   return { status, loading, refresh, isSignedIn: Boolean(status?.email) };

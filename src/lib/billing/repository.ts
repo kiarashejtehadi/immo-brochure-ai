@@ -145,6 +145,28 @@ export async function getUserCredits(userId: string): Promise<number> {
   return (data as DbUserCredits | null)?.remaining_credits ?? 0;
 }
 
+export async function getTrialCredits(userId: string): Promise<number> {
+  const supabase = createSupabaseServiceClient();
+  const { data } = await supabase
+    .from("user_credits")
+    .select("trial_credits")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return (data as { trial_credits?: number } | null)?.trial_credits ?? 0;
+}
+
+/** Count exposé generations that consumed a credit-pack credit. */
+export async function getCreditsUsedCount(userId: string): Promise<number> {
+  const supabase = createSupabaseServiceClient();
+  const { count, error } = await supabase
+    .from("generation_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("used_credit", true);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 export async function addCredits(userId: string, amount: number): Promise<number> {
   const supabase = createSupabaseServiceClient();
   const current = await getUserCredits(userId);
@@ -158,13 +180,36 @@ export async function addCredits(userId: string, amount: number): Promise<number
   return next;
 }
 
-export async function decrementCredit(userId: string): Promise<number | null> {
+export async function decrementCredit(
+  userId: string,
+): Promise<{ remaining: number; usedTrialCredit: boolean } | null> {
   const supabase = createSupabaseServiceClient();
-  const { data, error } = await supabase.rpc("decrement_user_credit", {
-    p_user_id: userId,
-  });
-  if (error) throw new Error(error.message);
-  return typeof data === "number" ? data : null;
+  const { data: row, error: readError } = await supabase
+    .from("user_credits")
+    .select("remaining_credits, trial_credits")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (readError) throw new Error(readError.message);
+  const remaining = (row as { remaining_credits?: number } | null)?.remaining_credits ?? 0;
+  const trial = (row as { trial_credits?: number } | null)?.trial_credits ?? 0;
+  if (remaining <= 0) return null;
+
+  const usedTrialCredit = trial > 0;
+  const nextRemaining = remaining - 1;
+  const nextTrial = usedTrialCredit ? trial - 1 : trial;
+
+  const { error: updateError } = await supabase
+    .from("user_credits")
+    .update({
+      remaining_credits: nextRemaining,
+      trial_credits: nextTrial,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+
+  if (updateError) throw new Error(updateError.message);
+  return { remaining: nextRemaining, usedTrialCredit };
 }
 
 export async function logGeneration(userId: string, usedCredit: boolean): Promise<void> {

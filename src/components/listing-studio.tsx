@@ -5,6 +5,8 @@ import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { AccountBar } from "@/components/billing/account-bar";
 import { BillingNeedPlanBanner } from "@/components/billing/billing-need-plan-banner";
+import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
+import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-status";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { Link } from "@/i18n/navigation";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
@@ -33,6 +35,8 @@ import {
   formatPriceAmount,
   type CurrencyCode,
 } from "@/lib/currency";
+import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl } from "@/lib/branding/pdf-branding";
+import type { UserBrandingProfile } from "@/types/branding";
 import { cn } from "@/lib/utils";
 import type {
   TransactionType,
@@ -265,11 +269,26 @@ export default function ListingStudio() {
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("story");
   const [result, setResult] = useState<GenerateResult | null>(null);
+  const [pdfWatermark, setPdfWatermark] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [billingHint, setBillingHint] = useState<"auth" | "checkout" | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const { status: billingStatus } = useBillingStatus();
+  const [brandingProfile, setBrandingProfile] = useState<UserBrandingProfile | null>(null);
+
+  useEffect(() => {
+    if (!billingStatus?.email) return;
+    void fetch("/api/branding/profile", { credentials: "same-origin" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as { branding?: UserBrandingProfile };
+        if (data.branding) setBrandingProfile(data.branding);
+      })
+      .catch(() => undefined);
+  }, [billingStatus?.email]);
+
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
@@ -374,7 +393,7 @@ export default function ListingStudio() {
       });
 
       const raw = await response.text();
-      let data: GenerateResult & { error?: string; code?: string } = {
+      let data: GenerateResult & { error?: string; code?: string; watermarkPdf?: boolean } = {
         title: "",
         summary: [],
         fullDescription: "",
@@ -425,9 +444,12 @@ export default function ListingStudio() {
         fullDescription: data.fullDescription,
         locationDescription: data.locationDescription || "—",
         socialCaptions: sc,
+        watermarkPdf: data.watermarkPdf,
       });
+      setPdfWatermark(Boolean(data.watermarkPdf));
       setHasGenerated(true);
       setPreviewTab("story");
+      window.dispatchEvent(new Event(BILLING_REFRESH_EVENT));
     } catch (err) {
       const message =
         err instanceof DOMException && err.name === "AbortError"
@@ -447,6 +469,13 @@ export default function ListingStudio() {
     setIsDownloadingPdf(true);
     setPdfError(null);
     try {
+      const isPro = billingStatus?.isPro === true;
+      const agentForPdf = mergeAgentWithBranding(agentForLocale, brandingProfile);
+      const brand = pdfBrandingFromProfile(brandingProfile, isPro);
+      let logoDataUrl: string | undefined;
+      if (brand.logoUrl) {
+        logoDataUrl = await logoUrlToDataUrl(brand.logoUrl);
+      }
       const pdfProps = buildBrochurePdfProps({
         transactionType,
         form: formCopy,
@@ -458,8 +487,14 @@ export default function ListingStudio() {
         rent,
         sale,
         energy,
-        agent: agentForLocale,
+        agent: agentForPdf,
         result,
+        branding: {
+          brandColor: brand.brandColor,
+          logoDataUrl,
+          website: brand.website,
+          showWatermark: pdfWatermark && !isPro,
+        },
       });
       const { downloadExposePdf } = await import("@/lib/download-expose-pdf");
       await downloadExposePdf({
@@ -1222,6 +1257,8 @@ export default function ListingStudio() {
               ) : null}
             </div>
           )}
+
+          <CreditPackUsage status={billingStatus} variant="panel" className="mb-1" />
 
           <button
             type="button"

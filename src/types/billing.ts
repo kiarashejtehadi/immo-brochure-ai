@@ -41,6 +41,14 @@ export type BillingStatusResponse = {
   email: string | null;
   hasActiveSubscription: boolean;
   remainingCredits: number;
+  /** Credits from free signup trial (PDF watermark when consumed). */
+  trialCredits: number;
+  /** Active monthly/yearly subscription — unlocks branding & watermark removal. */
+  isPro: boolean;
+  /** Generations paid with credit pack (not subscription). */
+  creditsUsed: number;
+  /** creditsUsed + remainingCredits (total pack balance purchased and not expired). */
+  creditsTotal: number;
   planId: string | null;
   subscriptionStatus: SubscriptionStatus | null;
   currentPeriodEnd: string | null;
