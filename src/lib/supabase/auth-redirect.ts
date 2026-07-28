@@ -37,25 +37,83 @@ export function studioPathForLocale(locale: AppLocale): string {
   return `/${locale}`;
 }
 
+export function checkoutPathForLocale(locale: AppLocale): string {
+  return `/${locale}/checkout`;
+}
+
+/** Path to restore after magic link — studio home → checkout when billing applies. */
+export function pathToSaveBeforeMagicLink(pathname: string): string {
+  const path = pathname.split("?")[0] || "/de";
+  if (path.includes("/checkout")) return path;
+  const locale = localeFromPath(path);
+  const normalized = path.replace(/\/$/, "") || `/${locale}`;
+  if (normalized === `/${locale}`) {
+    return checkoutPathForLocale(locale);
+  }
+  return path.startsWith("/") ? path : `/${locale}`;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchBillingStatus(retries = 5): Promise<BillingStatusResponse | null> {
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    try {
+      const res = await fetch("/api/billing/status", {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      if (res.ok) {
+        return (await res.json()) as BillingStatusResponse;
+      }
+    } catch {
+      /* retry */
+    }
+    if (attempt < retries - 1) {
+      await sleep(120 * (attempt + 1));
+    }
+  }
+  return null;
+}
+
+export type ResolvePathAfterSignInOptions = {
+  /** After magic link: default to checkout instead of studio when status is unavailable. */
+  defaultToCheckout?: boolean;
+};
+
 /**
- * After sign-in: return saved path, or /{locale}/checkout if billing is on and user has no plan/credits.
+ * After sign-in: honor saved checkout path, or /{locale}/checkout if billing is on and user has no plan/credits.
  */
-export async function resolvePathAfterSignIn(storedPath: string): Promise<string> {
+export async function resolvePathAfterSignIn(
+  storedPath: string,
+  options?: ResolvePathAfterSignInOptions,
+): Promise<string> {
   const locale = localeFromPath(storedPath);
   const studio = studioPathForLocale(locale);
+  const checkout = checkoutPathForLocale(locale);
 
-  try {
-    const res = await fetch("/api/billing/status", { cache: "no-store" });
-    if (!res.ok) return studio;
-    const status = (await res.json()) as BillingStatusResponse;
-    if (!status.billingEnabled) return studio;
+  const saved = storedPath.split("?")[0] ?? storedPath;
+  if (saved.includes("/checkout")) {
+    return saved.startsWith("/") ? saved : checkout;
+  }
 
-    const hasAccess =
-      status.hasActiveSubscription || (status.remainingCredits ?? 0) > 0;
-    if (hasAccess) return studio;
+  const status = await fetchBillingStatus();
+  const fallback = options?.defaultToCheckout ? checkout : studio;
 
-    return `/${locale}/checkout`;
-  } catch {
+  if (!status) {
+    return fallback;
+  }
+
+  if (!status.billingEnabled) {
+    return saved.startsWith("/") && saved !== studio ? saved : studio;
+  }
+
+  const hasAccess =
+    status.hasActiveSubscription || (status.remainingCredits ?? 0) > 0;
+  if (hasAccess) {
     return studio;
   }
+
+  return checkout;
 }

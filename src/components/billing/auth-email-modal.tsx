@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { authCallbackUrl, savePostAuthRedirect } from "@/lib/supabase/auth-redirect";
+import { authCallbackUrl, pathToSaveBeforeMagicLink, savePostAuthRedirect } from "@/lib/supabase/auth-redirect";
 import { cn } from "@/lib/utils";
 
 export function AuthEmailModal({
@@ -28,7 +28,7 @@ export function AuthEmailModal({
     setMessage(null);
     try {
       const supabase = createSupabaseBrowserClient();
-      const nextPath = window.location.pathname || "/de";
+      const nextPath = pathToSaveBeforeMagicLink(window.location.pathname || "/de");
       savePostAuthRedirect(nextPath);
       // No query on redirect URL — must match Supabase allowlist exactly.
       const redirectTo = authCallbackUrl(window.location.origin);
