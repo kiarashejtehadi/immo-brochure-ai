@@ -10,6 +10,7 @@ import {
   hasBrowserAuthSession,
   refreshBrowserAuthSession,
 } from "@/lib/supabase/client-session";
+import { readJsonResponse } from "@/lib/http/read-json-response";
 import { cn } from "@/lib/utils";
 
 type PlanCard = {
@@ -90,7 +91,7 @@ export function PricingSection({
         return;
       }
 
-      const data = (await res.json()) as { url?: string; error?: string };
+      const data = await readJsonResponse<{ url?: string; error?: string }>(res);
       if (!res.ok || !data.url) {
         throw new Error(data.error ?? "Checkout failed.");
       }

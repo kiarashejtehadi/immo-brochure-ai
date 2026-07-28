@@ -50,8 +50,28 @@ async function lemonFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
   const text = await res.text();
   if (!res.ok) {
+    let detail = text.slice(0, 400);
+    if (text.trim()) {
+      try {
+        const parsed = JSON.parse(text) as {
+          errors?: Array<{ detail?: string; title?: string }>;
+        };
+        const first = parsed.errors?.[0];
+        detail = first?.detail ?? first?.title ?? detail;
+      } catch {
+        /* use raw slice */
+      }
+    }
     console.error("[lemonsqueezy] API error", res.status, text);
-    throw new Error(`Lemon Squeezy API error (${res.status}).`);
+    throw new Error(
+      detail.trim()
+        ? `Lemon Squeezy: ${detail}`
+        : `Lemon Squeezy API error (${res.status}).`,
+    );
+  }
+
+  if (!text.trim()) {
+    throw new Error("Lemon Squeezy returned an empty response.");
   }
 
   return JSON.parse(text) as T;
