@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route-handler";
 
-export async function POST() {
-  const supabase = await createSupabaseServerClient();
+export async function POST(request: NextRequest) {
+  const response = NextResponse.json({ ok: true });
+  const supabase = createSupabaseRouteHandlerClient(request, response);
   await supabase.auth.signOut();
-  return NextResponse.json({ ok: true });
+  return response;
 }

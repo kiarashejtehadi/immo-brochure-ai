@@ -40,13 +40,25 @@ export function authCallbackRedirectUrl(request: NextRequest): URL | null {
     return null;
   }
   const code = request.nextUrl.searchParams.get("code");
-  if (!code) return null;
+  const tokenHash = request.nextUrl.searchParams.get("token_hash");
+  if (!code && !tokenHash) return null;
 
   const url = request.nextUrl.clone();
   url.pathname = "/auth/callback";
   url.search = "";
-  url.searchParams.set("code", code);
-  const nextPath = pathname === "/" || pathname === "" ? "/de" : pathname;
+  if (code) url.searchParams.set("code", code);
+  if (tokenHash) {
+    url.searchParams.set("token_hash", tokenHash);
+    const type = request.nextUrl.searchParams.get("type");
+    if (type) url.searchParams.set("type", type);
+  }
+  const existingNext = request.nextUrl.searchParams.get("next");
+  const nextPath =
+    existingNext?.startsWith("/")
+      ? existingNext
+      : pathname === "/" || pathname === ""
+        ? "/de"
+        : pathname;
   url.searchParams.set("next", nextPath);
   return url;
 }

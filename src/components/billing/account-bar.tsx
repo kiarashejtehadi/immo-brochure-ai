@@ -23,6 +23,9 @@ export function AccountBar({ locale }: { locale: string }) {
 
   useEffect(() => {
     void refresh();
+    const onFocus = () => void refresh();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [refresh]);
 
   if (!status?.billingEnabled) {
@@ -104,7 +107,10 @@ export function AccountBar({ locale }: { locale: string }) {
       <AuthEmailModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}
-        onSent={() => setAuthOpen(false)}
+        onSent={() => {
+          setAuthOpen(false);
+          void refresh();
+        }}
       />
     </>
   );
