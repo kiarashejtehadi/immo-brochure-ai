@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { AccountBar } from "@/components/billing/account-bar";
+import { BillingNeedPlanBanner } from "@/components/billing/billing-need-plan-banner";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { Link } from "@/i18n/navigation";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
@@ -517,6 +518,8 @@ export default function ListingStudio() {
           </div>
         </div>
       </header>
+
+      <BillingNeedPlanBanner />
 
       <main className="mx-auto grid max-w-6xl gap-8 px-6 py-8 lg:grid-cols-2 lg:items-start">
         <section className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">

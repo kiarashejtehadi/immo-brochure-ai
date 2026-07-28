@@ -55,7 +55,10 @@ export function AuthCallbackClient() {
 
     async function goAfterAuth(storedOrNext: string) {
       const dest = await resolvePathAfterSignIn(storedOrNext);
-      if (!cancelled) router.replace(dest);
+      if (!cancelled) {
+        router.refresh();
+        router.replace(dest);
+      }
     }
 
     async function completeAuth() {

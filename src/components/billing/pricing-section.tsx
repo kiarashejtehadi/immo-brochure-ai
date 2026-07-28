@@ -1,9 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { BillingPlanKey } from "@/types/billing";
 import { creditsPerPack } from "@/lib/billing/config";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
+import { useBillingStatus } from "@/hooks/use-billing-status";
+import {
+  hasBrowserAuthSession,
+  refreshBrowserAuthSession,
+} from "@/lib/supabase/client-session";
 import { cn } from "@/lib/utils";
 
 type PlanCard = {
@@ -40,15 +46,24 @@ const PLANS: PlanCard[] = [
   },
 ];
 
+async function postCheckout(plan: BillingPlanKey, locale: string) {
+  return fetch("/api/checkout/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ plan, locale }),
+  });
+}
+
 export function PricingSection({
   locale,
   billingEnabled,
-  isSignedIn,
 }: {
   locale: string;
   billingEnabled: boolean;
-  isSignedIn: boolean;
 }) {
+  const router = useRouter();
+  const { status, loading: statusLoading, refresh, isSignedIn } = useBillingStatus();
   const [loadingPlan, setLoadingPlan] = useState<BillingPlanKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
@@ -58,19 +73,23 @@ export function PricingSection({
       setError("Billing is not configured on this server.");
       return;
     }
-    if (!isSignedIn) {
-      setAuthOpen(true);
-      return;
-    }
 
     setLoadingPlan(plan);
     setError(null);
     try {
-      const res = await fetch("/api/checkout/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, locale }),
-      });
+      let res = await postCheckout(plan, locale);
+
+      if (res.status === 401 && (await hasBrowserAuthSession())) {
+        await refreshBrowserAuthSession();
+        router.refresh();
+        res = await postCheckout(plan, locale);
+      }
+
+      if (res.status === 401) {
+        setAuthOpen(true);
+        return;
+      }
+
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
         throw new Error(data.error ?? "Checkout failed.");
@@ -92,6 +111,17 @@ export function PricingSection({
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Choose credits for occasional use or subscribe for unlimited/high-volume generation.
         </p>
+        {isSignedIn && status?.email ? (
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            Signed in as <span className="font-medium text-zinc-800 dark:text-zinc-200">{status.email}</span>
+            {" — "}
+            purchases apply to this account.
+          </p>
+        ) : !statusLoading && billingEnabled ? (
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            Sign in when prompted, or use the account menu above.
+          </p>
+        ) : null}
       </div>
 
       {!billingEnabled ? (
@@ -125,14 +155,14 @@ export function PricingSection({
             </p>
             <button
               type="button"
-              disabled={!billingEnabled || loadingPlan === plan.key}
+              disabled={!billingEnabled || loadingPlan === plan.key || statusLoading}
               onClick={() => void startCheckout(plan.key)}
               className={cn(
                 "mt-5 w-full rounded-xl py-2.5 text-sm font-semibold transition",
                 plan.highlight
                   ? "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
                   : "border border-zinc-300 bg-white hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950",
-                (!billingEnabled || loadingPlan === plan.key) && "opacity-60",
+                (!billingEnabled || loadingPlan === plan.key || statusLoading) && "opacity-60",
               )}
             >
               {loadingPlan === plan.key ? "Redirecting…" : plan.cta}
@@ -144,7 +174,10 @@ export function PricingSection({
       <AuthEmailModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}
-        onSent={() => setAuthOpen(false)}
+        onSent={() => {
+          setAuthOpen(false);
+          void refresh();
+        }}
       />
     </section>
   );

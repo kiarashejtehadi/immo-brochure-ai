@@ -8,13 +8,22 @@ import {
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { BillingAccess, BillingStatusResponse } from "@/types/billing";
 
+/** Supabase auth user regardless of BILLING_ENABLED (for status UI / sign out). */
+export async function getSupabaseAuthUser() {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  } catch {
+    return null;
+  }
+}
+
 export async function getSessionUser() {
   if (!isBillingEnabled()) return null;
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  return getSupabaseAuthUser();
 }
 
 export async function resolveBillingAccess(): Promise<BillingAccess> {
@@ -63,10 +72,12 @@ export async function resolveBillingAccess(): Promise<BillingAccess> {
 }
 
 export async function getBillingStatusForClient(): Promise<BillingStatusResponse> {
+  const authUser = await getSupabaseAuthUser();
+
   if (!isBillingEnabled()) {
     return {
       billingEnabled: false,
-      email: null,
+      email: authUser?.email ?? null,
       hasActiveSubscription: false,
       remainingCredits: 0,
       planId: null,
@@ -76,7 +87,6 @@ export async function getBillingStatusForClient(): Promise<BillingStatusResponse
     };
   }
 
-  const authUser = await getSessionUser();
   if (!authUser?.email) {
     return {
       billingEnabled: true,
