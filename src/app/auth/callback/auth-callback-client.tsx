@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { consumePostAuthRedirect } from "@/lib/supabase/auth-redirect";
+import {
+  consumePostAuthRedirect,
+  resolvePathAfterSignIn,
+} from "@/lib/supabase/auth-redirect";
 
 function normalizeOtpType(raw: string | null): EmailOtpType | null {
   if (!raw) return null;
@@ -26,12 +29,7 @@ async function verifyTokenHash(
   tokenHash: string,
   primaryType: EmailOtpType,
 ): Promise<{ error: Error | null }> {
-  const types: EmailOtpType[] = [
-    primaryType,
-    "email",
-    "magiclink",
-    "signup",
-  ];
+  const types: EmailOtpType[] = [primaryType, "email", "magiclink", "signup"];
   const seen = new Set<string>();
   let lastError: Error | null = null;
   for (const type of types) {
@@ -55,22 +53,28 @@ export function AuthCallbackClient() {
   useEffect(() => {
     let cancelled = false;
 
+    async function goAfterAuth(storedOrNext: string) {
+      const dest = await resolvePathAfterSignIn(storedOrNext);
+      if (!cancelled) router.replace(dest);
+    }
+
     async function completeAuth() {
       try {
         const supabase = createSupabaseBrowserClient();
         const nextParam = searchParams.get("next");
-        const next =
-          nextParam?.startsWith("/")
-            ? nextParam
-            : consumePostAuthRedirect("/de");
+        const storedPath = nextParam?.startsWith("/")
+          ? nextParam
+          : consumePostAuthRedirect("/de");
 
-        const providerError = searchParams.get("error_description") ?? searchParams.get("error");
+        const providerError =
+          searchParams.get("error_description") ?? searchParams.get("error");
         if (providerError) {
           router.replace(`/en?auth=error&reason=${encodeURIComponent(providerError)}`);
           return;
         }
 
-        const hash = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
+        const hash =
+          typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
         const hashParams = new URLSearchParams(hash);
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
@@ -80,7 +84,7 @@ export function AuthCallbackClient() {
             refresh_token: refreshToken,
           });
           if (error) throw error;
-          if (!cancelled) router.replace(next);
+          await goAfterAuth(storedPath);
           return;
         }
 
@@ -89,7 +93,7 @@ export function AuthCallbackClient() {
         if (tokenHash && type) {
           const { error } = await verifyTokenHash(supabase, tokenHash, type);
           if (error) throw error;
-          if (!cancelled) router.replace(next);
+          await goAfterAuth(storedPath);
           return;
         }
 
@@ -102,7 +106,7 @@ export function AuthCallbackClient() {
             type: "email",
           });
           if (error) throw error;
-          if (!cancelled) router.replace(next);
+          await goAfterAuth(storedPath);
           return;
         }
 
@@ -112,14 +116,14 @@ export function AuthCallbackClient() {
           if (error) {
             const { data: sessionData } = await supabase.auth.getSession();
             if (sessionData.session) {
-              if (!cancelled) router.replace(next);
+              await goAfterAuth(storedPath);
               return;
             }
             throw new Error(
               `${error.message} (redirect URL in email must match this site: ${window.location.origin}/auth/callback)`,
             );
           }
-          if (!cancelled) router.replace(next);
+          await goAfterAuth(storedPath);
           return;
         }
 
