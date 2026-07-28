@@ -20,7 +20,12 @@ The app expects Supabase to redirect back to:
 | Field | Value |
 |--------|--------|
 | **Site URL** | `https://immo-brochure-ai.vercel.app` |
-| **Redirect URLs** | `https://immo-brochure-ai.vercel.app/auth/callback` |
+| **Redirect URLs** | `https://immo-brochure-ai.vercel.app/auth/callback` (exact; **no** `?next=`) |
+| **Optional wildcard** | `https://immo-brochure-ai.vercel.app/**` if you use query params elsewhere |
+
+The app stores your locale in **sessionStorage** and sends Supabase a **plain** `/auth/callback` URL so allowlisting works.
+
+**Site URL** must be production, not `localhost`, or email links open the wrong host and PKCE fails even in one browser.
 
 Save, then request a **new** magic link.
 

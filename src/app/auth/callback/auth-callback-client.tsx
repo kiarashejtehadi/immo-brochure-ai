@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { consumePostAuthRedirect } from "@/lib/supabase/auth-redirect";
 
 function normalizeOtpType(raw: string | null): EmailOtpType | null {
   if (!raw) return null;
@@ -57,8 +58,11 @@ export function AuthCallbackClient() {
     async function completeAuth() {
       try {
         const supabase = createSupabaseBrowserClient();
-        const nextRaw = searchParams.get("next") ?? "/de";
-        const next = nextRaw.startsWith("/") ? nextRaw : "/de";
+        const nextParam = searchParams.get("next");
+        const next =
+          nextParam?.startsWith("/")
+            ? nextParam
+            : consumePostAuthRedirect("/de");
 
         const providerError = searchParams.get("error_description") ?? searchParams.get("error");
         if (providerError) {
@@ -106,8 +110,13 @@ export function AuthCallbackClient() {
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData.session) {
+              if (!cancelled) router.replace(next);
+              return;
+            }
             throw new Error(
-              `${error.message} — Request a new link and open it in the same browser where you clicked Sign in.`,
+              `${error.message} (redirect URL in email must match this site: ${window.location.origin}/auth/callback)`,
             );
           }
           if (!cancelled) router.replace(next);

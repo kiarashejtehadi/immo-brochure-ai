@@ -2,14 +2,8 @@
 
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { authCallbackUrl, savePostAuthRedirect } from "@/lib/supabase/auth-redirect";
 import { cn } from "@/lib/utils";
-
-function authCallbackOrigin(): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
-  if (configured) return configured;
-  if (typeof window !== "undefined") return window.location.origin;
-  return "http://localhost:3000";
-}
 
 export function AuthEmailModal({
   open,
@@ -34,9 +28,10 @@ export function AuthEmailModal({
     setMessage(null);
     try {
       const supabase = createSupabaseBrowserClient();
-      const nextPath =
-        typeof window !== "undefined" ? window.location.pathname : "/de";
-      const redirectTo = `${authCallbackOrigin()}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const nextPath = window.location.pathname || "/de";
+      savePostAuthRedirect(nextPath);
+      // No query on redirect URL — must match Supabase allowlist exactly.
+      const redirectTo = authCallbackUrl(window.location.origin);
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: { emailRedirectTo: redirectTo },
