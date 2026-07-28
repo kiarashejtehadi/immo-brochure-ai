@@ -105,7 +105,11 @@ export function AuthCallbackClient() {
         const code = searchParams.get("code");
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
+          if (error) {
+            throw new Error(
+              `${error.message} — Request a new link and open it in the same browser where you clicked Sign in.`,
+            );
+          }
           if (!cancelled) router.replace(next);
           return;
         }

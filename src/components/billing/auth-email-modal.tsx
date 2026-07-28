@@ -42,7 +42,9 @@ export function AuthEmailModal({
         options: { emailRedirectTo: redirectTo },
       });
       if (signInError) throw signInError;
-      setMessage("Check your inbox for the magic link to sign in.");
+      setMessage(
+        "Check your inbox for the magic link. Open it in this same browser on this device (do not switch to phone or another app).",
+      );
       onSent?.(email.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send magic link.");
