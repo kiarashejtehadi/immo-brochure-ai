@@ -1,14 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { AccountBar } from "@/components/billing/account-bar";
 import { BillingNeedPlanBanner } from "@/components/billing/billing-need-plan-banner";
-import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
 import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-status";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
-import { Link } from "@/i18n/navigation";
+import { ListingForm } from "@/components/listing/listing-form";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
 import {
   buildBrochurePdfProps,
@@ -25,14 +24,10 @@ import {
 } from "@/lib/i18n";
 import { getFormCopy, isKnownDefaultLegalDisclaimer, resolveLegalDisclaimer } from "@/lib/i18n-form";
 import {
-  TARGET_LANGUAGE_OPTIONS,
   outputLanguageFromLocale,
 } from "@/lib/target-languages";
 import {
   getDefaultCurrencyForLocale,
-  ENGLISH_CURRENCY_OPTIONS,
-  CURRENCY_LABELS,
-  formatPriceAmount,
   type CurrencyCode,
 } from "@/lib/currency";
 import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl } from "@/lib/branding/pdf-branding";
@@ -43,44 +38,13 @@ import type {
   RentFormData,
   SaleFormData,
   EnergyFormData,
-  EnergyClass,
-  EnergyCertificateType,
   HeatingSource,
   GenerateResult,
   AgentFormData,
+  PropertyDetails,
 } from "@/types/listing";
 
 const MAX_PHOTOS = 5;
-
-const FEATURE_KEYS: FeatureKey[] = [
-  "Balcony",
-  "Fitted Kitchen",
-  "Elevator",
-  "Renovated",
-];
-
-const TONE_KEYS: ToneKey[] = ["Luxurious", "Professional", "Friendly"];
-
-const ENERGY_CLASSES: EnergyClass[] = [
-  "A+",
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "F",
-  "G",
-  "H",
-];
-
-const HEATING_SOURCES: HeatingSource[] = [
-  "heat_pump",
-  "district_heating",
-  "gas",
-  "oil",
-  "electricity",
-  "solar",
-];
 
 type PreviewTab = "story" | "location" | "social";
 
@@ -115,6 +79,14 @@ const EMPTY_SALE: SaleFormData = {
   commissionTerms: "",
 };
 
+const DEFAULT_PROPERTY: PropertyDetails = {
+  propertyType: "",
+  floorLevel: "",
+  parking: "",
+  parkingFee: "",
+  condition: "",
+};
+
 const DEFAULT_ENERGY: EnergyFormData = {
   certificateType: "na",
   energyValue: "",
@@ -123,14 +95,6 @@ const DEFAULT_ENERGY: EnergyFormData = {
   constructionYear: "",
   heatingInstallYear: "",
 };
-
-function inputClassName() {
-  return "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none ring-zinc-900/10 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-950";
-}
-
-function labelClassName() {
-  return "mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300";
-}
 
 function CopyButton({
   text,
@@ -167,25 +131,6 @@ function CopyButton({
   );
 }
 
-function PriceHint({
-  amount,
-  currency,
-  priceOnRequestLabel,
-  show,
-}: {
-  amount: string;
-  currency: CurrencyCode;
-  priceOnRequestLabel: string;
-  show: boolean;
-}) {
-  if (!show || !amount.trim()) return null;
-  return (
-    <p className="mt-1 text-xs text-zinc-500">
-      {formatPriceAmount(amount, currency, priceOnRequestLabel)}
-    </p>
-  );
-}
-
 export default function ListingStudio() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
@@ -216,7 +161,7 @@ export default function ListingStudio() {
     }));
   }, [routeLocale]);
 
-  const [currency, setCurrency] = useState<CurrencyCode>("USD");
+  const [currency, setCurrency] = useState<CurrencyCode>("EUR");
   const activeCurrency =
     uiLocale === "en" ? currency : getDefaultCurrencyForLocale(uiLocale);
 
@@ -241,6 +186,7 @@ export default function ListingStudio() {
   const [address, setAddress] = useState("");
   const [size, setSize] = useState("");
   const [rooms, setRooms] = useState("");
+  const [property, setProperty] = useState<PropertyDetails>({ ...DEFAULT_PROPERTY });
   const [features, setFeatures] = useState<FeatureKey[]>([]);
   const [tone, setTone] = useState<ToneKey>("Professional");
 
@@ -375,6 +321,7 @@ export default function ListingStudio() {
         address,
         size,
         rooms,
+        property,
         features,
         tone,
         rent,
@@ -442,7 +389,7 @@ export default function ListingStudio() {
         title: data.title,
         summary: Array.isArray(data.summary) ? data.summary : [],
         fullDescription: data.fullDescription,
-        locationDescription: data.locationDescription || "—",
+        locationDescription: data.locationDescription || "â€”",
         socialCaptions: sc,
         watermarkPdf: data.watermarkPdf,
       });
@@ -484,6 +431,7 @@ export default function ListingStudio() {
         address,
         size,
         rooms,
+        property,
         rent,
         sale,
         energy,
@@ -557,735 +505,59 @@ export default function ListingStudio() {
       <BillingNeedPlanBanner />
 
       <main className="mx-auto grid max-w-6xl gap-8 px-6 py-8 lg:grid-cols-2 lg:items-start">
-        <section className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
-            <button
-              type="button"
-              onClick={() => setTransactionType("rent")}
-              className={cn(
-                "flex-1 rounded-md py-2 text-sm font-semibold transition",
-                transactionType === "rent"
-                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50"
-                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400",
-              )}
-            >
-              {copy.forRent}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTransactionType("sale")}
-              className={cn(
-                "flex-1 rounded-md py-2 text-sm font-semibold transition",
-                transactionType === "sale"
-                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50"
-                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400",
-              )}
-            >
-              {copy.forSale}
-            </button>
-          </div>
-
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              {copy.propertyDetails}
-            </h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              {copy.propertyDetailsHint}
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {copy.photos}
-            </label>
-            <div
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ")
-                  photoInputRef.current?.click();
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOver(true);
-              }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOver(false);
-                if (photos.length < MAX_PHOTOS) addPhotos(e.dataTransfer.files);
-              }}
-              onClick={() => photoInputRef.current?.click()}
-              className={cn(
-                "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center transition",
-                dragOver
-                  ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-800"
-                  : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600",
-                photos.length >= MAX_PHOTOS && "pointer-events-none opacity-50",
-              )}
-            >
-              <p className="text-sm font-medium">{copy.dropImages}</p>
-              <p className="mt-1 text-xs text-zinc-500">
-                {photos.length}/{MAX_PHOTOS} {copy.photosSelected}
-              </p>
-            </div>
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files) addPhotos(e.target.files);
-                e.target.value = "";
-              }}
-            />
-            {photos.length > 0 && (
-              <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-                {photos.map((photo) => (
-                  <li
-                    key={photo.id}
-                    className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800"
-                  >
-                    {/*
-                      User upload preview (blob: URL, same origin — not a third-party CDN).
-                      next/image is unnecessary for ephemeral object URLs.
-                    */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.url}
-                      alt={photo.file.name}
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removePhoto(photo.id);
-                      }}
-                      className="absolute top-1 right-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100"
-                    >
-                      {copy.remove}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div>
-            <p className="mb-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-              {copy.basics}
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label htmlFor="address" className={labelClassName()}>
-                  {copy.address}
-                </label>
-                <input
-                  id="address"
-                  type="text"
-                  placeholder={copy.addressPlaceholder}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className={inputClassName()}
-                />
-              </div>
-              <div>
-                <label htmlFor="size" className={labelClassName()}>
-                  {copy.size}
-                </label>
-                <input
-                  id="size"
-                  type="number"
-                  min={0}
-                  placeholder="85"
-                  value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                  className={inputClassName()}
-                />
-              </div>
-              <div>
-                <label htmlFor="rooms" className={labelClassName()}>
-                  {copy.rooms}
-                </label>
-                <input
-                  id="rooms"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  placeholder="3"
-                  value={rooms}
-                  onChange={(e) => setRooms(e.target.value)}
-                  className={inputClassName()}
-                />
-              </div>
-            </div>
-          </div>
-
-          {transactionType === "rent" ? (
-            <div>
-              <p className="mb-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-                {copy.rentDetails}
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {(
-                  [
-                    ["netColdRent", copy.netColdRent, "netColdRent"],
-                    ["utilityCharges", copy.utilityCharges, "utilityCharges"],
-                    ["totalRent", copy.totalRent, "totalRent"],
-                    ["securityDeposit", copy.securityDeposit, "securityDeposit"],
-                  ] as const
-                ).map(([key, label, field]) => (
-                  <div key={key}>
-                    <label htmlFor={key} className={labelClassName()}>
-                      {label} ({activeCurrency})
-                    </label>
-                    <input
-                      id={key}
-                      type="number"
-                      min={0}
-                      value={rent[field]}
-                      onChange={(e) =>
-                        setRent((r) => ({ ...r, [field]: e.target.value }))
-                      }
-                      className={inputClassName()}
-                    />
-                    <PriceHint
-                      amount={rent[field]}
-                      currency={activeCurrency}
-                      priceOnRequestLabel={copy.priceOnRequest}
-                      show={hasMounted}
-                    />
-                  </div>
-                ))}
-                <div>
-                  <label htmlFor="availableFrom" className={labelClassName()}>
-                    {copy.availableFrom}
-                  </label>
-                  <input
-                    id="availableFrom"
-                    type="text"
-                    value={rent.availableFrom}
-                    onChange={(e) =>
-                      setRent((r) => ({ ...r, availableFrom: e.target.value }))
-                    }
-                    className={inputClassName()}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="minimumLeaseTerm" className={labelClassName()}>
-                    {copy.minimumLeaseTerm}
-                  </label>
-                  <input
-                    id="minimumLeaseTerm"
-                    type="text"
-                    value={rent.minimumLeaseTerm}
-                    onChange={(e) =>
-                      setRent((r) => ({
-                        ...r,
-                        minimumLeaseTerm: e.target.value,
-                      }))
-                    }
-                    className={inputClassName()}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="petPolicy" className={labelClassName()}>
-                    {copy.petPolicy}
-                  </label>
-                  <input
-                    id="petPolicy"
-                    type="text"
-                    value={rent.petPolicy}
-                    onChange={(e) =>
-                      setRent((r) => ({ ...r, petPolicy: e.target.value }))
-                    }
-                    className={inputClassName()}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p className="mb-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-                {copy.saleDetails}
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="purchasePrice" className={labelClassName()}>
-                    {copy.purchasePrice} ({activeCurrency})
-                  </label>
-                  <input
-                    id="purchasePrice"
-                    type="number"
-                    min={0}
-                    value={sale.purchasePrice}
-                    onChange={(e) =>
-                      setSale((s) => ({
-                        ...s,
-                        purchasePrice: e.target.value,
-                      }))
-                    }
-                    className={inputClassName()}
-                  />
-                  <PriceHint
-                    amount={sale.purchasePrice}
-                    currency={activeCurrency}
-                    priceOnRequestLabel={copy.priceOnRequest}
-                    show={hasMounted}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="hoaFee" className={labelClassName()}>
-                    {copy.hoaFee} ({activeCurrency})
-                  </label>
-                  <input
-                    id="hoaFee"
-                    type="number"
-                    min={0}
-                    value={sale.hoaFee}
-                    onChange={(e) =>
-                      setSale((s) => ({ ...s, hoaFee: e.target.value }))
-                    }
-                    className={inputClassName()}
-                  />
-                  <PriceHint
-                    amount={sale.hoaFee}
-                    currency={activeCurrency}
-                    priceOnRequestLabel={copy.priceOnRequest}
-                    show={hasMounted}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="rentalYield" className={labelClassName()}>
-                    {copy.rentalYield}
-                  </label>
-                  <input
-                    id="rentalYield"
-                    type="text"
-                    value={sale.rentalYield}
-                    onChange={(e) =>
-                      setSale((s) => ({ ...s, rentalYield: e.target.value }))
-                    }
-                    className={inputClassName()}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="commissionTerms" className={labelClassName()}>
-                    {copy.commissionTerms}
-                  </label>
-                  <input
-                    id="commissionTerms"
-                    type="text"
-                    value={sale.commissionTerms}
-                    onChange={(e) =>
-                      setSale((s) => ({
-                        ...s,
-                        commissionTerms: e.target.value,
-                      }))
-                    }
-                    className={inputClassName()}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {uiLocale === "en" && (
-            <div>
-              <label htmlFor="currency" className={labelClassName()}>
-                {copy.currency}
-              </label>
-              <select
-                id="currency"
-                value={currency}
-                onChange={(e) =>
-                  setCurrency(e.target.value as CurrencyCode)
-                }
-                className={inputClassName()}
-              >
-                {ENGLISH_CURRENCY_OPTIONS.map((code) => (
-                  <option key={code} value={code}>
-                    {CURRENCY_LABELS[code]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <details className="group rounded-xl border border-zinc-200 dark:border-zinc-700">
-            <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-800 marker:content-none dark:text-zinc-200 [&::-webkit-details-marker]:hidden">
-              <span className="flex items-center justify-between gap-2">
-                {copy.energySection}
-                <span className="text-xs font-normal text-zinc-500 group-open:hidden">
-                  {copy.energyExpand}
-                </span>
-              </span>
-            </summary>
-            <div className="space-y-4 border-t border-zinc-200 px-4 py-4 dark:border-zinc-700">
-              <div>
-                <label htmlFor="certType" className={labelClassName()}>
-                  {copy.certificateType}
-                </label>
-                <select
-                  id="certType"
-                  value={energy.certificateType}
-                  onChange={(e) =>
-                    setEnergy((en) => ({
-                      ...en,
-                      certificateType: e.target.value as EnergyCertificateType,
-                    }))
-                  }
-                  className={inputClassName()}
-                >
-                  <option value="consumption">{copy.certConsumption}</option>
-                  <option value="demand">{copy.certDemand}</option>
-                  <option value="na">{copy.certNa}</option>
-                </select>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="energyValue" className={labelClassName()}>
-                    {copy.energyValue}
-                  </label>
-                  <input
-                    id="energyValue"
-                    type="text"
-                    value={energy.energyValue}
-                    onChange={(e) =>
-                      setEnergy((en) => ({
-                        ...en,
-                        energyValue: e.target.value,
-                      }))
-                    }
-                    className={inputClassName()}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="energyClass" className={labelClassName()}>
-                    {copy.energyClass}
-                  </label>
-                  <select
-                    id="energyClass"
-                    value={energy.energyClass}
-                    onChange={(e) =>
-                      setEnergy((en) => ({
-                        ...en,
-                        energyClass: e.target.value as EnergyClass | "",
-                      }))
-                    }
-                    className={inputClassName()}
-                  >
-                    <option value="">—</option>
-                    {ENERGY_CLASSES.map((cls) => (
-                      <option key={cls} value={cls}>
-                        {cls}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="heatingSource" className={labelClassName()}>
-                    {copy.heatingSource}
-                  </label>
-                  <select
-                    id="heatingSource"
-                    value={energy.heatingSource}
-                    onChange={(e) =>
-                      setEnergy((en) => ({
-                        ...en,
-                        heatingSource: e.target.value as HeatingSource | "",
-                      }))
-                    }
-                    className={inputClassName()}
-                  >
-                    <option value="">—</option>
-                    {HEATING_SOURCES.map((src) => (
-                      <option key={src} value={src}>
-                        {heatingLabel(src)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="constructionYear" className={labelClassName()}>
-                    {copy.constructionYear}
-                  </label>
-                  <input
-                    id="constructionYear"
-                    type="text"
-                    value={energy.constructionYear}
-                    onChange={(e) =>
-                      setEnergy((en) => ({
-                        ...en,
-                        constructionYear: e.target.value,
-                      }))
-                    }
-                    className={inputClassName()}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="heatingInstallYear"
-                    className={labelClassName()}
-                  >
-                    {copy.heatingInstallYear}
-                  </label>
-                  <input
-                    id="heatingInstallYear"
-                    type="text"
-                    value={energy.heatingInstallYear}
-                    onChange={(e) =>
-                      setEnergy((en) => ({
-                        ...en,
-                        heatingInstallYear: e.target.value,
-                      }))
-                    }
-                    className={inputClassName()}
-                  />
-                </div>
-              </div>
-            </div>
-          </details>
-
-          <div>
-            <p className="mb-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-              {copy.agentSection}
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="agentName" className={labelClassName()}>
-                  {copy.agentName}
-                </label>
-                <input
-                  id="agentName"
-                  type="text"
-                  value={agent.name}
-                  onChange={(e) =>
-                    setAgent((a) => ({ ...a, name: e.target.value }))
-                  }
-                  className={inputClassName()}
-                />
-              </div>
-              <div>
-                <label htmlFor="agency" className={labelClassName()}>
-                  {copy.agency}
-                </label>
-                <input
-                  id="agency"
-                  type="text"
-                  value={agent.agency}
-                  onChange={(e) =>
-                    setAgent((a) => ({ ...a, agency: e.target.value }))
-                  }
-                  className={inputClassName()}
-                />
-              </div>
-              <div>
-                <label htmlFor="phone" className={labelClassName()}>
-                  {copy.phone}
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={agent.phone}
-                  onChange={(e) =>
-                    setAgent((a) => ({ ...a, phone: e.target.value }))
-                  }
-                  className={inputClassName()}
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className={labelClassName()}>
-                  {copy.email}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={agent.email}
-                  onChange={(e) =>
-                    setAgent((a) => ({ ...a, email: e.target.value }))
-                  }
-                  className={inputClassName()}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label htmlFor="legalDisclaimer" className={labelClassName()}>
-                  {copy.legalDisclaimer}
-                </label>
-                <textarea
-                  id="legalDisclaimer"
-                  rows={3}
-                  value={agentForLocale.legalDisclaimer}
-                  onChange={(e) =>
-                    setAgent((a) => ({
-                      ...a,
-                      legalDisclaimer: e.target.value,
-                    }))
-                  }
-                  className={cn(inputClassName(), "resize-y")}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClassName()}>{copy.floorPlan}</label>
-            <p className="mb-2 text-xs text-zinc-500">{copy.floorPlanHint}</p>
-            <input
-              ref={floorPlanInputRef}
-              type="file"
-              accept="image/*"
-              className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-800 dark:text-zinc-400 dark:file:bg-zinc-800 dark:file:text-zinc-200"
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null;
-                handleFloorPlanChange(file);
-                e.target.value = "";
-              }}
-            />
-            {floorPlanPreview && (
-              <div className="relative mt-3 aspect-[4/3] max-w-xs overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700">
-              {/*
-                Floor plan preview (blob: URL, same origin — not a third-party CDN).
-              */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={floorPlanPreview}
-                  alt={copy.floorPlan}
-                  className="h-full w-full object-contain bg-zinc-50 dark:bg-zinc-950"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleFloorPlanChange(null)}
-                  className="absolute top-2 right-2 rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white"
-                >
-                  {copy.remove}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {copy.features}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {FEATURE_KEYS.map((feature) => {
-                const active = features.includes(feature);
-                return (
-                  <button
-                    key={feature}
-                    type="button"
-                    onClick={() => toggleFeature(feature)}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-sm font-medium transition",
-                      active
-                        ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                        : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-                    )}
-                  >
-                    {copy.featuresMap[feature]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {copy.tone}
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {TONE_KEYS.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setTone(option)}
-                  className={cn(
-                    "rounded-lg border px-2 py-2 text-sm font-medium transition",
-                    tone === option
-                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                      : "border-zinc-200 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800",
-                  )}
-                >
-                  {copy.tonesMap[option]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
-            <label htmlFor="expose-language" className={labelClassName()}>
-              {copy.exposeLanguage}
-            </label>
-            <p className="mb-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-              {copy.exposeLanguageHint}
-            </p>
-            <select
-              id="expose-language"
-              value={targetLanguage}
-              onChange={(e) =>
-                handleExposeLanguageChange(e.target.value as OutputLanguage)
-              }
-              className={inputClassName()}
-            >
-              {TARGET_LANGUAGE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {LOCALE_LABELS[opt.locale]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {generateError && (
-            <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
-              <p>{generateError}</p>
-              {billingHint === "auth" ? (
-                <button
-                  type="button"
-                  onClick={() => setAuthOpen(true)}
-                  className="text-sm font-semibold underline"
-                >
-                  Sign in with email
-                </button>
-              ) : null}
-              {billingHint === "checkout" ? (
-                <Link href="/checkout" className="inline-block text-sm font-semibold underline">
-                  View pricing & buy credits
-                </Link>
-              ) : null}
-            </div>
-          )}
-
-          <CreditPackUsage status={billingStatus} variant="panel" className="mb-1" />
-
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="w-full rounded-xl bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-          >
-            {isGenerating ? copy.generating : copy.generate}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleDownloadPdf}
-            disabled={!result || isDownloadingPdf || isGenerating}
-            className={cn(
-              "w-full rounded-xl border-2 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
-              result
-                ? "border-emerald-600 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-100"
-                : "border-zinc-200 bg-white text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900",
-            )}
-          >
-            {isDownloadingPdf ? copy.preparingPdf : copy.downloadPdf}
-          </button>
-          {!result && (
-            <p className="text-center text-xs text-zinc-500">{copy.pdfHint}</p>
-          )}
+        <section className="min-w-0">
+          <ListingForm
+            copy={copy}
+            transactionType={transactionType}
+            onTransactionType={setTransactionType}
+            property={property}
+            onProperty={(patch) => setProperty((p) => ({ ...p, ...patch }))}
+            address={address}
+            onAddress={setAddress}
+            size={size}
+            onSize={setSize}
+            rooms={rooms}
+            onRooms={setRooms}
+            currency={currency}
+            onCurrency={setCurrency}
+            showCurrencySelect={uiLocale === "en"}
+            hasMounted={hasMounted}
+            rent={rent}
+            onRent={(patch) => setRent((r) => ({ ...r, ...patch }))}
+            sale={sale}
+            onSale={(patch) => setSale((s) => ({ ...s, ...patch }))}
+            energy={energy}
+            onEnergy={(patch) => setEnergy((en) => ({ ...en, ...patch }))}
+            heatingLabel={heatingLabel}
+            features={features}
+            onToggleFeature={toggleFeature}
+            photos={photos}
+            dragOver={dragOver}
+            onDragOver={setDragOver}
+            onAddPhotos={addPhotos}
+            onRemovePhoto={removePhoto}
+            photoInputRef={photoInputRef}
+            floorPlanPreview={floorPlanPreview}
+            floorPlanInputRef={floorPlanInputRef}
+            onFloorPlanChange={handleFloorPlanChange}
+            agent={agent}
+            onAgent={(patch) => setAgent((a) => ({ ...a, ...patch }))}
+            tone={tone}
+            onTone={setTone}
+            targetLanguage={targetLanguage}
+            onTargetLanguage={handleExposeLanguageChange}
+            generateError={generateError}
+            billingHint={billingHint}
+            onOpenAuth={() => setAuthOpen(true)}
+            billingStatus={billingStatus}
+            isGenerating={isGenerating}
+            isDownloadingPdf={isDownloadingPdf}
+            result={result}
+            onGenerate={handleGenerate}
+            onDownloadPdf={handleDownloadPdf}
+          />
         </section>
+
 
         <section
           ref={previewRef}
@@ -1424,7 +696,7 @@ export default function ListingStudio() {
                         disabled={isDownloadingPdf || isGenerating}
                         className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
                       >
-                        {isDownloadingPdf ? `${copy.pdfShort}…` : copy.pdfShort}
+                        {isDownloadingPdf ? `${copy.pdfShort}â€¦` : copy.pdfShort}
                       </button>
                     </div>
                   </div>

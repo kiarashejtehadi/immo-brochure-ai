@@ -3,6 +3,29 @@ import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
 
 export type TransactionType = "rent" | "sale";
 
+export type PropertyType =
+  | "apartment"
+  | "house"
+  | "penthouse"
+  | "commercial"
+  | "land";
+
+export type ParkingType = "none" | "outdoor" | "garage" | "underground";
+
+export type PropertyCondition =
+  | "first_occupancy"
+  | "modernized"
+  | "well_maintained"
+  | "needs_renovation";
+
+export type PropertyDetails = {
+  propertyType: PropertyType | "";
+  floorLevel: string;
+  parking: ParkingType | "";
+  parkingFee: string;
+  condition: PropertyCondition | "";
+};
+
 export type EnergyCertificateType = "consumption" | "demand" | "na";
 
 export type EnergyClass =
@@ -65,6 +88,7 @@ export type GenerateRequestPayload = {
   address: string;
   size: string;
   rooms: string;
+  property: PropertyDetails;
   features: FeatureKey[];
   tone: ToneKey;
   rent: RentFormData;

@@ -32,7 +32,7 @@ export const ENGLISH_CURRENCY_OPTIONS: CurrencyCode[] = [
 ];
 
 const LOCALE_DEFAULT_CURRENCY: Record<UiLocale, CurrencyCode> = {
-  en: "USD",
+  en: "EUR",
   de: "EUR",
   fr: "EUR",
   es: "EUR",

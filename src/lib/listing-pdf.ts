@@ -5,12 +5,14 @@ import type {
   EnergyFormData,
   GenerateRequestPayload,
   GenerateResult,
+  PropertyDetails,
   RentFormData,
   SaleFormData,
   TransactionType,
 } from "@/types/listing";
 import type { CurrencyCode } from "@/lib/currency";
 import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
+import { propertyOverviewRows } from "@/lib/listing-property-labels";
 
 export function buildGeneratePayload(input: {
   transactionType: TransactionType;
@@ -19,6 +21,7 @@ export function buildGeneratePayload(input: {
   address: string;
   size: string;
   rooms: string;
+  property: PropertyDetails;
   features: FeatureKey[];
   tone: ToneKey;
   rent: RentFormData;
@@ -39,6 +42,7 @@ export function buildBrochurePdfProps(input: {
   address: string;
   size: string;
   rooms: string;
+  property: PropertyDetails;
   rent: RentFormData;
   sale: SaleFormData;
   energy: EnergyFormData;
@@ -63,23 +67,26 @@ export function buildBrochurePdfProps(input: {
       ? input.rent.totalRent || input.rent.netColdRent
       : input.sale.purchasePrice;
 
-  const specsTable =
+  const pricingRows =
     input.transactionType === "rent"
       ? [
           { label: input.form.netColdRent, value: input.rent.netColdRent },
           { label: input.form.utilityCharges, value: input.rent.utilityCharges },
           { label: input.form.totalRent, value: input.rent.totalRent },
           { label: input.form.securityDeposit, value: input.rent.securityDeposit },
-          { label: input.form.availableFrom, value: input.rent.availableFrom },
-          { label: input.form.minimumLeaseTerm, value: input.rent.minimumLeaseTerm },
-          { label: input.form.petPolicy, value: input.rent.petPolicy },
         ]
       : [
           { label: input.form.purchasePrice, value: input.sale.purchasePrice },
           { label: input.form.hoaFee, value: input.sale.hoaFee },
           { label: input.form.rentalYield, value: input.sale.rentalYield },
-          { label: input.form.commissionTerms, value: input.sale.commissionTerms },
         ];
+
+  const specsTable = [
+    ...propertyOverviewRows(input.property, input.form, input.currency),
+    { label: input.ui.size, value: input.size.trim() ? `${input.size} m²` : "" },
+    { label: input.ui.rooms, value: input.rooms },
+    ...pricingRows,
+  ];
 
   const energyLines = [
     { label: input.form.certificateType, value: input.energy.certificateType },

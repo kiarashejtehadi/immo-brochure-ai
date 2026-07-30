@@ -3,6 +3,32 @@ import type { UiLocale } from "@/lib/i18n";
 export type FormCopy = {
   exposeLanguage: string;
   exposeLanguageHint: string;
+  sectionListingOverview: string;
+  sectionSpecsPricing: string;
+  sectionBuildingEnergy: string;
+  sectionFeatures: string;
+  sectionMedia: string;
+  sectionAgentOutput: string;
+  propertyType: string;
+  propertyTypeApartment: string;
+  propertyTypeHouse: string;
+  propertyTypePenthouse: string;
+  propertyTypeCommercial: string;
+  propertyTypeLand: string;
+  floorLevel: string;
+  floorLevelPlaceholder: string;
+  parking: string;
+  parkingNone: string;
+  parkingOutdoor: string;
+  parkingGarage: string;
+  parkingUnderground: string;
+  parkingFee: string;
+  condition: string;
+  conditionFirstOccupancy: string;
+  conditionModernized: string;
+  conditionWellMaintained: string;
+  conditionNeedsRenovation: string;
+  epcSection: string;
   forRent: string;
   forSale: string;
   transactionBadgeRent: string;
@@ -63,6 +89,32 @@ const en: FormCopy = {
   exposeLanguage: "Exposé language",
   exposeLanguageHint:
     "Language for AI-generated exposé text, social captions, and PDF output.",
+  sectionListingOverview: "Listing overview",
+  sectionSpecsPricing: "Key specifications & pricing",
+  sectionBuildingEnergy: "Building, energy & parking",
+  sectionFeatures: "Features & amenities",
+  sectionMedia: "Media uploads",
+  sectionAgentOutput: "Agent & output settings",
+  propertyType: "Property type",
+  propertyTypeApartment: "Apartment",
+  propertyTypeHouse: "House",
+  propertyTypePenthouse: "Penthouse",
+  propertyTypeCommercial: "Commercial",
+  propertyTypeLand: "Land",
+  floorLevel: "Floor level",
+  floorLevelPlaceholder: "e.g. 2nd floor",
+  parking: "Parking",
+  parkingNone: "None",
+  parkingOutdoor: "Outdoor space",
+  parkingGarage: "Garage",
+  parkingUnderground: "Underground / Tiefgarage",
+  parkingFee: "Parking fee",
+  condition: "Condition",
+  conditionFirstOccupancy: "First occupancy",
+  conditionModernized: "Modernized / renovated",
+  conditionWellMaintained: "Well maintained",
+  conditionNeedsRenovation: "Needs renovation",
+  epcSection: "Energy performance certificate (EPC)",
   forRent: "For Rent",
   forSale: "For Sale",
   transactionBadgeRent: "FOR RENT",
@@ -120,11 +172,37 @@ const en: FormCopy = {
     "All information is provided without guarantee. This exposé does not constitute a binding offer. Agent and agency details apply per local imprint requirements.",
 };
 
-const de: FormCopy = {
+const de: Partial<FormCopy> = {
   ...en,
   exposeLanguage: "Exposé-Sprache",
   exposeLanguageHint:
     "Sprache für KI-generiertes Exposé, Social-Media-Texte und PDF-Inhalt.",
+  sectionListingOverview: "Objektübersicht",
+  sectionSpecsPricing: "Kernangaben & Preise",
+  sectionBuildingEnergy: "Gebäude, Energie & Parken",
+  sectionFeatures: "Ausstattung & Merkmale",
+  sectionMedia: "Medien-Uploads",
+  sectionAgentOutput: "Makler & Ausgabe",
+  propertyType: "Objektart",
+  propertyTypeApartment: "Wohnung",
+  propertyTypeHouse: "Haus",
+  propertyTypePenthouse: "Penthouse",
+  propertyTypeCommercial: "Gewerbe",
+  propertyTypeLand: "Grundstück",
+  floorLevel: "Etage",
+  floorLevelPlaceholder: "z. B. 2. OG",
+  parking: "Stellplatz",
+  parkingNone: "Keiner",
+  parkingOutdoor: "Außenstellplatz",
+  parkingGarage: "Garage",
+  parkingUnderground: "Tiefgarage",
+  parkingFee: "Stellplatzgebühr",
+  condition: "Zustand",
+  conditionFirstOccupancy: "Erstbezug",
+  conditionModernized: "Modernisiert / saniert",
+  conditionWellMaintained: "Gepflegt",
+  conditionNeedsRenovation: "Renovierungsbedürftig",
+  epcSection: "Energieausweis (GEG)",
   forRent: "Zur Miete",
   forSale: "Zum Kauf",
   transactionBadgeRent: "ZUR MIETE",
@@ -179,7 +257,7 @@ const de: FormCopy = {
     "Alle Angaben ohne Gewähr. Dieses Exposé stellt kein bindendes Angebot dar. Angaben zu Makler und Firma gemäß Impressum.",
 };
 
-const fr: FormCopy = {
+const fr: Partial<FormCopy> = {
   exposeLanguage: "Langue de l'exposé",
   exposeLanguageHint:
     "Langue du texte d'exposé, des légendes sociales et du contenu PDF générés par l'IA.",
@@ -240,7 +318,7 @@ const fr: FormCopy = {
     "Informations sans garantie. Cet exposé ne constitue pas une offre ferme. Coordonnées agent et agence selon mentions légales locales.",
 };
 
-const es: FormCopy = {
+const es: Partial<FormCopy> = {
   exposeLanguage: "Idioma del exposé",
   exposeLanguageHint:
     "Idioma del exposé, captions y contenido PDF generados por IA.",
@@ -301,7 +379,7 @@ const es: FormCopy = {
     "Información sin garantía. Este exposé no constituye una oferta vinculante. Datos de agente y agencia según requisitos legales locales.",
 };
 
-const it: FormCopy = {
+const it: Partial<FormCopy> = {
   exposeLanguage: "Lingua dell'exposé",
   exposeLanguageHint:
     "Lingua di testi exposé, caption social e PDF generati dall'IA.",
@@ -362,7 +440,7 @@ const it: FormCopy = {
     "Informazioni senza garanzia. Questo exposé non costituisce un'offerta vincolante. Dati agente e agenzia secondo imprint locale.",
 };
 
-const nl: FormCopy = {
+const nl: Partial<FormCopy> = {
   exposeLanguage: "Exposé-taal",
   exposeLanguageHint:
     "Taal voor AI-gegenereerde exposétekst, social captions en PDF-inhoud.",
@@ -423,7 +501,7 @@ const nl: FormCopy = {
     "Informatie zonder garantie. Dit exposé is geen bindend aanbod. Makelaar- en kantoorgegevens volgens lokaal imprint.",
 };
 
-const fa: FormCopy = {
+const fa: Partial<FormCopy> = {
   exposeLanguage: "زبان exposé",
   exposeLanguageHint:
     "زبان متن exposé، کپشن‌های شبکه اجتماعی و خروجی PDF تولیدشده با هوش مصنوعی.",
@@ -484,7 +562,7 @@ const fa: FormCopy = {
     "اطلاعات بدون ضمانت ارائه شده است. این exposé پیشنهاد لازم‌الاجرا نیست. جزئیات مشاور و آژانس طبق الزامات محلی.",
 };
 
-const ar: FormCopy = {
+const ar: Partial<FormCopy> = {
   exposeLanguage: "لغة الوصف",
   exposeLanguageHint:
     "لغة نص الوصف وتعليقات وسائل التواصل ومحتوى PDF المُنشأ بالذكاء الاصطناعي.",
@@ -545,7 +623,7 @@ const ar: FormCopy = {
     "المعلومات دون ضمان. هذا الوصف لا يُعد عرضاً ملزماً. بيانات الوسيط والوكالة وفق المتطلبات المحلية.",
 };
 
-const pl: FormCopy = {
+const pl: Partial<FormCopy> = {
   exposeLanguage: "Język exposé",
   exposeLanguageHint:
     "Język wygenerowanego exposé, opisów social media i treści PDF.",
@@ -606,7 +684,7 @@ const pl: FormCopy = {
     "Informacje bez gwarancji. Niniejsze exposé nie stanowi wiążącej oferty. Dane pośrednika i biura zgodnie z lokalnymi wymogami.",
 };
 
-export const formTranslations: Record<UiLocale, FormCopy> = {
+export const formTranslations: Record<UiLocale, Partial<FormCopy>> & { en: FormCopy } = {
   en,
   de,
   fr,
@@ -619,7 +697,7 @@ export const formTranslations: Record<UiLocale, FormCopy> = {
 };
 
 export function getFormCopy(locale: UiLocale): FormCopy {
-  return formTranslations[locale] ?? en;
+  return { ...en, ...(formTranslations[locale] ?? {}) };
 }
 
 const ALL_DEFAULT_LEGAL_DISCLAIMERS = new Set(

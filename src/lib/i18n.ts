@@ -16,10 +16,13 @@ export const OUTPUT_LANGUAGE_OPTIONS = [
 export type OutputLanguage = (typeof OUTPUT_LANGUAGE_OPTIONS)[number]["value"];
 
 export type FeatureKey =
-  | "Balcony"
+  | "Balcony Terrace"
   | "Fitted Kitchen"
   | "Elevator"
-  | "Renovated";
+  | "Garden"
+  | "Guest WC"
+  | "Cellar"
+  | "Wheelchair Accessible";
 
 export type ToneKey = "Luxurious" | "Professional" | "Friendly";
 
@@ -122,10 +125,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "Copied!",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "Balcony",
-      "Fitted Kitchen": "Fitted kitchen",
+      "Balcony Terrace": "Balcony / Terrace",
+      "Fitted Kitchen": "Fitted kitchen (EBK)",
       Elevator: "Elevator",
-      Renovated: "Renovated",
+      Garden: "Garden",
+      "Guest WC": "Guest WC",
+      Cellar: "Cellar",
+      "Wheelchair Accessible": "Wheelchair accessible",
     },
     tonesMap: {
       Luxurious: "Luxurious",
@@ -190,10 +196,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "Kopiert!",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "Balkon",
-      "Fitted Kitchen": "Einbauküche",
+      "Balcony Terrace": "Balkon / Terrasse",
+      "Fitted Kitchen": "Einbauküche (EBK)",
       Elevator: "Aufzug",
-      Renovated: "Renoviert",
+      Garden: "Garten",
+      "Guest WC": "Gäste-WC",
+      Cellar: "Keller",
+      "Wheelchair Accessible": "Barrierefrei",
     },
     tonesMap: {
       Luxurious: "Luxuriös",
@@ -257,10 +266,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "Copié !",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "Balcon",
-      "Fitted Kitchen": "Cuisine équipée",
+      "Balcony Terrace": "Balcon / Terrasse",
+      "Fitted Kitchen": "Cuisine équipée (EBK)",
       Elevator: "Ascenseur",
-      Renovated: "Rénové",
+      Garden: "Jardin",
+      "Guest WC": "WC invités",
+      Cellar: "Cave",
+      "Wheelchair Accessible": "Accessible PMR",
     },
     tonesMap: {
       Luxurious: "Luxueux",
@@ -321,10 +333,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "¡Copiado!",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "Balcón",
-      "Fitted Kitchen": "Cocina equipada",
+      "Balcony Terrace": "Balcón / Terraza",
+      "Fitted Kitchen": "Cocina equipada (EBK)",
       Elevator: "Ascensor",
-      Renovated: "Reformado",
+      Garden: "Jardín",
+      "Guest WC": "Aseo de invitados",
+      Cellar: "Sótano",
+      "Wheelchair Accessible": "Accesible silla de ruedas",
     },
     tonesMap: {
       Luxurious: "Lujoso",
@@ -385,10 +400,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "Copiato!",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "Balcone",
-      "Fitted Kitchen": "Cucina attrezzata",
+      "Balcony Terrace": "Balcone / Terrazza",
+      "Fitted Kitchen": "Cucina attrezzata (EBK)",
       Elevator: "Ascensore",
-      Renovated: "Ristrutturato",
+      Garden: "Giardino",
+      "Guest WC": "WC ospiti",
+      Cellar: "Cantina",
+      "Wheelchair Accessible": "Accessibile disabili",
     },
     tonesMap: {
       Luxurious: "Lussuoso",
@@ -449,10 +467,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "Gekopieerd!",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "Balkon",
-      "Fitted Kitchen": "Inbouwkeuken",
+      "Balcony Terrace": "Balkon / Terras",
+      "Fitted Kitchen": "Inbouwkeuken (EBK)",
       Elevator: "Lift",
-      Renovated: "Gerenoveerd",
+      Garden: "Tuin",
+      "Guest WC": "Gasttoilet",
+      Cellar: "Kelder",
+      "Wheelchair Accessible": "Rolstoeltoegankelijk",
     },
     tonesMap: {
       Luxurious: "Luxueus",
@@ -513,10 +534,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "کپی شد!",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "بالکن",
-      "Fitted Kitchen": "آشپزخانه مجهز",
+      "Balcony Terrace": "بالکن / تراس",
+      "Fitted Kitchen": "آشپزخانه مجهز (EBK)",
       Elevator: "آسانسور",
-      Renovated: "بازسازی‌شده",
+      Garden: "باغ",
+      "Guest WC": "سرویس مهمان",
+      Cellar: "انباری",
+      "Wheelchair Accessible": "دسترس‌پذیر ویلچر",
     },
     tonesMap: {
       Luxurious: "لوکس",
@@ -577,10 +601,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "تم النسخ!",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "شرفة",
-      "Fitted Kitchen": "مطبخ مجهز",
+      "Balcony Terrace": "شرفة / تراس",
+      "Fitted Kitchen": "مطبخ مجهز (EBK)",
       Elevator: "مصعد",
-      Renovated: "مُجدَّد",
+      Garden: "حديقة",
+      "Guest WC": "دورة مياه للضيوف",
+      Cellar: "قبو",
+      "Wheelchair Accessible": "مناسب للكراسي المتحركة",
     },
     tonesMap: {
       Luxurious: "فاخر",
@@ -641,10 +668,13 @@ export const translations: Record<UiLocale, UiCopy> = {
     copied: "Skopiowano!",
     pdfShort: "PDF",
     featuresMap: {
-      Balcony: "Balkon",
-      "Fitted Kitchen": "Kuchnia w zabudowie",
+      "Balcony Terrace": "Balkon / Taras",
+      "Fitted Kitchen": "Kuchnia w zabudowie (EBK)",
       Elevator: "Winda",
-      Renovated: "Po remoncie",
+      Garden: "Ogród",
+      "Guest WC": "Toaleta gościnna",
+      Cellar: "Piwnica",
+      "Wheelchair Accessible": "Dostępne dla wózków",
     },
     tonesMap: {
       Luxurious: "Luksusowy",

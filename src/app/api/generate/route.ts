@@ -77,10 +77,25 @@ function buildPropertyPayload(body: GenerateRequestPayload, outputLanguage: Outp
       ? formatPriceAmount(amount, currency)
       : "Not specified";
 
+  const property = body.property ?? {
+    propertyType: "",
+    floorLevel: "",
+    parking: "",
+    parkingFee: "",
+    condition: "",
+  };
+
   const common = {
     transactionType: body.transactionType,
     targetLanguage: outputLanguage,
     address: body.address?.trim() || "Not specified",
+    propertyType: property.propertyType || "Not specified",
+    floorLevel: property.floorLevel?.trim() || "Not specified",
+    parking: property.parking || "Not specified",
+    parkingFee: property.parkingFee?.trim()
+      ? format(property.parkingFee)
+      : "Not specified",
+    condition: property.condition || "Not specified",
     sizeSqm: body.size?.trim() || "Not specified",
     rooms: body.rooms?.trim() || "Not specified",
     features: body.features?.length ? body.features.join(", ") : "None selected",
