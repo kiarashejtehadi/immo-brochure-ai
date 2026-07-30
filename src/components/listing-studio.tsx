@@ -493,7 +493,7 @@ export default function ListingStudio() {
           brandColor: brand.brandColor,
           logoDataUrl,
           website: brand.website,
-          showWatermark: pdfWatermark && !isPro,
+          showWatermark: Boolean(result.watermarkPdf ?? pdfWatermark),
         },
       });
       const { downloadExposePdf } = await import("@/lib/download-expose-pdf");

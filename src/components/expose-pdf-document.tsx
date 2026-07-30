@@ -117,12 +117,13 @@ const s = StyleSheet.create({
   },
   watermark: {
     position: "absolute",
-    bottom: 38,
+    bottom: 44,
     left: 32,
     right: 32,
-    fontSize: 7,
-    color: "#71717a",
+    fontSize: 8,
+    color: "#52525b",
     textAlign: "center",
+    opacity: 0.95,
   },
   floorPlan: {
     width: "100%",

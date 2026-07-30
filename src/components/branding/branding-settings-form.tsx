@@ -235,7 +235,7 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             {isPro
               ? "Pro plans remove the footer watermark on PDF exports."
-              : "Free trial PDFs include a watermark. Paid credit packs do not; Pro removes branding limits."}
+              : "PDFs from trial or credit-pack generations include a footer watermark until you subscribe to Pro."}
           </p>
           {!isPro ? (
             <button
