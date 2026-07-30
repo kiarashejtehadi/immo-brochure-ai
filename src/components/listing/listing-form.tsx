@@ -21,6 +21,7 @@ import {
   type CurrencyCode,
 } from "@/lib/currency";
 import { blockNonNumericKey, sanitizeNumericInput } from "@/lib/numeric-input";
+import { btnPrimaryCompact, chipActive, chipInactive, segmentActive } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type {
   AgentFormData,
@@ -300,15 +301,15 @@ export function ListingForm(props: ListingFormProps) {
   return (
     <div className="space-y-5 pb-28">
       <FormCard title={`1. ${copy.sectionListingOverview}`}>
-        <div className="flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+        <div className="flex gap-1 rounded-lg bg-indigo-50/80 p-1 dark:bg-indigo-950/40">
           <button
             type="button"
             onClick={() => onTransactionType("rent")}
             className={cn(
-              "flex-1 rounded-md py-2.5 text-sm font-semibold transition",
+              "flex-1 rounded-md py-2.5 text-sm font-semibold transition-all duration-200",
               transactionType === "rent"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50"
-                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400",
+                ? segmentActive
+                : "text-zinc-600 hover:text-indigo-700 dark:text-zinc-400 dark:hover:text-indigo-300",
             )}
           >
             {copy.forRent}
@@ -317,10 +318,10 @@ export function ListingForm(props: ListingFormProps) {
             type="button"
             onClick={() => onTransactionType("sale")}
             className={cn(
-              "flex-1 rounded-md py-2.5 text-sm font-semibold transition",
+              "flex-1 rounded-md py-2.5 text-sm font-semibold transition-all duration-200",
               transactionType === "sale"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50"
-                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400",
+                ? segmentActive
+                : "text-zinc-600 hover:text-indigo-700 dark:text-zinc-400 dark:hover:text-indigo-300",
             )}
           >
             {copy.forSale}
@@ -681,10 +682,8 @@ export function ListingForm(props: ListingFormProps) {
                 type="button"
                 onClick={() => onToggleFeature(feature)}
                 className={cn(
-                  "rounded-full border px-3.5 py-2 text-sm font-medium transition",
-                  active
-                    ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                    : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+                  "rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-200",
+                  active ? chipActive : chipInactive,
                 )}
               >
                 {copy.featuresMap[feature]}
@@ -874,10 +873,10 @@ export function ListingForm(props: ListingFormProps) {
                 type="button"
                 onClick={() => onTone(option)}
                 className={cn(
-                  "rounded-lg border px-2 py-2.5 text-sm font-medium transition",
+                  "rounded-lg border px-2 py-2.5 text-sm font-medium transition-all duration-200",
                   tone === option
-                    ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                    : "border-zinc-200 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800",
+                    ? "border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 dark:border-indigo-500 dark:bg-indigo-500"
+                    : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 hover:bg-indigo-50/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
                 )}
               >
                 {copy.tonesMap[option]}
@@ -949,7 +948,7 @@ export function ListingForm(props: ListingFormProps) {
             type="button"
             onClick={onGenerate}
             disabled={isGenerating}
-            className="rounded-xl bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+            className={cn(btnPrimaryCompact, "w-full sm:col-span-1")}
           >
             {isGenerating ? copy.generating : copy.generate}
           </button>

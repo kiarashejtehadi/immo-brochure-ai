@@ -468,7 +468,7 @@ export default function ListingStudio() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-zinc-50 to-zinc-50 text-zinc-900 dark:from-indigo-950/20 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-50">
       <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
           <div>

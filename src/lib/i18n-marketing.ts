@@ -1,6 +1,7 @@
 import type { UiLocale } from "@/lib/i18n";
 
 export type MarketingCopy = {
+  heroPillTag: string;
   heroHeadline: string;
   heroSubheadline: string;
   heroCta: string;
@@ -18,6 +19,7 @@ export type MarketingCopy = {
 };
 
 const en: MarketingCopy = {
+  heroPillTag: "✨ AI-Powered Real Estate Studio",
   heroHeadline: "Turn Listing Specs into Professional Exposés in 60 Seconds",
   heroSubheadline:
     "Upload photos, enter property details, and let AI generate polished listing descriptions, social captions, and print-ready PDF brochures tailored for real estate agents.",
@@ -39,6 +41,7 @@ const en: MarketingCopy = {
 };
 
 const de: Partial<MarketingCopy> = {
+  heroPillTag: "✨ KI-gestütztes Immobilien-Studio",
   heroHeadline: "Aus Objektdaten wird in 60 Sekunden ein professionelles Exposé",
   heroSubheadline:
     "Fotos hochladen, Objektdaten eingeben — unsere KI erstellt überzeugende Exposé-Texte, Social Captions und druckfertige PDF-Broschüren für Immobilienmakler.",
@@ -60,6 +63,7 @@ const de: Partial<MarketingCopy> = {
 };
 
 const fr: Partial<MarketingCopy> = {
+  heroPillTag: "✨ Studio immobilier propulsé par l'IA",
   heroHeadline: "Transformez une fiche bien en exposé pro en 60 secondes",
   heroSubheadline:
     "Importez vos photos, saisissez les détails du bien — l'IA génère descriptions, légendes réseaux sociaux et PDF prêt à imprimer pour agents immobiliers.",

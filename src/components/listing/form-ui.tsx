@@ -28,7 +28,7 @@ export function FormCard({
         className,
       )}
     >
-      <header className="mb-4 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+      <header className="mb-4 border-b border-indigo-100/80 pb-3 dark:border-indigo-950/60">
         <h2 className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
           {title}
         </h2>
