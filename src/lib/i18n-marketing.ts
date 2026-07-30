@@ -16,6 +16,13 @@ export type MarketingCopy = {
   step2Description: string;
   step3Title: string;
   step3Description: string;
+  comparisonTitle: string;
+  comparisonSubtitle: string;
+  comparisonGenericTitle: string;
+  comparisonImmoTitle: string;
+  comparisonImmoBadge: string;
+  comparisonGenericItems: readonly string[];
+  comparisonImmoItems: readonly string[];
 };
 
 const en: MarketingCopy = {
@@ -38,6 +45,27 @@ const en: MarketingCopy = {
   step3Title: "3. Download Branded PDF",
   step3Description:
     "Export a high-resolution, print-ready PDF brochure complete with your logo and broker contacts.",
+  comparisonTitle: "Why ImmoCaption AI vs. Generic ChatGPT?",
+  comparisonSubtitle:
+    "ChatGPT gives you unformatted plain text. We deliver print-ready, branded real estate brochures in seconds.",
+  comparisonGenericTitle: "General AI Chatbots (ChatGPT / Gemini)",
+  comparisonImmoTitle: "ImmoCaption AI",
+  comparisonImmoBadge: "⚡ Built for Real Estate",
+  comparisonGenericItems: [
+    "Requires writing complex prompts manually",
+    "Outputs plain text only—no PDF design or layout",
+    "No agency logo, branding, or color customization",
+    "Cannot format floor plans or property photo grids",
+    "Requires 10–15 minutes of tedious copy-pasting",
+  ],
+  comparisonImmoItems: [
+    "Fill-in-the-blank structured form for quick input",
+    "Generates a 3-page high-res print & portal PDF",
+    "Automatic agency logo & custom brand colors",
+    "Automated photo placement & floor plan layout",
+    "Instant social media captions + location story",
+    "Done in under 60 seconds",
+  ],
 };
 
 const de: Partial<MarketingCopy> = {
@@ -60,6 +88,27 @@ const de: Partial<MarketingCopy> = {
   step3Title: "3. Gebrandetes PDF laden",
   step3Description:
     "Export als hochauflösendes, druckfertiges PDF mit Logo und Maklerkontakten.",
+  comparisonTitle: "Warum ImmoCaption AI statt generischem ChatGPT?",
+  comparisonSubtitle:
+    "ChatGPT liefert unformatierten Fließtext. Wir erstellen in Sekunden druckfertige, gebrandete Immobilien-Exposés.",
+  comparisonGenericTitle: "Allgemeine KI-Chatbots (ChatGPT / Gemini)",
+  comparisonImmoTitle: "ImmoCaption AI",
+  comparisonImmoBadge: "⚡ Für Immobilienprofis gebaut",
+  comparisonGenericItems: [
+    "Komplexe Prompts müssen manuell formuliert werden",
+    "Nur Fließtext — kein PDF-Layout oder Design",
+    "Kein Agentur-Logo, Branding oder Farbanpassung",
+    "Keine automatische Foto- oder Grundriss-Platzierung",
+    "10–15 Minuten Copy-Paste-Aufwand",
+  ],
+  comparisonImmoItems: [
+    "Strukturiertes Formular statt Prompt-Engineering",
+    "3-seitiges PDF in Druck- & Portalqualität",
+    "Automatisches Logo & individuelle Markenfarben",
+    "Automatische Foto- und Grundriss-Layouts",
+    "Sofort Social Captions + Lage-Story",
+    "Fertig in unter 60 Sekunden",
+  ],
 };
 
 const fr: Partial<MarketingCopy> = {
@@ -82,6 +131,27 @@ const fr: Partial<MarketingCopy> = {
   step3Title: "3. Télécharger le PDF brandé",
   step3Description:
     "Export PDF haute résolution avec logo et contacts du courtier.",
+  comparisonTitle: "Pourquoi ImmoCaption AI plutôt que ChatGPT générique ?",
+  comparisonSubtitle:
+    "ChatGPT produit du texte brut. Nous livrons des brochures immobilières brandées, prêtes à imprimer, en quelques secondes.",
+  comparisonGenericTitle: "Chatbots IA généralistes (ChatGPT / Gemini)",
+  comparisonImmoTitle: "ImmoCaption AI",
+  comparisonImmoBadge: "⚡ Conçu pour l'immobilier",
+  comparisonGenericItems: [
+    "Prompts complexes à rédiger manuellement",
+    "Texte brut uniquement — pas de mise en page PDF",
+    "Pas de logo agence, branding ni couleurs personnalisées",
+    "Pas de grilles photos ou plans automatiques",
+    "10–15 minutes de copier-coller fastidieux",
+  ],
+  comparisonImmoItems: [
+    "Formulaire structuré — saisie rapide",
+    "PDF 3 pages haute résolution pour print & portails",
+    "Logo agence & couleurs de marque automatiques",
+    "Placement photos & plan intégré automatiquement",
+    "Légendes réseaux sociaux + texte local instantanés",
+    "Prêt en moins de 60 secondes",
+  ],
 };
 
 const marketingByLocale: Record<UiLocale, Partial<MarketingCopy>> = {

@@ -10,6 +10,7 @@ import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
 import { HeroSection } from "@/components/hero-section";
 import { HowItWorks } from "@/components/how-it-works";
+import { ComparisonSection } from "@/components/comparison-section";
 import { getMarketingCopy } from "@/lib/i18n-marketing";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
 import {
@@ -514,6 +515,7 @@ export default function ListingStudio() {
       <div className="mx-auto max-w-6xl px-6 pt-8">
         <HeroSection copy={marketingCopy} />
         <HowItWorks copy={marketingCopy} />
+        <ComparisonSection copy={marketingCopy} />
       </div>
 
       <main className="mx-auto grid max-w-6xl gap-8 px-6 py-8 lg:grid-cols-2 lg:items-start">
