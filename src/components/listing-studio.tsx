@@ -8,6 +8,9 @@ import { BillingNeedPlanBanner } from "@/components/billing/billing-need-plan-ba
 import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-status";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
+import { HeroSection } from "@/components/hero-section";
+import { HowItWorks } from "@/components/how-it-works";
+import { getMarketingCopy } from "@/lib/i18n-marketing";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
 import {
   buildBrochurePdfProps,
@@ -145,6 +148,10 @@ export default function ListingStudio() {
   const copy = useMemo(
     () => ({ ...uiCopy, ...formCopy }),
     [uiCopy, formCopy],
+  );
+  const marketingCopy = useMemo(
+    () => getMarketingCopy(uiLocale),
+    [uiLocale],
   );
 
   const [targetLanguage, setTargetLanguage] = useState<OutputLanguage>(() =>
@@ -504,8 +511,13 @@ export default function ListingStudio() {
 
       <BillingNeedPlanBanner />
 
+      <div className="mx-auto max-w-6xl px-6 pt-8">
+        <HeroSection copy={marketingCopy} />
+        <HowItWorks copy={marketingCopy} />
+      </div>
+
       <main className="mx-auto grid max-w-6xl gap-8 px-6 py-8 lg:grid-cols-2 lg:items-start">
-        <section className="min-w-0">
+        <section id="listing-form" className="min-w-0 scroll-mt-28">
           <ListingForm
             copy={copy}
             transactionType={transactionType}
