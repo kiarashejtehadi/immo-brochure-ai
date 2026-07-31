@@ -9,9 +9,7 @@ import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-sta
 import { hasPurchasedBillingAccess } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
-import { HeroSection } from "@/components/hero-section";
-import { HowItWorks } from "@/components/how-it-works";
-import { ComparisonSection } from "@/components/comparison-section";
+import { WorkspaceMarketing } from "@/components/workspace-marketing";
 import { getMarketingCopy } from "@/lib/i18n-marketing";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
 import {
@@ -247,6 +245,7 @@ export default function ListingStudio() {
 
   const showMarketing =
     !purchaseSuccess && !hasPurchasedBillingAccess(billingStatus);
+  const isSignedIn = Boolean(billingStatus?.email);
 
   useEffect(() => {
     if (!billingStatus?.email) return;
@@ -539,15 +538,9 @@ export default function ListingStudio() {
         </div>
       ) : null}
 
-      {showMarketing ? (
-        <div className="mx-auto max-w-6xl px-6 pt-8">
-          <HeroSection copy={marketingCopy} />
-          <HowItWorks copy={marketingCopy} />
-          <ComparisonSection copy={marketingCopy} />
-        </div>
-      ) : null}
+      <WorkspaceMarketing copy={marketingCopy} isSignedIn={isSignedIn} visible={showMarketing} />
 
-      <main className="mx-auto grid max-w-6xl gap-8 px-6 py-8 lg:grid-cols-2 lg:items-start">
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-6 py-6 sm:py-8 lg:grid-cols-2 lg:items-start">
         <section id="listing-form" className="min-w-0 scroll-mt-28">
           <ListingForm
             copy={copy}
@@ -604,9 +597,9 @@ export default function ListingStudio() {
 
         <section
           ref={previewRef}
-          className="flex min-h-[32rem] flex-col rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="flex min-h-[28rem] flex-col rounded-2xl border border-zinc-200 bg-white shadow-sm sm:min-h-[32rem] lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start dark:border-zinc-800 dark:bg-zinc-900"
         >
-          <div className="border-b border-zinc-200 px-4 pt-4 dark:border-zinc-800">
+          <div className="shrink-0 border-b border-zinc-200 px-4 pt-4 dark:border-zinc-800">
             <h2 className="px-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {copy.preview}
             </h2>
@@ -660,7 +653,7 @@ export default function ListingStudio() {
             </div>
           </div>
 
-          <div className="flex flex-1 flex-col p-4">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
             {generateError && !isGenerating && (
               <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
                 {generateError}
