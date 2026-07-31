@@ -14,7 +14,7 @@ export function getAppUrl(): string {
 
 export function checkoutSuccessUrl(locale: string): string {
   const loc = locale.trim() || "en";
-  return `${getAppUrl()}/${loc}/checkout?checkout=success`;
+  return `${getAppUrl()}/${loc}?checkout=success`;
 }
 
 export function checkoutCancelUrl(locale: string): string {

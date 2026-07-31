@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { AccountBar } from "@/components/billing/account-bar";
 import { BillingNeedPlanBanner } from "@/components/billing/billing-need-plan-banner";
 import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-status";
+import { hasPurchasedBillingAccess } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
 import { HeroSection } from "@/components/hero-section";
@@ -230,8 +231,22 @@ export default function ListingStudio() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [billingHint, setBillingHint] = useState<"auth" | "checkout" | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
-  const { status: billingStatus } = useBillingStatus();
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const { status: billingStatus, refresh: refreshBilling } = useBillingStatus();
   const [brandingProfile, setBrandingProfile] = useState<UserBrandingProfile | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "success") return;
+    setPurchaseSuccess(true);
+    window.dispatchEvent(new Event(BILLING_REFRESH_EVENT));
+    void refreshBilling();
+    router.replace(pathname);
+  }, [router, pathname, refreshBilling]);
+
+  const showMarketing =
+    !purchaseSuccess && !hasPurchasedBillingAccess(billingStatus);
 
   useEffect(() => {
     if (!billingStatus?.email) return;
@@ -513,11 +528,24 @@ export default function ListingStudio() {
 
       <BillingNeedPlanBanner />
 
-      <div className="mx-auto max-w-6xl px-6 pt-8">
-        <HeroSection copy={marketingCopy} />
-        <HowItWorks copy={marketingCopy} />
-        <ComparisonSection copy={marketingCopy} />
-      </div>
+      {purchaseSuccess ? (
+        <div className="mx-auto max-w-6xl px-6 pt-4">
+          <p
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100"
+            role="status"
+          >
+            {marketingCopy.purchaseSuccessMessage}
+          </p>
+        </div>
+      ) : null}
+
+      {showMarketing ? (
+        <div className="mx-auto max-w-6xl px-6 pt-8">
+          <HeroSection copy={marketingCopy} />
+          <HowItWorks copy={marketingCopy} />
+          <ComparisonSection copy={marketingCopy} />
+        </div>
+      ) : null}
 
       <main className="mx-auto grid max-w-6xl gap-8 px-6 py-8 lg:grid-cols-2 lg:items-start">
         <section id="listing-form" className="min-w-0 scroll-mt-28">

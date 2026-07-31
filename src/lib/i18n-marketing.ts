@@ -23,6 +23,7 @@ export type MarketingCopy = {
   comparisonImmoBadge: string;
   comparisonGenericItems: readonly string[];
   comparisonImmoItems: readonly string[];
+  purchaseSuccessMessage: string;
 };
 
 const en: MarketingCopy = {
@@ -66,6 +67,7 @@ const en: MarketingCopy = {
     "Instant social media captions + location story",
     "Done in under 60 seconds",
   ],
+  purchaseSuccessMessage: "Purchase successful — you're ready to create your exposé.",
 };
 
 const de: Partial<MarketingCopy> = {
@@ -109,6 +111,7 @@ const de: Partial<MarketingCopy> = {
     "Sofort Social Captions + Lage-Story",
     "Fertig in unter 60 Sekunden",
   ],
+  purchaseSuccessMessage: "Kauf erfolgreich — Sie können jetzt Ihr Exposé erstellen.",
 };
 
 const fr: Partial<MarketingCopy> = {
@@ -152,6 +155,7 @@ const fr: Partial<MarketingCopy> = {
     "Légendes réseaux sociaux + texte local instantanés",
     "Prêt en moins de 60 secondes",
   ],
+  purchaseSuccessMessage: "Achat réussi — vous pouvez créer votre exposé.",
 };
 
 const marketingByLocale: Record<UiLocale, Partial<MarketingCopy>> = {
