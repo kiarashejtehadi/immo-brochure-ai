@@ -258,6 +258,8 @@ export function ListingForm(props: ListingFormProps) {
     onDownloadPdf,
   } = props;
 
+  const epcDetailsVisible = energy.certificateType !== "na";
+
   const propertyTypeLabel = useCallback(
     (type: PropertyType) => {
       const map: Record<PropertyType, string> = {
@@ -606,11 +608,14 @@ export function ListingForm(props: ListingFormProps) {
               <select
                 id="certType"
                 value={energy.certificateType}
-                onChange={(e) =>
-                  onEnergy({
-                    certificateType: e.target.value as EnergyCertificateType,
-                  })
-                }
+                onChange={(e) => {
+                  const certificateType = e.target.value as EnergyCertificateType;
+                  if (certificateType === "na") {
+                    onEnergy({ certificateType, energyValue: "", energyClass: "" });
+                  } else {
+                    onEnergy({ certificateType });
+                  }
+                }}
                 className={inputClassName()}
               >
                 <option value="consumption">{copy.certConsumption}</option>
@@ -618,34 +623,40 @@ export function ListingForm(props: ListingFormProps) {
                 <option value="na">{copy.certNa}</option>
               </select>
             </div>
-            <NumericField
-              id="energyValue"
-              label={copy.energyValue}
-              value={energy.energyValue}
-              onChange={(v) => onEnergy({ energyValue: v })}
-              allowDecimal
-              placeholder="120"
-            />
-            <div>
-              <label htmlFor="energyClass" className={labelClassName()}>
-                {copy.energyClass}
-              </label>
-              <select
-                id="energyClass"
-                value={energy.energyClass}
-                onChange={(e) =>
-                  onEnergy({ energyClass: e.target.value as EnergyClass | "" })
-                }
-                className={inputClassName()}
-              >
-                <option value="">—</option>
-                {ENERGY_CLASSES.map((cls) => (
-                  <option key={cls} value={cls}>
-                    {cls}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {epcDetailsVisible ? (
+              <>
+                <div className="animate-fade-in-up">
+                  <NumericField
+                    id="energyValue"
+                    label={copy.energyValue}
+                    value={energy.energyValue}
+                    onChange={(v) => onEnergy({ energyValue: v })}
+                    allowDecimal
+                    placeholder="120"
+                  />
+                </div>
+                <div className="animate-fade-in-up animate-fade-in-up-delay-1">
+                  <label htmlFor="energyClass" className={labelClassName()}>
+                    {copy.energyClass}
+                  </label>
+                  <select
+                    id="energyClass"
+                    value={energy.energyClass}
+                    onChange={(e) =>
+                      onEnergy({ energyClass: e.target.value as EnergyClass | "" })
+                    }
+                    className={inputClassName()}
+                  >
+                    <option value="">—</option>
+                    {ENERGY_CLASSES.map((cls) => (
+                      <option key={cls} value={cls}>
+                        {cls}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            ) : null}
             <div className="sm:col-span-2">
               <label htmlFor="heatingSource" className={labelClassName()}>
                 {copy.heatingSource}

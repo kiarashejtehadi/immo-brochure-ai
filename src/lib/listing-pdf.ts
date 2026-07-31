@@ -14,6 +14,14 @@ import type { CurrencyCode } from "@/lib/currency";
 import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
 import { propertyOverviewRows } from "@/lib/listing-property-labels";
 
+/** Strip EPC value/class when no certificate applies. */
+export function sanitizeEnergyForPayload(energy: EnergyFormData): EnergyFormData {
+  if (energy.certificateType === "na") {
+    return { ...energy, energyValue: "", energyClass: "" };
+  }
+  return energy;
+}
+
 export function buildGeneratePayload(input: {
   transactionType: TransactionType;
   targetLanguage: OutputLanguage;
@@ -31,7 +39,7 @@ export function buildGeneratePayload(input: {
   images: { base64: string; mimeType: string }[];
   floorPlan?: { base64: string; mimeType: string };
 }): GenerateRequestPayload {
-  return input;
+  return { ...input, energy: sanitizeEnergyForPayload(input.energy) };
 }
 
 export function buildBrochurePdfProps(input: {
@@ -90,8 +98,12 @@ export function buildBrochurePdfProps(input: {
 
   const energyLines = [
     { label: input.form.certificateType, value: input.energy.certificateType },
-    { label: input.form.energyValue, value: input.energy.energyValue },
-    { label: input.form.energyClass, value: input.energy.energyClass },
+    ...(input.energy.certificateType !== "na"
+      ? [
+          { label: input.form.energyValue, value: input.energy.energyValue },
+          { label: input.form.energyClass, value: input.energy.energyClass },
+        ]
+      : []),
     { label: input.form.heatingSource, value: input.energy.heatingSource },
     { label: input.form.constructionYear, value: input.energy.constructionYear },
     {
