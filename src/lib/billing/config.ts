@@ -62,9 +62,9 @@ export type PlanDisplayPrices = {
 /** Public display prices — set in Vercel to match Lemon Squeezy variant prices. */
 export function getPlanDisplayPrices(): PlanDisplayPrices {
   return {
-    creditsPack: process.env.NEXT_PUBLIC_PRICE_CREDITS_PACK?.trim() || "€29",
-    monthly: process.env.NEXT_PUBLIC_PRICE_MONTHLY?.trim() || "€49",
-    yearly: process.env.NEXT_PUBLIC_PRICE_YEARLY?.trim() || "€399",
+    creditsPack: process.env.NEXT_PUBLIC_PRICE_CREDITS_PACK?.trim() || "€5",
+    monthly: process.env.NEXT_PUBLIC_PRICE_MONTHLY?.trim() || "€12.99",
+    yearly: process.env.NEXT_PUBLIC_PRICE_YEARLY?.trim() || "€119.99",
   };
 }
 
