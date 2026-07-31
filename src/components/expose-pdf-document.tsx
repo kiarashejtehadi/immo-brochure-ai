@@ -9,6 +9,11 @@ import {
 import { formatPriceAmount, type CurrencyCode } from "@/lib/currency";
 import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
+import {
+  PageBackdropWatermarks,
+  TextAreaWatermark,
+  WatermarkedImage,
+} from "@/components/pdf-watermark-overlays";
 
 export type { BrochurePdfProps };
 
@@ -22,6 +27,7 @@ const s = StyleSheet.create({
     color: "#18181b",
     backgroundColor: "#ffffff",
     flexDirection: "column",
+    position: "relative",
   },
   accentBar: {
     position: "absolute",
@@ -199,14 +205,21 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
   return (
     <Document title={`Exposé – ${props.title}`}>
       <Page size="A4" style={s.page}>
+        {showWatermark ? <PageBackdropWatermarks page={1} /> : null}
+        {showWatermark ? <TextAreaWatermark top={400} /> : null}
+        {showWatermark ? <TextAreaWatermark top={560} /> : null}
         <PdfPageChrome
           brandColor={brandColor}
           logoDataUrl={props.logoDataUrl}
           badge={props.transactionBadge}
         />
         {hero ? (
-          // eslint-disable-next-line jsx-a11y/alt-text
-          <Image style={s.hero} src={hero} />
+          <WatermarkedImage
+            src={hero}
+            imageStyle={s.hero}
+            showWatermark={showWatermark}
+            diagonalSize={28}
+          />
         ) : (
           <View style={[s.hero, { alignItems: "center", justifyContent: "center" }]}>
             <Text style={{ color: "#a1a1aa" }}>ImmoCaption AI</Text>
@@ -244,6 +257,9 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
       </Page>
 
       <Page size="A4" style={s.page}>
+        {showWatermark ? <PageBackdropWatermarks page={2} /> : null}
+        {showWatermark ? <TextAreaWatermark top={420} /> : null}
+        {showWatermark ? <TextAreaWatermark top={620} /> : null}
         <PdfPageChrome
           brandColor={brandColor}
           logoDataUrl={props.logoDataUrl}
@@ -253,8 +269,14 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         <View style={s.grid}>
           {gallery.length > 0 ? (
             gallery.map((src, i) => (
-              // eslint-disable-next-line jsx-a11y/alt-text
-              <Image key={i} style={s.gridImg} src={src} />
+              <WatermarkedImage
+                key={i}
+                src={src}
+                frameStyle={{ width: "48%" }}
+                imageStyle={s.gridImg}
+                showWatermark={showWatermark}
+                diagonalSize={12}
+              />
             ))
           ) : (
             <Text style={{ color: "#a1a1aa" }}>Additional photos</Text>
@@ -286,6 +308,9 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
       </Page>
 
       <Page size="A4" style={s.page}>
+        {showWatermark ? <PageBackdropWatermarks page={3} /> : null}
+        {showWatermark ? <TextAreaWatermark top={210} /> : null}
+        {showWatermark ? <TextAreaWatermark top={520} /> : null}
         <PdfPageChrome
           brandColor={brandColor}
           logoDataUrl={props.logoDataUrl}
@@ -296,8 +321,12 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
 
         <Text style={[s.h2, { color: brandColor }]}>Floor plan</Text>
         {props.floorPlanDataUrl ? (
-          // eslint-disable-next-line jsx-a11y/alt-text
-          <Image style={s.floorPlan} src={props.floorPlanDataUrl} />
+          <WatermarkedImage
+            src={props.floorPlanDataUrl}
+            imageStyle={s.floorPlan}
+            showWatermark={showWatermark}
+            diagonalSize={18}
+          />
         ) : (
           <View style={[s.floorPlan, { alignItems: "center", justifyContent: "center" }]}>
             <Text style={{ color: "#a1a1aa" }}>No floor plan uploaded</Text>
