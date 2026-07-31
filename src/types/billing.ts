@@ -43,7 +43,7 @@ export type BillingStatusResponse = {
   remainingCredits: number;
   /** Credits from free signup trial (PDF watermark when consumed). */
   trialCredits: number;
-  /** Active monthly/yearly subscription — unlocks branding & watermark removal. */
+  /** Active monthly/yearly subscription — unlocks custom branding on PDFs. */
   isPro: boolean;
   /** Generations paid with credit pack (not subscription). */
   creditsUsed: number;

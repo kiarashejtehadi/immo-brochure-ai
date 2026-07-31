@@ -6,7 +6,13 @@ import { getCaptionHashtags, normalizeOutputLanguage } from "@/lib/output-langua
 import type { GenerateResult, GenerateRequestPayload } from "@/types/listing";
 import { isBillingEnabled } from "@/lib/billing/config";
 import { getSessionUser, resolveBillingAccess } from "@/lib/billing/access";
-import { decrementCredit, logGeneration } from "@/lib/billing/repository";
+import { isTrialOnlyCredits } from "@/lib/billing/client-access";
+import {
+  decrementCredit,
+  getTrialCredits,
+  getUserCredits,
+  logGeneration,
+} from "@/lib/billing/repository";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -251,6 +257,8 @@ Schema:
 
     if (billingUserId) {
       if (useCreditForGeneration) {
+        const remainingBefore = await getUserCredits(billingUserId);
+        const trialBefore = await getTrialCredits(billingUserId);
         const dec = await decrementCredit(billingUserId);
         if (dec === null) {
           return NextResponse.json(
@@ -262,7 +270,7 @@ Schema:
         const parsed = parseGenerateResult(content, instagramTags);
         return NextResponse.json({
           ...parsed,
-          watermarkPdf: true,
+          watermarkPdf: isTrialOnlyCredits(remainingBefore, trialBefore),
         });
       }
       await logGeneration(billingUserId, false);

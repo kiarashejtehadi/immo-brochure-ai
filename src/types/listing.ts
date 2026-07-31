@@ -111,6 +111,6 @@ export type GenerateResult = {
   fullDescription: string;
   locationDescription: string;
   socialCaptions: SocialCaptions;
-  /** Set when billing consumed a trial credit — PDF should be watermarked unless Pro. */
+  /** Set when billing consumed a trial-only credit — PDF should be watermarked. */
   watermarkPdf?: boolean;
 };

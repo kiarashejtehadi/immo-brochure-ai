@@ -32,8 +32,8 @@ export function UpgradeProModal({
               Upgrade to Pro
             </h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Unlock custom logo & brand colors, remove PDF watermarks, and unlimited generation with a
-              monthly or yearly plan.
+              Unlock custom logo & brand colors with a monthly or yearly plan. Credit packs and
+              subscriptions also remove PDF watermarks.
             </p>
           </div>
           <button

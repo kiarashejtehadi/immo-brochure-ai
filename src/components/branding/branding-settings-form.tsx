@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useBillingStatus } from "@/hooks/use-billing-status";
+import { hasPurchasedBillingAccess } from "@/lib/billing/client-access";
 import { ProBadge, UpgradeProModal } from "@/components/billing/upgrade-pro-modal";
 import { DEFAULT_BRAND_COLOR, type UserBrandingProfile } from "@/types/branding";
 import { readJsonResponse } from "@/lib/http/read-json-response";
@@ -27,6 +28,7 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const isPro = status?.isPro === true;
+  const cleanPdfExports = hasPurchasedBillingAccess(status);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -230,21 +232,20 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold">PDF watermark</h3>
-            <ProBadge />
+            {!cleanPdfExports ? <ProBadge /> : null}
           </div>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {isPro
-              ? "Pro plans remove the footer watermark on PDF exports."
-              : "PDFs from trial or credit-pack generations include a footer watermark until you subscribe to Pro."}
+            {cleanPdfExports
+              ? "Your PDF exports are watermark-free."
+              : "Trial PDFs include a watermark. Buy a credit pack or subscribe to export clean brochures."}
           </p>
-          {!isPro ? (
-            <button
-              type="button"
-              onClick={() => setUpgradeOpen(true)}
-              className="mt-3 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+          {!cleanPdfExports ? (
+            <Link
+              href="/checkout"
+              className="mt-3 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
             >
-              Upgrade to Pro
-            </button>
+              View plans
+            </Link>
           ) : null}
         </section>
 
