@@ -35,6 +35,7 @@ import {
   type CurrencyCode,
 } from "@/lib/currency";
 import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl } from "@/lib/branding/pdf-branding";
+import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
 import type { UserBrandingProfile } from "@/types/branding";
 import { cn } from "@/lib/utils";
 import type {
@@ -449,7 +450,7 @@ export default function ListingStudio() {
           brandColor: brand.brandColor,
           logoDataUrl,
           website: brand.website,
-          showWatermark: Boolean(result.watermarkPdf ?? pdfWatermark),
+          showWatermark: resolveShowPdfWatermark(result, pdfWatermark, billingStatus),
         },
       });
       const { downloadExposePdf } = await import("@/lib/download-expose-pdf");

@@ -16,6 +16,7 @@ const s = StyleSheet.create({
   page: {
     padding: 32,
     paddingTop: 48,
+    paddingBottom: 64,
     fontFamily: "Helvetica",
     fontSize: 10,
     color: "#18181b",
@@ -108,22 +109,30 @@ const s = StyleSheet.create({
   bullet: { fontSize: 9, marginBottom: 3 },
   footer: {
     position: "absolute",
-    bottom: 24,
+    bottom: 20,
     left: 32,
     right: 32,
     fontSize: 7,
     color: "#a1a1aa",
     textAlign: "center",
   },
-  watermark: {
+  watermarkBand: {
     position: "absolute",
-    bottom: 44,
+    bottom: 36,
     left: 32,
     right: 32,
-    fontSize: 8,
-    color: "#52525b",
+    backgroundColor: "#eef2ff",
+    borderWidth: 1,
+    borderColor: "#6366f1",
+    borderRadius: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  watermarkText: {
+    fontSize: 9,
+    color: "#3730a3",
     textAlign: "center",
-    opacity: 0.95,
+    fontWeight: 700,
   },
   floorPlan: {
     width: "100%",
@@ -167,7 +176,11 @@ function PdfPageChrome({
 function PdfFooter({ pageLabel, showWatermark }: { pageLabel: string; showWatermark?: boolean }) {
   return (
     <>
-      {showWatermark ? <Text style={s.watermark}>{PDF_WATERMARK_TEXT}</Text> : null}
+      {showWatermark ? (
+        <View style={s.watermarkBand}>
+          <Text style={s.watermarkText}>{PDF_WATERMARK_TEXT}</Text>
+        </View>
+      ) : null}
       <Text style={s.footer}>{pageLabel}</Text>
     </>
   );

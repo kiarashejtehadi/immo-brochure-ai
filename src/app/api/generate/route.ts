@@ -263,17 +263,18 @@ Schema:
         const isPro = Boolean(subscription);
         await logGeneration(billingUserId, true);
         const parsed = parseGenerateResult(content, instagramTags);
-        // Non-Pro generations (trial or credit pack) get a PDF watermark until Pro subscription.
+        const shouldWatermark = !isPro;
         return NextResponse.json({
           ...parsed,
-          watermarkPdf: !isPro,
+          watermarkPdf: shouldWatermark,
         });
       }
       await logGeneration(billingUserId, false);
     }
 
+    const parsed = parseGenerateResult(content, instagramTags);
     return NextResponse.json({
-      ...parseGenerateResult(content, instagramTags),
+      ...parsed,
       watermarkPdf: false,
     });
   } catch (err) {
