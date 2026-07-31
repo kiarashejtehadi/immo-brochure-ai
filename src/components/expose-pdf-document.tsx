@@ -319,19 +319,17 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         <Text style={[s.h2, { color: brandColor }]}>Location & neighborhood</Text>
         <Text style={[s.body, { marginBottom: 14 }]}>{props.locationDescription}</Text>
 
-        <Text style={[s.h2, { color: brandColor }]}>Floor plan</Text>
         {props.floorPlanDataUrl ? (
-          <WatermarkedImage
-            src={props.floorPlanDataUrl}
-            imageStyle={s.floorPlan}
-            showWatermark={showWatermark}
-            diagonalSize={18}
-          />
-        ) : (
-          <View style={[s.floorPlan, { alignItems: "center", justifyContent: "center" }]}>
-            <Text style={{ color: "#a1a1aa" }}>No floor plan uploaded</Text>
-          </View>
-        )}
+          <>
+            <Text style={[s.h2, { color: brandColor }]}>Floor plan</Text>
+            <WatermarkedImage
+              src={props.floorPlanDataUrl}
+              imageStyle={s.floorPlan}
+              showWatermark={showWatermark}
+              diagonalSize={18}
+            />
+          </>
+        ) : null}
 
         <Text style={[s.h2, { color: brandColor }]}>Your contact</Text>
         <View style={[s.box, { borderColor: brandColor }]}>

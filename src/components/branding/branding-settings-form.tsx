@@ -126,16 +126,22 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
 
   return (
     <>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/"
+          className="inline-flex items-center rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        >
+          ← Back to studio
+        </Link>
+      </div>
+
       <SettingsNav />
 
       <div className="space-y-8">
         <div>
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Branding settings</h2>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Custom logo and colors apply to PDF brochures on Monthly &amp; Yearly Pro plans.{" "}
-            <Link href="/" className="underline">
-              Back to studio
-            </Link>
+            Custom logo and colors apply to PDF brochures on Monthly &amp; Yearly Pro plans.
           </p>
           {status?.trialCredits ? (
             <p className="mt-2 text-sm text-emerald-800 dark:text-emerald-200">
