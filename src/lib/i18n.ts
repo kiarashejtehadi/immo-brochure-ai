@@ -47,6 +47,8 @@ export type UiCopy = {
   tone: string;
   targetOutputLanguage: string;
   generate: string;
+  generateWithCredit: string;
+  generateMinimumFieldsHint: string;
   generating: string;
   downloadPdf: string;
   preparingPdf: string;
@@ -102,6 +104,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "Tone",
     targetOutputLanguage: "Target output language",
     generate: "Generate Exposé & Captions",
+    generateWithCredit: "Generate Exposé & Captions (1 Credit)",
+    generateMinimumFieldsHint:
+      "Fill in at least Property Type and Address or Size to generate.",
     generating: "Generating…",
     downloadPdf: "Download PDF Exposé",
     preparingPdf: "Preparing PDF…",
@@ -172,6 +177,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "Tonfall",
     targetOutputLanguage: "Zielsprache für Texte",
     generate: "Exposé & Captions erstellen",
+    generateWithCredit: "Exposé & Captions erstellen (1 Credit)",
+    generateMinimumFieldsHint:
+      "Mindestens Immobilientyp sowie Adresse oder Größe (m²) ausfüllen.",
     generating: "Wird erstellt…",
     downloadPdf: "PDF-Exposé herunterladen",
     preparingPdf: "PDF wird erstellt…",
@@ -243,6 +251,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "Ton",
     targetOutputLanguage: "Langue de sortie",
     generate: "Générer exposé & légendes",
+    generateWithCredit: "Générer exposé & légendes (1 crédit)",
+    generateMinimumFieldsHint:
+      "Renseignez au minimum le type de bien et l'adresse ou la surface (m²).",
     generating: "Génération…",
     downloadPdf: "Télécharger l'exposé PDF",
     preparingPdf: "Préparation du PDF…",
@@ -311,6 +322,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "Tono",
     targetOutputLanguage: "Idioma de salida",
     generate: "Generar exposé y captions",
+    generateWithCredit: "Generar exposé y captions (1 crédito)",
+    generateMinimumFieldsHint:
+      "Complete al menos el tipo de inmueble y la dirección o el tamaño (m²).",
     generating: "Generando…",
     downloadPdf: "Descargar exposé PDF",
     preparingPdf: "Preparando PDF…",
@@ -378,6 +392,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "Tono",
     targetOutputLanguage: "Lingua di output",
     generate: "Genera exposé e caption",
+    generateWithCredit: "Genera exposé e caption (1 credito)",
+    generateMinimumFieldsHint:
+      "Compila almeno tipo di immobile e indirizzo o superficie (m²).",
     generating: "Generazione…",
     downloadPdf: "Scarica exposé PDF",
     preparingPdf: "Preparazione PDF…",
@@ -445,6 +462,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "Toon",
     targetOutputLanguage: "Doeltaal voor teksten",
     generate: "Exposé & captions genereren",
+    generateWithCredit: "Exposé & captions genereren (1 credit)",
+    generateMinimumFieldsHint:
+      "Vul minimaal het woningtype en het adres of de oppervlakte (m²) in.",
     generating: "Bezig…",
     downloadPdf: "PDF-exposé downloaden",
     preparingPdf: "PDF voorbereiden…",
@@ -512,6 +532,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "لحن",
     targetOutputLanguage: "زبان خروجی متن",
     generate: "ساخت exposé و کپشن",
+    generateWithCredit: "ساخت exposé و کپشن (۱ اعتبار)",
+    generateMinimumFieldsHint:
+      "حداقل نوع ملک و آدرس یا متراژ (m²) را وارد کنید.",
     generating: "در حال ساخت…",
     downloadPdf: "دانلود PDF exposé",
     preparingPdf: "در حال آماده‌سازی PDF…",
@@ -579,6 +602,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "النبرة",
     targetOutputLanguage: "لغة النص الناتج",
     generate: "إنشاء الوصف والتعليقات",
+    generateWithCredit: "إنشاء الوصف والتعليقات (رصيد واحد)",
+    generateMinimumFieldsHint:
+      "يرجى إدخال نوع العقار على الأقل مع العنوان أو المساحة (م²).",
     generating: "جارٍ الإنشاء…",
     downloadPdf: "تنزيل PDF للوصف",
     preparingPdf: "جارٍ تجهيز PDF…",
@@ -646,6 +672,9 @@ export const translations: Record<UiLocale, UiCopy> = {
     tone: "Ton",
     targetOutputLanguage: "Język treści",
     generate: "Generuj exposé i opisy",
+    generateWithCredit: "Generuj exposé i opisy (1 kredyt)",
+    generateMinimumFieldsHint:
+      "Uzupełnij co najmniej typ nieruchomości oraz adres lub metraż (m²).",
     generating: "Generowanie…",
     downloadPdf: "Pobierz PDF exposé",
     preparingPdf: "Przygotowywanie PDF…",

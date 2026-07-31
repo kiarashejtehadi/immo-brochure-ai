@@ -260,6 +260,19 @@ export function ListingForm(props: ListingFormProps) {
 
   const epcDetailsVisible = energy.certificateType !== "na";
 
+  const hasMinimumFields =
+    property.propertyType !== "" &&
+    (address.trim() !== "" || size.trim() !== "");
+  const showCreditCost =
+    billingStatus?.billingEnabled === true &&
+    !billingStatus.hasActiveSubscription &&
+    (billingStatus.remainingCredits ?? 0) > 0;
+  const generateButtonLabel = isGenerating
+    ? copy.generating
+    : showCreditCost
+      ? copy.generateWithCredit
+      : copy.generate;
+
   const propertyTypeLabel = useCallback(
     (type: PropertyType) => {
       const map: Record<PropertyType, string> = {
@@ -955,14 +968,21 @@ export function ListingForm(props: ListingFormProps) {
         <CreditPackUsage status={billingStatus} variant="panel" />
 
         <div className="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={onGenerate}
-            disabled={isGenerating}
-            className={cn(btnPrimaryCompact, "w-full sm:col-span-1")}
-          >
-            {isGenerating ? copy.generating : copy.generate}
-          </button>
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={onGenerate}
+              disabled={isGenerating || !hasMinimumFields}
+              className={cn(btnPrimaryCompact, "w-full sm:col-span-1")}
+            >
+              {generateButtonLabel}
+            </button>
+            {!hasMinimumFields && !isGenerating ? (
+              <p className="text-xs leading-snug text-amber-800/90 dark:text-amber-200/90">
+                {copy.generateMinimumFieldsHint}
+              </p>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={onDownloadPdf}
