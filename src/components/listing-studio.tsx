@@ -491,7 +491,7 @@ export default function ListingStudio() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-zinc-50 to-zinc-50 text-zinc-900 dark:from-indigo-950/20 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-50">
+    <div className="min-h-screen overflow-visible bg-gradient-to-b from-blue-50/30 via-zinc-50 to-zinc-50 text-zinc-900 dark:from-indigo-950/20 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-50">
       <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
           <div>
@@ -549,12 +549,12 @@ export default function ListingStudio() {
 
       <main
         className={cn(
-          "mx-auto max-w-6xl px-6 pb-8",
+          "mx-auto max-w-6xl overflow-visible px-6 pb-8",
           isWorkspace ? "pt-4 sm:pt-6" : "py-6 sm:py-8",
         )}
       >
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
-        <section id="listing-form" className="order-1 min-w-0 scroll-mt-28">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <section id="listing-form" className="order-1 min-w-0 flex-1 scroll-mt-28">
           <ListingForm
             copy={copy}
             transactionType={transactionType}
@@ -605,13 +605,13 @@ export default function ListingStudio() {
             onGenerate={handleGenerate}
             onDownloadPdf={handleDownloadPdf}
           />
-        </section>
+          </section>
 
-        <div className="order-2 min-w-0 lg:sticky lg:top-6 lg:z-10 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:overscroll-contain">
-        <section
-          ref={previewRef}
-          className="flex flex-col rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-        >
+          <aside className="order-2 min-w-0 flex-1 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto">
+            <section
+              ref={previewRef}
+              className="flex flex-col rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            >
           <div className="shrink-0 border-b border-zinc-200 px-4 pt-4 dark:border-zinc-800">
             <h2 className="px-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {copy.preview}
@@ -666,7 +666,7 @@ export default function ListingStudio() {
             </div>
           </div>
 
-          <div className="flex flex-col p-4 lg:min-h-[24rem]">
+          <div className="flex flex-col p-4 lg:min-h-[20rem]">
             {generateError && !isGenerating && (
               <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
                 {generateError}
@@ -800,9 +800,9 @@ export default function ListingStudio() {
                 ))}
               </ul>
             ) : null}
-          </div>
-        </section>
-        </div>
+            </div>
+          </section>
+          </aside>
         </div>
       </main>
       <AuthEmailModal open={authOpen} onClose={() => setAuthOpen(false)} onSent={() => setAuthOpen(false)} />
