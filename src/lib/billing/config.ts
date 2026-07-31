@@ -53,6 +53,21 @@ export function creditsPerPack(): number {
   return Number.isFinite(n) && n > 0 ? n : 5;
 }
 
+export type PlanDisplayPrices = {
+  creditsPack: string;
+  monthly: string;
+  yearly: string;
+};
+
+/** Public display prices — set in Vercel to match Lemon Squeezy variant prices. */
+export function getPlanDisplayPrices(): PlanDisplayPrices {
+  return {
+    creditsPack: process.env.NEXT_PUBLIC_PRICE_CREDITS_PACK?.trim() || "€29",
+    monthly: process.env.NEXT_PUBLIC_PRICE_MONTHLY?.trim() || "€49",
+    yearly: process.env.NEXT_PUBLIC_PRICE_YEARLY?.trim() || "€399",
+  };
+}
+
 export type PlanConfig = {
   key: BillingPlanKey;
   variantId: string;

@@ -29,10 +29,14 @@
     "analyticsOffNotice": "Analytics integrations are not enabled in this deployment. Your choice is stored for when they are added."
   },
   "checkout": {
-    "title": "Subscribe",
-    "subtitle": "Complete legal confirmations before payment.",
+    "title": "Pricing & Plans",
+    "subtitle": "Choose a plan — checkout opens in a secure Lemon Squeezy overlay.",
+    "legalHeading": "Legal information",
     "termsCheckbox": "I agree to the Terms of Service and Privacy Policy.",
     "withdrawalCheckbox": "I expressly request immediate execution of the digital service and acknowledge that I forfeit my 14-day right of withdrawal once generation or subscription performance begins.",
+    "purchaseLegalInline": "By continuing, you agree to our",
+    "withdrawalInline": "Digital delivery starts immediately after payment.",
+    "purchaseLegalHint": "Selecting a plan above confirms both statements and opens secure checkout.",
     "payButton": "Continue to secure checkout",
     "payDisabledHint": "Please confirm both checkboxes to continue.",
     "paymentNotConfigured": "Payments are not configured yet. Set LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID, and variant IDs to enable checkout.",

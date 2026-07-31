@@ -1,51 +1,20 @@
 "use client";
 
+import { Check, X } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BillingPlanKey } from "@/types/billing";
-import { creditsPerPack } from "@/lib/billing/config";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
+import { PricingLegalNotice } from "@/components/billing/pricing-legal-notice";
 import { useBillingStatus } from "@/hooks/use-billing-status";
+import { openLemonSqueezyCheckout } from "@/lib/billing/lemon-checkout-client";
+import { getPlanCardDefinitions, type PlanFeature } from "@/lib/billing/plan-display";
 import {
   hasBrowserAuthSession,
   refreshBrowserAuthSession,
 } from "@/lib/supabase/client-session";
 import { readJsonResponse } from "@/lib/http/read-json-response";
 import { cn } from "@/lib/utils";
-
-type PlanCard = {
-  key: BillingPlanKey;
-  title: string;
-  price: string;
-  description: string;
-  cta: string;
-  highlight?: boolean;
-};
-
-const PLANS: PlanCard[] = [
-  {
-    key: "credits_pack",
-    title: "Pay-per-use",
-    price: "Credit pack",
-    description: `${creditsPerPack()} AI exposé generations — no subscription.`,
-    cta: "Buy credits",
-  },
-  {
-    key: "monthly",
-    title: "Monthly",
-    price: "Unlimited / high volume",
-    description: "Best for active agents with steady listing volume.",
-    cta: "Subscribe monthly",
-    highlight: true,
-  },
-  {
-    key: "yearly",
-    title: "Yearly",
-    price: "Discounted annual",
-    description: "Same benefits as monthly, billed once per year.",
-    cta: "Subscribe yearly",
-  },
-];
 
 async function postCheckout(plan: BillingPlanKey, locale: string) {
   return fetch("/api/checkout/create", {
@@ -56,18 +25,51 @@ async function postCheckout(plan: BillingPlanKey, locale: string) {
   });
 }
 
+function PlanFeatureRow({ feature }: { feature: PlanFeature }) {
+  const Icon = feature.included ? Check : X;
+  return (
+    <li className="flex items-start gap-2 text-sm leading-snug">
+      <Icon
+        className={cn(
+          "mt-0.5 h-4 w-4 shrink-0",
+          feature.included
+            ? "text-emerald-600 dark:text-emerald-400"
+            : "text-zinc-400 dark:text-zinc-500",
+        )}
+        aria-hidden
+      />
+      <span
+        className={cn(
+          feature.included
+            ? "text-zinc-700 dark:text-zinc-300"
+            : "text-zinc-500 dark:text-zinc-500",
+        )}
+      >
+        {feature.text}
+      </span>
+    </li>
+  );
+}
+
 export function PricingSection({
   locale,
   billingEnabled,
+  compact,
+  subscriptionOnly,
 }: {
   locale: string;
   billingEnabled: boolean;
+  compact?: boolean;
+  subscriptionOnly?: boolean;
 }) {
   const router = useRouter();
   const { status, loading: statusLoading, refresh, isSignedIn } = useBillingStatus();
   const [loadingPlan, setLoadingPlan] = useState<BillingPlanKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const plans = getPlanCardDefinitions().filter(
+    (plan) => !subscriptionOnly || plan.key !== "credits_pack",
+  );
 
   async function startCheckout(plan: BillingPlanKey) {
     if (!billingEnabled) {
@@ -95,7 +97,7 @@ export function PricingSection({
       if (!res.ok || !data.url) {
         throw new Error(data.error ?? "Checkout failed.");
       }
-      window.location.href = data.url;
+      await openLemonSqueezyCheckout(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed.");
     } finally {
@@ -105,25 +107,29 @@ export function PricingSection({
 
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Pricing
-        </h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Choose credits for occasional use or subscribe for unlimited/high-volume generation.
-        </p>
-        {isSignedIn && status?.email ? (
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Signed in as <span className="font-medium text-zinc-800 dark:text-zinc-200">{status.email}</span>
-            {" — "}
-            purchases apply to this account.
+      {!compact ? (
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Pricing & Plans
+          </h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Choose credits for occasional use or subscribe for unlimited generation, custom branding,
+            and watermark-free PDFs.
           </p>
-        ) : !statusLoading && billingEnabled ? (
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Sign in when prompted, or use the account menu above.
-          </p>
-        ) : null}
-      </div>
+          {isSignedIn && status?.email ? (
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Signed in as{" "}
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">{status.email}</span>
+              {" — "}
+              checkout opens with this email pre-filled.
+            </p>
+          ) : !statusLoading && billingEnabled ? (
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Sign in when prompted — your email will be pre-filled at checkout.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {!billingEnabled ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
@@ -138,22 +144,41 @@ export function PricingSection({
         </p>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {PLANS.map((plan) => (
+      <div className={cn("grid gap-4", subscriptionOnly ? "md:grid-cols-2" : "md:grid-cols-3")}>
+        {plans.map((plan) => (
           <article
             key={plan.key}
             className={cn(
-              "flex flex-col rounded-2xl border p-5 shadow-sm",
+              "relative flex flex-col rounded-2xl border p-5 shadow-sm",
               plan.highlight
-                ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900/60"
+                ? "border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-600/20 dark:border-indigo-400 dark:bg-indigo-950/30"
                 : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900",
             )}
           >
-            <h3 className="text-lg font-semibold">{plan.title}</h3>
-            <p className="mt-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">{plan.price}</p>
-            <p className="mt-3 flex-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-              {plan.description}
+            {plan.badge ? (
+              <span
+                className={cn(
+                  "absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide",
+                  plan.highlight
+                    ? "bg-indigo-600 text-white"
+                    : "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
+                )}
+              >
+                {plan.badge}
+              </span>
+            ) : null}
+
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{plan.title}</h3>
+            <p className="mt-2 text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              {plan.priceLabel}
             </p>
+
+            <ul className="mt-4 flex-1 space-y-2.5">
+              {plan.features.map((feature) => (
+                <PlanFeatureRow key={feature.text} feature={feature} />
+              ))}
+            </ul>
+
             <button
               type="button"
               disabled={!billingEnabled || loadingPlan === plan.key || statusLoading}
@@ -161,16 +186,19 @@ export function PricingSection({
               className={cn(
                 "mt-5 w-full rounded-xl py-2.5 text-sm font-semibold transition",
                 plan.highlight
-                  ? "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
-                  : "border border-zinc-300 bg-white hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950",
+                  ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                  : "border border-zinc-300 bg-white hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:hover:bg-zinc-900",
                 (!billingEnabled || loadingPlan === plan.key || statusLoading) && "opacity-60",
               )}
             >
-              {loadingPlan === plan.key ? "Redirecting…" : plan.cta}
+              {loadingPlan === plan.key ? "Opening checkout…" : plan.cta}
             </button>
+            <PricingLegalNotice variant="inline" className="mt-3" />
           </article>
         ))}
       </div>
+
+      <PricingLegalNotice variant="panel" />
 
       <AuthEmailModal
         open={authOpen}

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { Lock } from "lucide-react";
 import { planDisplayName } from "@/lib/billing/config";
+import { isCreditPackPlan } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
@@ -96,6 +98,8 @@ export function AccountBar({ locale }: { locale: string }) {
     !status?.hasActiveSubscription &&
     (status?.remainingCredits ?? 0) === 0;
 
+  const brandingLocked = isCreditPackPlan(status);
+
   return (
     <>
       <div className="flex flex-col items-stretch gap-2 sm:items-end">
@@ -124,7 +128,7 @@ export function AccountBar({ locale }: { locale: string }) {
                   </Link>
                 ) : (
                   <Link
-                    href="/checkout"
+                    href="/pricing"
                     className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
                   >
                     Pricing
@@ -150,9 +154,12 @@ export function AccountBar({ locale }: { locale: string }) {
               ) : null}
               <Link
                 href="/settings"
-                className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
               >
                 Branding
+                {brandingLocked ? (
+                  <Lock className="h-3 w-3 text-amber-600 dark:text-amber-400" aria-hidden />
+                ) : null}
               </Link>
               <button
                 type="button"

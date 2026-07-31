@@ -2,7 +2,7 @@ import { CheckoutPageContent } from "@/components/billing/checkout-page-content"
 import { setRequestLocale } from "next-intl/server";
 import type { AppLocale } from "@/i18n/routing";
 
-export default async function CheckoutPage({
+export default async function PricingPage({
   params,
 }: {
   params: Promise<{ locale: string }>;

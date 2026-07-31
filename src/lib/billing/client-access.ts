@@ -16,3 +16,12 @@ export function hasPurchasedBillingAccess(
   if (status.hasActiveSubscription) return true;
   return !isTrialOnlyCredits(status.remainingCredits ?? 0, status.trialCredits ?? 0);
 }
+
+/** Pay-per-use credit pack without an active Pro subscription. */
+export function isCreditPackPlan(
+  status: BillingStatusResponse | null | undefined,
+): boolean {
+  if (!status?.billingEnabled || !status.email) return false;
+  if (status.hasActiveSubscription) return false;
+  return hasPurchasedBillingAccess(status);
+}

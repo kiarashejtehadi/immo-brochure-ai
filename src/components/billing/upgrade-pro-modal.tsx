@@ -9,10 +9,12 @@ export function UpgradeProModal({
   open,
   onClose,
   locale,
+  subscriptionOnly,
 }: {
   open: boolean;
   onClose: () => void;
   locale: string;
+  subscriptionOnly?: boolean;
 }) {
   const billingEnabled = isBillingEnabled();
 
@@ -25,15 +27,16 @@ export function UpgradeProModal({
       aria-modal="true"
       aria-labelledby="upgrade-pro-title"
     >
-      <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id="upgrade-pro-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               Upgrade to Pro
             </h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Unlock custom logo & brand colors with a monthly or yearly plan. Credit packs and
-              subscriptions also remove PDF watermarks.
+              {subscriptionOnly
+                ? "Unlock custom logo, brand colors, and broker signatures on every PDF with a monthly or yearly plan."
+                : "Unlock custom logo & brand colors with a monthly or yearly plan. Credit packs and subscriptions also remove PDF watermarks."}
             </p>
           </div>
           <button
@@ -46,7 +49,12 @@ export function UpgradeProModal({
         </div>
         {billingEnabled ? (
           <div className="mt-6">
-            <PricingSection locale={locale} billingEnabled />
+            <PricingSection
+              locale={locale}
+              billingEnabled
+              compact
+              subscriptionOnly={subscriptionOnly}
+            />
           </div>
         ) : (
           <p className="mt-4 text-sm text-amber-800 dark:text-amber-200">
@@ -55,8 +63,8 @@ export function UpgradeProModal({
         )}
         <p className="mt-4 text-center text-xs text-zinc-500">
           Or{" "}
-          <Link href="/checkout" className="underline" onClick={onClose}>
-            open checkout
+          <Link href="/pricing" className="underline" onClick={onClose}>
+            open pricing page
           </Link>
         </p>
       </div>

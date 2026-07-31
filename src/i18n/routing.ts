@@ -67,6 +67,17 @@ export const routing = defineRouting({
       fa: "/checkout",
       ar: "/checkout",
     },
+    "/pricing": {
+      en: "/pricing",
+      de: "/pricing",
+      fr: "/pricing",
+      es: "/pricing",
+      it: "/pricing",
+      nl: "/pricing",
+      pl: "/pricing",
+      fa: "/pricing",
+      ar: "/pricing",
+    },
     "/settings": {
       en: "/settings",
       de: "/settings",

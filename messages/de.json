@@ -29,10 +29,14 @@
     "analyticsOffNotice": "Analytics ist in dieser Umgebung nicht aktiv. Ihre Wahl wird für später gespeichert."
   },
   "checkout": {
-    "title": "Abonnement",
-    "subtitle": "Bitte bestätigen Sie die rechtlichen Hinweise vor der Zahlung.",
+    "title": "Preise & Tarife",
+    "subtitle": "Tarif wählen — Checkout öffnet sich im sicheren Lemon-Squeezy-Overlay.",
+    "legalHeading": "Rechtliche Hinweise",
     "termsCheckbox": "Ich stimme den AGB und der Datenschutzerklärung zu.",
     "withdrawalCheckbox": "Ich verlange ausdrücklich die sofortige Ausführung der digitalen Leistung und weiß, dass mein 14-tägiges Widerrufsrecht mit Beginn der Leistung erlischt.",
+    "purchaseLegalInline": "Mit dem Fortfahren stimmen Sie unseren",
+    "withdrawalInline": "Die digitale Leistung beginnt unmittelbar nach der Zahlung.",
+    "purchaseLegalHint": "Die Auswahl eines Tarifs bestätigt beide Erklärungen und öffnet den sicheren Checkout.",
     "payButton": "Weiter zur sicheren Zahlung",
     "payDisabledHint": "Bitte beide Kästchen bestätigen.",
     "paymentNotConfigured": "Zahlungen sind noch nicht konfiguriert. LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID und Varianten-IDs setzen.",

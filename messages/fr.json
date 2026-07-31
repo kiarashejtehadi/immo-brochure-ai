@@ -20,7 +20,17 @@
     "save": "Enregistrer"
   },
   "checkout": {
-    "title": "Abonnement",
-    "subtitle": "Veuillez confirmer les informations légales avant le paiement."
+    "title": "Tarifs & offres",
+    "subtitle": "Choisissez une offre — le paiement s'ouvre dans l'overlay sécurisé Lemon Squeezy.",
+    "legalHeading": "Informations légales",
+    "termsCheckbox": "J'accepte les conditions générales et la politique de confidentialité.",
+    "withdrawalCheckbox": "Je demande expressément l'exécution immédiate du service numérique et reconnais renoncer à mon droit de rétractation de 14 jours dès le début de la prestation.",
+    "purchaseLegalInline": "En continuant, vous acceptez nos",
+    "withdrawalInline": "La livraison numérique commence immédiatement après le paiement.",
+    "purchaseLegalHint": "Choisir une offre confirme les deux déclarations et ouvre le paiement sécurisé.",
+    "payButton": "Continuer vers le paiement sécurisé",
+    "payDisabledHint": "Veuillez cocher les deux cases.",
+    "paymentNotConfigured": "Les paiements ne sont pas encore configurés.",
+    "planLabel": "Offre Pro (exemple)"
   }
 }
