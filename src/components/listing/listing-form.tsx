@@ -684,7 +684,7 @@ export function ListingForm(props: ListingFormProps) {
       </FormCard>
 
       <FormCard title={`4. ${copy.sectionFeatures}`}>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {FEATURE_KEYS.map((feature) => {
             const active = features.includes(feature);
             return (
@@ -693,7 +693,7 @@ export function ListingForm(props: ListingFormProps) {
                 type="button"
                 onClick={() => onToggleFeature(feature)}
                 className={cn(
-                  "rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-200",
+                  "w-full rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-200",
                   active ? chipActive : chipInactive,
                 )}
               >
