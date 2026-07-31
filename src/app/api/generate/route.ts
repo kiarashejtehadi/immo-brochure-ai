@@ -6,7 +6,7 @@ import { getCaptionHashtags, normalizeOutputLanguage } from "@/lib/output-langua
 import type { GenerateResult, GenerateRequestPayload } from "@/types/listing";
 import { isBillingEnabled } from "@/lib/billing/config";
 import { getSessionUser, resolveBillingAccess } from "@/lib/billing/access";
-import { decrementCredit, getActiveSubscription, logGeneration } from "@/lib/billing/repository";
+import { decrementCredit, logGeneration } from "@/lib/billing/repository";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -258,15 +258,11 @@ Schema:
             { status: 402 },
           );
         }
-        const sub = await getSessionUser();
-        const subscription = sub ? await getActiveSubscription(sub.id) : null;
-        const isPro = Boolean(subscription);
         await logGeneration(billingUserId, true);
         const parsed = parseGenerateResult(content, instagramTags);
-        const shouldWatermark = !isPro;
         return NextResponse.json({
           ...parsed,
-          watermarkPdf: shouldWatermark,
+          watermarkPdf: true,
         });
       }
       await logGeneration(billingUserId, false);

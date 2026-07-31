@@ -16,11 +16,12 @@ const s = StyleSheet.create({
   page: {
     padding: 32,
     paddingTop: 48,
-    paddingBottom: 64,
+    paddingBottom: 40,
     fontFamily: "Helvetica",
     fontSize: 10,
     color: "#18181b",
     backgroundColor: "#ffffff",
+    flexDirection: "column",
   },
   accentBar: {
     position: "absolute",
@@ -107,32 +108,31 @@ const s = StyleSheet.create({
   tableLabel: { width: "45%", fontSize: 9, color: "#52525b" },
   tableValue: { width: "55%", fontSize: 9, fontWeight: 700 },
   bullet: { fontSize: 9, marginBottom: 3 },
-  footer: {
-    position: "absolute",
-    bottom: 20,
-    left: 32,
-    right: 32,
-    fontSize: 7,
-    color: "#a1a1aa",
-    textAlign: "center",
+  pageFooter: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#e4e4e7",
+    paddingTop: 8,
   },
   watermarkBand: {
-    position: "absolute",
-    bottom: 36,
-    left: 32,
-    right: 32,
     backgroundColor: "#eef2ff",
     borderWidth: 1,
-    borderColor: "#6366f1",
+    borderColor: "#4f46e5",
     borderRadius: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    marginBottom: 6,
   },
   watermarkText: {
     fontSize: 9,
-    color: "#3730a3",
+    color: "#312e81",
     textAlign: "center",
     fontWeight: 700,
+  },
+  footerLabel: {
+    fontSize: 7,
+    color: "#a1a1aa",
+    textAlign: "center",
   },
   floorPlan: {
     width: "100%",
@@ -141,6 +141,10 @@ const s = StyleSheet.create({
     marginTop: 8,
     marginBottom: 12,
     backgroundColor: "#fafafa",
+  },
+  flexSpacer: {
+    flexGrow: 1,
+    minHeight: 8,
   },
 });
 
@@ -173,16 +177,16 @@ function PdfPageChrome({
   );
 }
 
-function PdfFooter({ pageLabel, showWatermark }: { pageLabel: string; showWatermark?: boolean }) {
+function PdfPageFooter({ pageLabel, showWatermark }: { pageLabel: string; showWatermark?: boolean }) {
   return (
-    <>
+    <View style={s.pageFooter} wrap={false}>
       {showWatermark ? (
         <View style={s.watermarkBand}>
           <Text style={s.watermarkText}>{PDF_WATERMARK_TEXT}</Text>
         </View>
       ) : null}
-      <Text style={s.footer}>{pageLabel}</Text>
-    </>
+      <Text style={s.footerLabel}>{pageLabel}</Text>
+    </View>
   );
 }
 
@@ -190,6 +194,7 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
   const hero = props.photoDataUrls[0];
   const gallery = props.photoDataUrls.slice(1, 5);
   const brandColor = props.brandColor ?? "#18181b";
+  const showWatermark = props.showWatermark === true;
 
   return (
     <Document title={`Exposé – ${props.title}`}>
@@ -234,7 +239,8 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             • {line}
           </Text>
         ))}
-        <PdfFooter pageLabel="ImmoCaption AI · Page 1 — Cover" showWatermark={props.showWatermark} />
+        <View style={s.flexSpacer} />
+        <PdfPageFooter pageLabel="ImmoCaption AI · Page 1 — Cover" showWatermark={showWatermark} />
       </Page>
 
       <Page size="A4" style={s.page}>
@@ -275,7 +281,8 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             </View>
           ))}
         </View>
-        <PdfFooter pageLabel="ImmoCaption AI · Page 2 — Details" showWatermark={props.showWatermark} />
+        <View style={s.flexSpacer} />
+        <PdfPageFooter pageLabel="ImmoCaption AI · Page 2 — Details" showWatermark={showWatermark} />
       </Page>
 
       <Page size="A4" style={s.page}>
@@ -310,9 +317,10 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         <Text style={{ fontSize: 8, lineHeight: 1.35, color: "#52525b" }}>
           {props.agent.legalDisclaimer.trim() || props.legalDisclaimerFallback}
         </Text>
-        <PdfFooter
+        <View style={s.flexSpacer} />
+        <PdfPageFooter
           pageLabel="ImmoCaption AI · Page 3 — Contact & imprint"
-          showWatermark={props.showWatermark}
+          showWatermark={showWatermark}
         />
       </Page>
     </Document>
