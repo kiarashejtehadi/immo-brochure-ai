@@ -15,7 +15,13 @@ import type {
   UiLocale,
 } from "@/lib/i18n";
 import { LOCALE_LABELS } from "@/lib/i18n";
-import { VoiceInputButton } from "@/components/listing/voice-input-button";
+import {
+  VoiceInputRow,
+  VoiceTextarea,
+  VoiceTextInput,
+  appendVoiceTranscript,
+  type VoiceFieldLabels,
+} from "@/components/listing/voice-input-field";
 import { EXPOSE_LANGUAGE_OPTIONS } from "@/lib/target-languages";
 import {
   CURRENCY_LABELS,
@@ -127,6 +133,7 @@ function NumericField({
   allowDecimal = true,
   placeholder,
   hint,
+  voice,
 }: {
   id: string;
   label: string;
@@ -135,24 +142,42 @@ function NumericField({
   allowDecimal?: boolean;
   placeholder?: string;
   hint?: React.ReactNode;
+  voice?: VoiceFieldLabels;
 }) {
+  const input = (
+    <input
+      id={id}
+      type="text"
+      inputMode={allowDecimal ? "decimal" : "numeric"}
+      pattern={allowDecimal ? "[0-9]*[.]?[0-9]*" : "[0-9]*"}
+      min={0}
+      placeholder={placeholder}
+      value={value}
+      onKeyDown={(e) => blockNonNumericKey(e, allowDecimal)}
+      onChange={(e) => onChange(sanitizeNumericInput(e.target.value, allowDecimal))}
+      className={cn(inputClassName(), voice && "min-w-0 flex-1")}
+    />
+  );
+
   return (
     <div>
       <label htmlFor={id} className={labelClassName()}>
         {label}
       </label>
-      <input
-        id={id}
-        type="text"
-        inputMode={allowDecimal ? "decimal" : "numeric"}
-        pattern={allowDecimal ? "[0-9]*[.]?[0-9]*" : "[0-9]*"}
-        min={0}
-        placeholder={placeholder}
-        value={value}
-        onKeyDown={(e) => blockNonNumericKey(e, allowDecimal)}
-        onChange={(e) => onChange(sanitizeNumericInput(e.target.value, allowDecimal))}
-        className={inputClassName()}
-      />
+      {voice ? (
+        <VoiceInputRow
+          voice={voice}
+          onTranscript={(text) =>
+            onChange(
+              sanitizeNumericInput(appendVoiceTranscript(value, text), allowDecimal),
+            )
+          }
+        >
+          {input}
+        </VoiceInputRow>
+      ) : (
+        input
+      )}
       {hint}
     </div>
   );
@@ -263,6 +288,13 @@ export function ListingForm(props: ListingFormProps) {
     onDownloadPdf,
   } = props;
 
+  const voiceLabels: VoiceFieldLabels = {
+    uiLocale,
+    ariaLabel: copy.voiceDictation,
+    listeningLabel: copy.voiceListening,
+    unsupportedLabel: copy.voiceUnsupported,
+  };
+
   const epcDetailsVisible = energy.certificateType !== "na";
 
   const hasMinimumFields =
@@ -369,31 +401,14 @@ export function ListingForm(props: ListingFormProps) {
           </select>
         </div>
 
-        <div>
-          <label htmlFor="address" className={labelClassName()}>
-            {copy.address}
-          </label>
-          <div className="flex items-start gap-2">
-            <input
-              id="address"
-              type="text"
-              placeholder={copy.addressPlaceholder}
-              value={address}
-              onChange={(e) => onAddress(e.target.value)}
-              className={cn(inputClassName(), "min-w-0 flex-1")}
-            />
-            <VoiceInputButton
-              uiLocale={uiLocale}
-              ariaLabel={copy.voiceDictation}
-              listeningLabel={copy.voiceListening}
-              unsupportedLabel={copy.voiceUnsupported}
-              onTranscript={(text) =>
-                onAddress(address.trim() ? `${address.trim()} ${text}` : text)
-              }
-              className="shrink-0"
-            />
-          </div>
-        </div>
+        <VoiceTextInput
+          id="address"
+          label={copy.address}
+          placeholder={copy.addressPlaceholder}
+          value={address}
+          onChange={onAddress}
+          voice={voiceLabels}
+        />
       </FormCard>
 
       <FormCard title={`2. ${copy.sectionSpecsPricing}`}>
@@ -404,6 +419,7 @@ export function ListingForm(props: ListingFormProps) {
             value={size}
             onChange={onSize}
             placeholder="85"
+            voice={voiceLabels}
           />
           <NumericField
             id="rooms"
@@ -411,20 +427,16 @@ export function ListingForm(props: ListingFormProps) {
             value={rooms}
             onChange={onRooms}
             placeholder="3"
+            voice={voiceLabels}
           />
-          <div>
-            <label htmlFor="floorLevel" className={labelClassName()}>
-              {copy.floorLevel}
-            </label>
-            <input
-              id="floorLevel"
-              type="text"
-              placeholder={copy.floorLevelPlaceholder}
-              value={property.floorLevel}
-              onChange={(e) => onProperty({ floorLevel: e.target.value })}
-              className={inputClassName()}
-            />
-          </div>
+          <VoiceTextInput
+            id="floorLevel"
+            label={copy.floorLevel}
+            placeholder={copy.floorLevelPlaceholder}
+            value={property.floorLevel}
+            onChange={(value) => onProperty({ floorLevel: value })}
+            voice={voiceLabels}
+          />
 
           {transactionType === "rent" ? (
             <>
@@ -433,6 +445,7 @@ export function ListingForm(props: ListingFormProps) {
                 label={`${copy.netColdRent} (${currency})`}
                 value={rent.netColdRent}
                 onChange={(v) => onRent({ netColdRent: v })}
+                voice={voiceLabels}
                 hint={
                   <PriceHint
                     amount={rent.netColdRent}
@@ -447,6 +460,7 @@ export function ListingForm(props: ListingFormProps) {
                 label={`${copy.utilityCharges} (${currency})`}
                 value={rent.utilityCharges}
                 onChange={(v) => onRent({ utilityCharges: v })}
+                voice={voiceLabels}
                 hint={
                   <PriceHint
                     amount={rent.utilityCharges}
@@ -461,6 +475,7 @@ export function ListingForm(props: ListingFormProps) {
                 label={`${copy.totalRent} (${currency})`}
                 value={rent.totalRent}
                 onChange={(v) => onRent({ totalRent: v })}
+                voice={voiceLabels}
                 hint={
                   <PriceHint
                     amount={rent.totalRent}
@@ -475,6 +490,7 @@ export function ListingForm(props: ListingFormProps) {
                 label={`${copy.securityDeposit} (${currency})`}
                 value={rent.securityDeposit}
                 onChange={(v) => onRent({ securityDeposit: v })}
+                voice={voiceLabels}
                 hint={
                   <PriceHint
                     amount={rent.securityDeposit}
@@ -492,6 +508,7 @@ export function ListingForm(props: ListingFormProps) {
                 label={`${copy.purchasePrice} (${currency})`}
                 value={sale.purchasePrice}
                 onChange={(v) => onSale({ purchasePrice: v })}
+                voice={voiceLabels}
                 hint={
                   <PriceHint
                     amount={sale.purchasePrice}
@@ -506,6 +523,7 @@ export function ListingForm(props: ListingFormProps) {
                 label={`${copy.hoaFee} (${currency})`}
                 value={sale.hoaFee}
                 onChange={(v) => onSale({ hoaFee: v })}
+                voice={voiceLabels}
                 hint={
                   <PriceHint
                     amount={sale.hoaFee}
@@ -516,15 +534,12 @@ export function ListingForm(props: ListingFormProps) {
                 }
               />
               <div className="sm:col-span-2 lg:col-span-1">
-                <label htmlFor="rentalYield" className={labelClassName()}>
-                  {copy.rentalYield}
-                </label>
-                <input
+                <VoiceTextInput
                   id="rentalYield"
-                  type="text"
+                  label={copy.rentalYield}
                   value={sale.rentalYield}
-                  onChange={(e) => onSale({ rentalYield: e.target.value })}
-                  className={inputClassName()}
+                  onChange={(value) => onSale({ rentalYield: value })}
+                  voice={voiceLabels}
                 />
               </div>
             </>
@@ -579,6 +594,7 @@ export function ListingForm(props: ListingFormProps) {
             label={`${copy.parkingFee} (${currency})`}
             value={property.parkingFee}
             onChange={(v) => onProperty({ parkingFee: v })}
+            voice={voiceLabels}
             hint={
               <PriceHint
                 amount={property.parkingFee}
@@ -615,6 +631,7 @@ export function ListingForm(props: ListingFormProps) {
             onChange={(v) => onEnergy({ constructionYear: v })}
             allowDecimal={false}
             placeholder="1998"
+            voice={voiceLabels}
           />
           <NumericField
             id="heatingInstallYear"
@@ -623,6 +640,7 @@ export function ListingForm(props: ListingFormProps) {
             onChange={(v) => onEnergy({ heatingInstallYear: v })}
             allowDecimal={false}
             placeholder="2015"
+            voice={voiceLabels}
           />
         </FormGrid>
 
@@ -663,6 +681,7 @@ export function ListingForm(props: ListingFormProps) {
                     onChange={(v) => onEnergy({ energyValue: v })}
                     allowDecimal
                     placeholder="120"
+                    voice={voiceLabels}
                   />
                 </div>
                 <div className="animate-fade-in-up animate-fade-in-up-delay-1">
@@ -855,54 +874,36 @@ export function ListingForm(props: ListingFormProps) {
 
       <FormCard title={`6. ${copy.sectionAgentOutput}`}>
         <FormGrid>
-          <div>
-            <label htmlFor="agentName" className={labelClassName()}>
-              {copy.agentName}
-            </label>
-            <input
-              id="agentName"
-              type="text"
-              value={agent.name}
-              onChange={(e) => onAgent({ name: e.target.value })}
-              className={inputClassName()}
-            />
-          </div>
-          <div>
-            <label htmlFor="agency" className={labelClassName()}>
-              {copy.agency}
-            </label>
-            <input
-              id="agency"
-              type="text"
-              value={agent.agency}
-              onChange={(e) => onAgent({ agency: e.target.value })}
-              className={inputClassName()}
-            />
-          </div>
-          <div>
-            <label htmlFor="phone" className={labelClassName()}>
-              {copy.phone}
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              value={agent.phone}
-              onChange={(e) => onAgent({ phone: e.target.value })}
-              className={inputClassName()}
-            />
-          </div>
-          <div>
-            <label htmlFor="email" className={labelClassName()}>
-              {copy.email}
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={agent.email}
-              onChange={(e) => onAgent({ email: e.target.value })}
-              className={inputClassName()}
-            />
-          </div>
+          <VoiceTextInput
+            id="agentName"
+            label={copy.agentName}
+            value={agent.name}
+            onChange={(value) => onAgent({ name: value })}
+            voice={voiceLabels}
+          />
+          <VoiceTextInput
+            id="agency"
+            label={copy.agency}
+            value={agent.agency}
+            onChange={(value) => onAgent({ agency: value })}
+            voice={voiceLabels}
+          />
+          <VoiceTextInput
+            id="phone"
+            label={copy.phone}
+            type="tel"
+            value={agent.phone}
+            onChange={(value) => onAgent({ phone: value })}
+            voice={voiceLabels}
+          />
+          <VoiceTextInput
+            id="email"
+            label={copy.email}
+            type="email"
+            value={agent.email}
+            onChange={(value) => onAgent({ email: value })}
+            voice={voiceLabels}
+          />
         </FormGrid>
 
         <div>
@@ -947,18 +948,14 @@ export function ListingForm(props: ListingFormProps) {
           </select>
         </div>
 
-        <div>
-          <label htmlFor="legalDisclaimer" className={labelClassName()}>
-            {copy.legalDisclaimer}
-          </label>
-          <textarea
-            id="legalDisclaimer"
-            rows={2}
-            value={agent.legalDisclaimer}
-            onChange={(e) => onAgent({ legalDisclaimer: e.target.value })}
-            className={cn(inputClassName(), "resize-y")}
-          />
-        </div>
+        <VoiceTextarea
+          id="legalDisclaimer"
+          label={copy.legalDisclaimer}
+          rows={2}
+          value={agent.legalDisclaimer}
+          onChange={(value) => onAgent({ legalDisclaimer: value })}
+          voice={voiceLabels}
+        />
       </FormCard>
 
       <div className="sticky bottom-0 z-10 -mx-1 space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/95">
