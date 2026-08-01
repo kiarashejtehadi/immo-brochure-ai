@@ -35,6 +35,7 @@ import {
   type CurrencyCode,
 } from "@/lib/currency";
 import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl } from "@/lib/branding/pdf-branding";
+import { reelBrandingFromProfile } from "@/lib/property-reel";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
 import type { UserBrandingProfile } from "@/types/branding";
@@ -285,6 +286,12 @@ export default function ListingStudio() {
     [copy],
   );
 
+  const reelBranding = useMemo(() => {
+    const isPro = billingStatus?.isPro === true;
+    const agentMerged = mergeAgentWithBranding(agentForLocale, brandingProfile);
+    return reelBrandingFromProfile(brandingProfile, isPro, agentMerged);
+  }, [agentForLocale, brandingProfile, billingStatus?.isPro]);
+
   const reelPreviewInput = useMemo(
     () => ({
       photoFiles: photos.map((p) => p.file),
@@ -301,6 +308,7 @@ export default function ListingStudio() {
       priceOnRequestLabel: copy.priceOnRequest,
       perMonthSuffix: copy.reelPerMonth,
       headline: result?.title,
+      ...reelBranding,
     }),
     [
       photos,
@@ -316,6 +324,7 @@ export default function ListingStudio() {
       copy.priceOnRequest,
       copy.reelPerMonth,
       result?.title,
+      reelBranding,
     ],
   );
 

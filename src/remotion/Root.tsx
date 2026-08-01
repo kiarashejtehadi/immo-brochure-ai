@@ -8,6 +8,7 @@ import {
   PROPERTY_REEL_WIDTH,
 } from "./constants";
 import type { PropertyReelProps } from "@/types/property-reel";
+import { DEFAULT_BRAND_COLOR } from "@/types/branding";
 
 const defaultProps: PropertyReelProps = {
   photos: [
@@ -21,6 +22,12 @@ const defaultProps: PropertyReelProps = {
   rooms: "3",
   propertyType: "Apartment",
   headline: "Bright city apartment with balcony",
+  brandColor: DEFAULT_BRAND_COLOR,
+  brokerContact: {
+    name: "Jane Broker",
+    phone: "+49 30 12345678",
+    email: "jane@agency.example",
+  },
 };
 
 export const RemotionRoot: React.FC = () => {

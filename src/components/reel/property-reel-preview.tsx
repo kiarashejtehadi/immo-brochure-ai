@@ -12,13 +12,14 @@ import {
   PROPERTY_REEL_HEIGHT,
   PROPERTY_REEL_WIDTH,
 } from "@/remotion/constants";
-import type { PropertyReelProps } from "@/types/property-reel";
+import type { PropertyReelProps, ReelBrokerContact } from "@/types/property-reel";
 import {
   buildPropertyReelProps,
   downloadBlob,
   photosToDataUrls,
 } from "@/lib/property-reel";
 import { hasProReelAccess } from "@/lib/billing/client-access";
+import { logoUrlToDataUrl } from "@/lib/branding/pdf-branding";
 import { ProBadge, UpgradeProModal } from "@/components/billing/upgrade-pro-modal";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { readJsonResponse } from "@/lib/http/read-json-response";
@@ -60,6 +61,9 @@ export type PropertyReelPreviewInput = {
   priceOnRequestLabel: string;
   perMonthSuffix: string;
   headline?: string;
+  agencyLogoUrl?: string;
+  brandColor?: string;
+  brokerContact?: ReelBrokerContact;
 };
 
 export function PropertyReelPreview({
@@ -100,6 +104,9 @@ export function PropertyReelPreview({
         priceOnRequestLabel: input.priceOnRequestLabel,
         perMonthSuffix: input.perMonthSuffix,
         headline: input.headline,
+        agencyLogoUrl: input.agencyLogoUrl,
+        brandColor: input.brandColor,
+        brokerContact: input.brokerContact,
       }),
     [input],
   );
@@ -137,6 +144,12 @@ export function PropertyReelPreview({
           ? await photosToDataUrls(input.photoFiles.slice(0, 5))
           : [];
 
+      let agencyLogoUrl = input.agencyLogoUrl;
+      if (agencyLogoUrl) {
+        agencyLogoUrl =
+          (await logoUrlToDataUrl(agencyLogoUrl)) ?? agencyLogoUrl;
+      }
+
       const exportProps = buildPropertyReelProps({
         photoUrls: dataUrlPhotos,
         transactionType: input.transactionType,
@@ -151,6 +164,9 @@ export function PropertyReelPreview({
         priceOnRequestLabel: input.priceOnRequestLabel,
         perMonthSuffix: input.perMonthSuffix,
         headline: input.headline,
+        agencyLogoUrl,
+        brandColor: input.brandColor,
+        brokerContact: input.brokerContact,
       });
 
       const { getBlob } = await renderMediaOnWeb({
