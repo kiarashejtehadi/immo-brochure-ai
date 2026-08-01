@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { assertProReelAccess } from "@/lib/billing/access";
+import { assertReelExportAccess } from "@/lib/billing/access";
 
 export const runtime = "nodejs";
 
 /**
- * Authorizes property reel export/render for Monthly & Yearly Pro subscribers.
- * Client-side Remotion rendering must call this before starting export.
+ * Authorizes property reel export/render for signed-in users with billing access.
+ * Pro (Monthly/Yearly) subscribers export without the demo watermark.
  */
 export async function POST() {
-  const access = await assertProReelAccess();
+  const access = await assertReelExportAccess();
 
   if (!access.ok) {
     return NextResponse.json(
@@ -17,5 +17,5 @@ export async function POST() {
     );
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, isProReel: access.isProReel });
 }

@@ -23,30 +23,24 @@ export function formatReelSize(size: string): string {
 
 export function reelBrandingFromProfile(
   branding: UserBrandingProfile | null,
-  isPro: boolean,
+  isProReel: boolean,
   agent: { name: string; phone: string; email: string },
 ): Pick<PropertyReelProps, "agencyLogoUrl" | "brandColor" | "brokerContact"> {
-  const brandColor =
-    isPro && branding?.brandColor?.trim()
-      ? branding.brandColor.trim()
-      : DEFAULT_BRAND_COLOR;
+  if (!isProReel) {
+    return {
+      brandColor: DEFAULT_BRAND_COLOR,
+      agencyLogoUrl: undefined,
+      brokerContact: undefined,
+    };
+  }
 
-  const agencyLogoUrl =
-    isPro && branding?.logoUrl ? branding.logoUrl : undefined;
+  const brandColor = branding?.brandColor?.trim() || DEFAULT_BRAND_COLOR;
+  const agencyLogoUrl = branding?.logoUrl ?? undefined;
 
   const brokerContact: ReelBrokerContact = {
-    name:
-      (isPro ? branding?.brokerName?.trim() : undefined) ||
-      agent.name.trim() ||
-      undefined,
-    phone:
-      (isPro ? branding?.contactPhone?.trim() : undefined) ||
-      agent.phone.trim() ||
-      undefined,
-    email:
-      (isPro ? branding?.contactEmail?.trim() : undefined) ||
-      agent.email.trim() ||
-      undefined,
+    name: branding?.brokerName?.trim() || agent.name.trim() || undefined,
+    phone: branding?.contactPhone?.trim() || agent.phone.trim() || undefined,
+    email: branding?.contactEmail?.trim() || agent.email.trim() || undefined,
   };
 
   const hasBrokerContact = Boolean(
@@ -77,6 +71,7 @@ export function buildPropertyReelProps(input: {
   agencyLogoUrl?: string;
   brandColor?: string;
   brokerContact?: ReelBrokerContact;
+  showDemoWatermark?: boolean;
 }): PropertyReelProps {
   const priceRaw =
     input.transactionType === "rent"
@@ -109,9 +104,10 @@ export function buildPropertyReelProps(input: {
     rooms: input.rooms.trim() || undefined,
     propertyType,
     headline: input.headline?.trim() || undefined,
-    agencyLogoUrl: input.agencyLogoUrl,
+    agencyLogoUrl: input.showDemoWatermark ? undefined : input.agencyLogoUrl,
     brandColor: input.brandColor ?? DEFAULT_BRAND_COLOR,
-    brokerContact: input.brokerContact,
+    brokerContact: input.showDemoWatermark ? undefined : input.brokerContact,
+    showDemoWatermark: input.showDemoWatermark ?? false,
   };
 }
 

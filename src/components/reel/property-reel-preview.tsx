@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState, type ComponentType } from "react";
 import dynamic from "next/dynamic";
-import { Lock } from "lucide-react";
 import { canRenderMediaOnWeb, renderMediaOnWeb } from "@remotion/web-renderer";
 import { PropertyReel } from "@/remotion/PropertyReel";
 import {
@@ -20,7 +19,7 @@ import {
 } from "@/lib/property-reel";
 import { hasProReelAccess } from "@/lib/billing/client-access";
 import { logoUrlToDataUrl } from "@/lib/branding/pdf-branding";
-import { ProBadge, UpgradeProModal } from "@/components/billing/upgrade-pro-modal";
+import { UpgradeProModal } from "@/components/billing/upgrade-pro-modal";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { readJsonResponse } from "@/lib/http/read-json-response";
 import { cn } from "@/lib/utils";
@@ -41,9 +40,12 @@ type ReelPreviewCopy = {
   exportReel: string;
   exportingReel: string;
   reelHint: string;
+  reelDemoHint: string;
+  reelUpgradeBanner: string;
   reelExportUnsupported: string;
   reelExportFailed: string;
-  reelProOnly: string;
+  reelSignInRequired: string;
+  reelPaymentRequired: string;
 };
 
 export type PropertyReelPreviewInput = {
@@ -66,6 +68,32 @@ export type PropertyReelPreviewInput = {
   brokerContact?: ReelBrokerContact;
 };
 
+function buildReelProps(
+  input: PropertyReelPreviewInput,
+  photoUrls: string[],
+  showDemoWatermark: boolean,
+): PropertyReelProps {
+  return buildPropertyReelProps({
+    photoUrls,
+    transactionType: input.transactionType,
+    currency: input.currency,
+    address: input.address,
+    size: input.size,
+    rooms: input.rooms,
+    property: input.property,
+    rent: input.rent,
+    sale: input.sale,
+    formCopy: input.formCopy,
+    priceOnRequestLabel: input.priceOnRequestLabel,
+    perMonthSuffix: input.perMonthSuffix,
+    headline: input.headline,
+    agencyLogoUrl: input.agencyLogoUrl,
+    brandColor: input.brandColor,
+    brokerContact: input.brokerContact,
+    showDemoWatermark,
+  });
+}
+
 export function PropertyReelPreview({
   input,
   copy,
@@ -81,6 +109,7 @@ export function PropertyReelPreview({
 }) {
   const { status } = useBillingStatus();
   const proReelAccess = hasProReelAccess(status);
+  const showDemoWatermark = !proReelAccess;
   const signedIn = Boolean(status?.email);
 
   const [exporting, setExporting] = useState(false);
@@ -90,25 +119,8 @@ export function PropertyReelPreview({
 
   const previewProps = useMemo(
     (): PropertyReelProps =>
-      buildPropertyReelProps({
-        photoUrls: input.photoPreviewUrls,
-        transactionType: input.transactionType,
-        currency: input.currency,
-        address: input.address,
-        size: input.size,
-        rooms: input.rooms,
-        property: input.property,
-        rent: input.rent,
-        sale: input.sale,
-        formCopy: input.formCopy,
-        priceOnRequestLabel: input.priceOnRequestLabel,
-        perMonthSuffix: input.perMonthSuffix,
-        headline: input.headline,
-        agencyLogoUrl: input.agencyLogoUrl,
-        brandColor: input.brandColor,
-        brokerContact: input.brokerContact,
-      }),
-    [input],
+      buildReelProps(input, input.photoPreviewUrls, showDemoWatermark),
+    [input, showDemoWatermark],
   );
 
   const handleExport = useCallback(async () => {
@@ -121,13 +133,24 @@ export function PropertyReelPreview({
         method: "POST",
         credentials: "same-origin",
       });
-      const authData = await readJsonResponse<{ ok?: boolean; error?: string; code?: string }>(
-        authRes,
-      );
+      const authData = await readJsonResponse<{
+        ok?: boolean;
+        isProReel?: boolean;
+        error?: string;
+        code?: string;
+      }>(authRes);
 
       if (!authRes.ok) {
-        throw new Error(authData.error ?? copy.reelProOnly);
+        if (authData.code === "unauthenticated") {
+          throw new Error(copy.reelSignInRequired);
+        }
+        if (authData.code === "payment_required") {
+          throw new Error(copy.reelPaymentRequired);
+        }
+        throw new Error(authData.error ?? copy.reelExportFailed);
       }
+
+      const exportDemoWatermark = authData.isProReel !== true;
 
       const readiness = await canRenderMediaOnWeb({
         container: "mp4",
@@ -145,7 +168,7 @@ export function PropertyReelPreview({
           : [];
 
       let agencyLogoUrl = input.agencyLogoUrl;
-      if (agencyLogoUrl) {
+      if (agencyLogoUrl && !exportDemoWatermark) {
         agencyLogoUrl =
           (await logoUrlToDataUrl(agencyLogoUrl)) ?? agencyLogoUrl;
       }
@@ -167,6 +190,7 @@ export function PropertyReelPreview({
         agencyLogoUrl,
         brandColor: input.brandColor,
         brokerContact: input.brokerContact,
+        showDemoWatermark: exportDemoWatermark,
       });
 
       const { getBlob } = await renderMediaOnWeb({
@@ -196,16 +220,18 @@ export function PropertyReelPreview({
       setExporting(false);
       setExportProgress(null);
     }
-  }, [copy.reelExportFailed, copy.reelExportUnsupported, copy.reelProOnly, input]);
+  }, [
+    copy.reelExportFailed,
+    copy.reelExportUnsupported,
+    copy.reelPaymentRequired,
+    copy.reelSignInRequired,
+    input,
+  ]);
 
   function handleExportClick() {
-    if (!proReelAccess) {
-      setExportError(null);
-      if (!signedIn) {
-        onSignIn?.();
-        return;
-      }
-      setUpgradeOpen(true);
+    setExportError(null);
+    if (!signedIn) {
+      onSignIn?.();
       return;
     }
     void handleExport();
@@ -214,7 +240,7 @@ export function PropertyReelPreview({
   return (
     <>
       <div className={cn("flex flex-col items-center gap-4", className)}>
-        <div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-700">
+        <div className="relative w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-700">
           <RemotionPlayer
             component={PropertyReel as ComponentType<Record<string, unknown>>}
             inputProps={previewProps as Record<string, unknown>}
@@ -230,40 +256,39 @@ export function PropertyReelPreview({
             loop
             acknowledgeRemotionLicense
           />
+
+          {showDemoWatermark ? (
+            <button
+              type="button"
+              onClick={() => setUpgradeOpen(true)}
+              className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-black/80 px-3 py-2.5 text-left transition hover:bg-black/90"
+            >
+              <p className="text-[10px] font-semibold leading-snug text-white sm:text-xs">
+                {copy.reelUpgradeBanner}
+              </p>
+            </button>
+          ) : null}
         </div>
 
         <div className="w-full max-w-sm space-y-2">
           <button
             type="button"
             onClick={handleExportClick}
-            disabled={exporting && proReelAccess}
-            className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
-              proReelAccess
-                ? "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-500"
-                : "border-zinc-300 bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700",
-            )}
+            disabled={exporting}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-600 bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {!proReelAccess ? <Lock className="h-4 w-4 shrink-0" aria-hidden /> : null}
             <span>
-              {exporting && proReelAccess
+              {exporting
                 ? exportProgress !== null
                   ? `${copy.exportingReel} (${exportProgress}%)`
                   : copy.exportingReel
                 : copy.exportReel}
             </span>
-            {!proReelAccess ? <ProBadge /> : null}
           </button>
 
-          {!proReelAccess ? (
-            <p className="text-center text-xs leading-relaxed text-amber-800 dark:text-amber-200">
-              {copy.reelProOnly}
-            </p>
-          ) : (
-            <p className="text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-              {copy.reelHint}
-            </p>
-          )}
+          <p className="text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+            {showDemoWatermark ? copy.reelDemoHint : copy.reelHint}
+          </p>
 
           {exportError ? (
             <p className="text-center text-xs text-red-600 dark:text-red-400" role="alert">

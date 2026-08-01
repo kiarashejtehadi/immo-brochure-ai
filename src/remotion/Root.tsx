@@ -23,6 +23,7 @@ const defaultProps: PropertyReelProps = {
   propertyType: "Apartment",
   headline: "Bright city apartment with balcony",
   brandColor: DEFAULT_BRAND_COLOR,
+  showDemoWatermark: true,
   brokerContact: {
     name: "Jane Broker",
     phone: "+49 30 12345678",

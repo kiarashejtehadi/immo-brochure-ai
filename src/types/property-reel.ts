@@ -26,4 +26,6 @@ export type PropertyReelProps = {
   brandColor?: string;
   /** Broker contact details for the end-screen frame. */
   brokerContact?: ReelBrokerContact;
+  /** When true, show diagonal demo watermark and hide Pro branding/end card. */
+  showDemoWatermark?: boolean;
 };

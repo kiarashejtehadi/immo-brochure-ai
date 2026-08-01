@@ -135,7 +135,7 @@ export type ProReelAccessResult =
   | { ok: true; userId: string }
   | { ok: false; status: 401 | 403; error: string; code: "unauthenticated" | "pro_required" | "billing_disabled" };
 
-/** Server-side gate for property video reel export. */
+/** Server-side gate for property video reel export (Monthly & Yearly Pro only). */
 export async function assertProReelAccess(): Promise<ProReelAccessResult> {
   if (!isBillingEnabled()) {
     return {
@@ -169,4 +169,55 @@ export async function assertProReelAccess(): Promise<ProReelAccessResult> {
   }
 
   return { ok: true, userId: authUser.id };
+}
+
+export type ReelExportAccessResult =
+  | { ok: true; userId: string; isProReel: boolean }
+  | {
+      ok: false;
+      status: 401 | 402 | 403;
+      error: string;
+      code: "unauthenticated" | "payment_required" | "billing_disabled";
+    };
+
+/** Server-side gate for property video reel export (all billing tiers; Pro = no demo watermark). */
+export async function assertReelExportAccess(): Promise<ReelExportAccessResult> {
+  if (!isBillingEnabled()) {
+    return { ok: true, userId: "billing-disabled", isProReel: true };
+  }
+
+  const access = await resolveBillingAccess();
+  if (!access.allowed) {
+    if (access.reason === "unauthenticated") {
+      return {
+        ok: false,
+        status: 401,
+        error: "Sign in to export video reels.",
+        code: "unauthenticated",
+      };
+    }
+    return {
+      ok: false,
+      status: 402,
+      error: "Active subscription or credits required.",
+      code: "payment_required",
+    };
+  }
+
+  const authUser = await getSessionUser();
+  if (!authUser?.email) {
+    return {
+      ok: false,
+      status: 401,
+      error: "Sign in to export video reels.",
+      code: "unauthenticated",
+    };
+  }
+
+  const subscription = await getActiveSubscription(authUser.id);
+  const isProReel = Boolean(
+    subscription && PRO_REEL_PLANS.has(subscription.plan_id),
+  );
+
+  return { ok: true, userId: authUser.id, isProReel };
 }

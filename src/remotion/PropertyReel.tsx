@@ -22,6 +22,61 @@ const SPRING_TEXT = { damping: 200, stiffness: 100, mass: 0.9 };
 const PLACEHOLDER_GRADIENT =
   "linear-gradient(160deg, #1e293b 0%, #0f172a 45%, #312e81 100%)";
 
+const DEMO_WATERMARK_TEXT = "DEMO PREVIEW • SUBSCRIBE TO REMOVE WATERMARK";
+
+function DemoWatermarkOverlay() {
+  return (
+    <AbsoluteFill
+      style={{
+        pointerEvents: "none",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          transform: "rotate(-32deg)",
+          width: "140%",
+          textAlign: "center",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            color: "rgba(255, 255, 255, 0.38)",
+            fontFamily:
+              'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+            fontSize: 40,
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            lineHeight: 1.35,
+            textTransform: "uppercase",
+            textShadow: "0 4px 24px rgba(0,0,0,0.45)",
+          }}
+        >
+          {DEMO_WATERMARK_TEXT}
+        </p>
+        <p
+          style={{
+            margin: "48px 0 0",
+            color: "rgba(255, 255, 255, 0.28)",
+            fontFamily:
+              'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+            fontSize: 40,
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            lineHeight: 1.35,
+            textTransform: "uppercase",
+            textShadow: "0 4px 24px rgba(0,0,0,0.45)",
+          }}
+        >
+          {DEMO_WATERMARK_TEXT}
+        </p>
+      </div>
+    </AbsoluteFill>
+  );
+}
+
 function PhotoSlide({
   src,
   durationInFrames,
@@ -464,8 +519,10 @@ export const PropertyReel: React.FC<PropertyReelProps> = ({
   agencyLogoUrl,
   brandColor,
   brokerContact,
+  showDemoWatermark = false,
 }) => {
   const accent = brandColor?.trim() || DEFAULT_BRAND_COLOR;
+  const proBranding = !showDemoWatermark;
 
   const slides =
     photos.length > 0
@@ -477,7 +534,9 @@ export const PropertyReel: React.FC<PropertyReelProps> = ({
     Math.floor(PROPERTY_REEL_DURATION_FRAMES / slides.length),
   );
 
-  const mainContentEnd = PROPERTY_REEL_DURATION_FRAMES - PROPERTY_REEL_END_SCREEN_FRAMES;
+  const mainContentEnd = showDemoWatermark
+    ? PROPERTY_REEL_DURATION_FRAMES
+    : PROPERTY_REEL_DURATION_FRAMES - PROPERTY_REEL_END_SCREEN_FRAMES;
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000000" }}>
@@ -516,21 +575,27 @@ export const PropertyReel: React.FC<PropertyReelProps> = ({
           headline={headline}
           brandColor={accent}
         />
-        {agencyLogoUrl ? <AgencyLogoWatermark src={agencyLogoUrl} /> : null}
+        {proBranding && agencyLogoUrl ? (
+          <AgencyLogoWatermark src={agencyLogoUrl} />
+        ) : null}
       </Sequence>
 
       <ReelProgressBar brandColor={accent} />
 
-      <Sequence
-        from={mainContentEnd}
-        durationInFrames={PROPERTY_REEL_END_SCREEN_FRAMES}
-      >
-        <EndScreen
-          agencyLogoUrl={agencyLogoUrl}
-          brandColor={accent}
-          brokerContact={brokerContact}
-        />
-      </Sequence>
+      {showDemoWatermark ? <DemoWatermarkOverlay /> : null}
+
+      {proBranding ? (
+        <Sequence
+          from={mainContentEnd}
+          durationInFrames={PROPERTY_REEL_END_SCREEN_FRAMES}
+        >
+          <EndScreen
+            agencyLogoUrl={agencyLogoUrl}
+            brandColor={accent}
+            brokerContact={brokerContact}
+          />
+        </Sequence>
+      ) : null}
     </AbsoluteFill>
   );
 };

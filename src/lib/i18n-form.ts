@@ -83,6 +83,10 @@ export type FormCopy = {
   reelExportFailed: string;
   reelPerMonth: string;
   reelProOnly: string;
+  reelUpgradeBanner: string;
+  reelDemoHint: string;
+  reelSignInRequired: string;
+  reelPaymentRequired: string;
   headline: string;
   summaryLabel: string;
   locationLabel: string;
@@ -178,6 +182,12 @@ const en: FormCopy = {
   reelExportFailed: "Reel export failed. Please try again.",
   reelPerMonth: " / month",
   reelProOnly: "Video Reels are exclusive to Monthly and Yearly Pro plans.",
+  reelUpgradeBanner:
+    "Upgrade to Monthly or Yearly Pro to export watermark-free video reels with your custom logo.",
+  reelDemoHint:
+    "Demo preview includes a watermark. Export is available on all plans; upgrade to Pro for watermark-free reels with your agency branding.",
+  reelSignInRequired: "Sign in to export video reels.",
+  reelPaymentRequired: "Active subscription or credits required to export video reels.",
   headline: "Headline",
   summaryLabel: "Key highlights",
   locationLabel: "Neighborhood & location",
@@ -276,6 +286,12 @@ const de: Partial<FormCopy> = {
   reelExportFailed: "Reel-Export fehlgeschlagen. Bitte erneut versuchen.",
   reelPerMonth: " / Monat",
   reelProOnly: "Video-Reels sind exklusiv für Monats- und Jahres-Pro-Tarife.",
+  reelUpgradeBanner:
+    "Upgrade auf Monats- oder Jahres-Pro für wasserzeichenfreie Video-Reels mit Ihrem Logo.",
+  reelDemoHint:
+    "Demo-Vorschau mit Wasserzeichen. Export auf allen Tarifen; Pro entfernt Wasserzeichen und fügt Agentur-Branding hinzu.",
+  reelSignInRequired: "Melden Sie sich an, um Video-Reels zu exportieren.",
+  reelPaymentRequired: "Aktives Abo oder Credits erforderlich für den Reel-Export.",
   headline: "Überschrift",
   summaryLabel: "Highlights",
   locationLabel: "Lage & Umgebung",
@@ -344,6 +360,12 @@ const fr: Partial<FormCopy> = {
   reelExportFailed: "Échec de l'export du reel. Réessayez.",
   reelPerMonth: " / mois",
   reelProOnly: "Les reels vidéo sont réservés aux offres Pro mensuelles et annuelles.",
+  reelUpgradeBanner:
+    "Passez au Pro mensuel ou annuel pour exporter des reels sans filigrane avec votre logo.",
+  reelDemoHint:
+    "Aperçu démo avec filigrane. Export sur tous les forfaits ; le Pro supprime le filigrane et ajoute votre branding.",
+  reelSignInRequired: "Connectez-vous pour exporter des reels vidéo.",
+  reelPaymentRequired: "Abonnement actif ou crédits requis pour exporter des reels.",
   headline: "Titre",
   summaryLabel: "Points clés",
   locationLabel: "Quartier & localisation",

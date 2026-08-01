@@ -26,10 +26,11 @@ export function isCreditPackPlan(
   return hasPurchasedBillingAccess(status);
 }
 
-/** Active Monthly or Yearly Pro subscription — required for property video reels. */
+/** Active Monthly or Yearly Pro subscription — watermark-free branded video reels. */
 export function hasProReelAccess(
   status: BillingStatusResponse | null | undefined,
 ): boolean {
+  if (status && status.billingEnabled === false) return true;
   if (!status?.billingEnabled || !status.email) return false;
   if (!status.hasActiveSubscription || !status.isPro) return false;
   return status.planId === "monthly" || status.planId === "yearly";

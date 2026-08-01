@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Lock } from "lucide-react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { AccountBar } from "@/components/billing/account-bar";
@@ -287,10 +286,10 @@ export default function ListingStudio() {
   );
 
   const reelBranding = useMemo(() => {
-    const isPro = billingStatus?.isPro === true;
+    const proReel = hasProReelAccess(billingStatus);
     const agentMerged = mergeAgentWithBranding(agentForLocale, brandingProfile);
-    return reelBrandingFromProfile(brandingProfile, isPro, agentMerged);
-  }, [agentForLocale, brandingProfile, billingStatus?.isPro]);
+    return reelBrandingFromProfile(brandingProfile, proReel, agentMerged);
+  }, [agentForLocale, billingStatus, brandingProfile]);
 
   const reelPreviewInput = useMemo(
     () => ({
@@ -681,15 +680,7 @@ export default function ListingStudio() {
                       : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400",
                   )}
                 >
-                  <span className="inline-flex items-center justify-center gap-1">
-                    {label}
-                    {tab === "reel" && !hasProReelAccess(billingStatus) ? (
-                      <Lock
-                        className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400"
-                        aria-hidden
-                      />
-                    ) : null}
-                  </span>
+                  {label}
                 </button>
               ))}
             </div>
@@ -735,9 +726,12 @@ export default function ListingStudio() {
                   exportReel: copy.exportReel,
                   exportingReel: copy.exportingReel,
                   reelHint: copy.reelHint,
+                  reelDemoHint: copy.reelDemoHint,
+                  reelUpgradeBanner: copy.reelUpgradeBanner,
                   reelExportUnsupported: copy.reelExportUnsupported,
                   reelExportFailed: copy.reelExportFailed,
-                  reelProOnly: copy.reelProOnly,
+                  reelSignInRequired: copy.reelSignInRequired,
+                  reelPaymentRequired: copy.reelPaymentRequired,
                 }}
               />
             ) : !hasGenerated && !isGenerating && !generateError ? (
