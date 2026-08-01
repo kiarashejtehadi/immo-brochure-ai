@@ -49,7 +49,8 @@ function ComparisonList({
 export function ComparisonSection({ copy }: { copy: MarketingCopy }) {
   return (
     <section
-      className="animate-fade-in-up mt-10 sm:mt-12"
+      id="features"
+      className="animate-fade-in-up mt-10 scroll-mt-24 sm:mt-12"
       aria-labelledby="comparison-title"
     >
       <div className="mb-6 text-center sm:mb-8">

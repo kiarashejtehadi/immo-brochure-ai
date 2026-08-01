@@ -41,7 +41,11 @@ const STEPS: {
 
 export function HowItWorks({ copy }: { copy: MarketingCopy }) {
   return (
-    <section className="mt-8 sm:mt-10" aria-labelledby="how-it-works-title">
+    <section
+      id="how-it-works"
+      className="mt-8 scroll-mt-24 sm:mt-10"
+      aria-labelledby="how-it-works-title"
+    >
       <div className="animate-fade-in-up animate-fade-in-up-delay-1 mb-6 text-center sm:mb-8">
         <h2
           id="how-it-works-title"

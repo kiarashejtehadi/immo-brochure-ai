@@ -10,7 +10,11 @@ import { hasPurchasedBillingAccess, hasProReelAccess } from "@/lib/billing/clien
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
 import { WorkspaceMarketing } from "@/components/workspace-marketing";
+import { MarketingNavbar } from "@/components/marketing-navbar";
+import { FreeTrialFormBanner } from "@/components/free-trial-form-banner";
 import { getMarketingCopy } from "@/lib/i18n-marketing";
+import { fetchDemoPhotos, getDemoListingContent } from "@/lib/demo-listing";
+import { isBillingEnabled } from "@/lib/billing/config";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
 import {
   buildBrochurePdfProps,
@@ -341,6 +345,33 @@ export default function ListingStudio() {
     ],
   );
 
+  const loadDemoSample = useCallback(async () => {
+    const demo = getDemoListingContent(exposeLocale);
+    setTransactionType("rent");
+    setAddress(demo.address);
+    setSize(demo.size);
+    setRooms(demo.rooms);
+    setProperty({ ...demo.property });
+    setRent({ ...demo.rent });
+    setFeatures(["Balcony Terrace", "Fitted Kitchen", "Elevator"]);
+    setResult({ ...demo.result, watermarkPdf: true });
+    setHasGenerated(true);
+    setGenerateError(null);
+    setPreviewTab("reel");
+
+    try {
+      const demoPhotos = await fetchDemoPhotos();
+      setPhotos((prev) => {
+        for (const photo of prev) URL.revokeObjectURL(photo.url);
+        return demoPhotos;
+      });
+    } catch {
+      setPhotos([]);
+    }
+
+    previewRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [exposeLocale]);
+
   const addPhotos = useCallback((files: FileList | File[]) => {
     const incoming = Array.from(files).filter((f) =>
       f.type.startsWith("image/"),
@@ -548,8 +579,17 @@ export default function ListingStudio() {
     }
   }
 
+  const showLandingNav = showMarketing && !isSignedIn;
+
   return (
     <div className="min-h-screen overflow-visible bg-gradient-to-b from-blue-50/30 via-zinc-50 to-zinc-50 text-zinc-900 dark:from-indigo-950/20 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-50">
+      {showLandingNav ? (
+        <MarketingNavbar
+          copy={marketingCopy}
+          locale={routeLocale}
+          onSignIn={() => setAuthOpen(true)}
+        />
+      ) : (
       <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
           <div>
@@ -589,6 +629,7 @@ export default function ListingStudio() {
           </div>
         </div>
       </header>
+      )}
 
       <BillingNeedPlanBanner />
 
@@ -603,7 +644,14 @@ export default function ListingStudio() {
         </div>
       ) : null}
 
-      <WorkspaceMarketing copy={marketingCopy} isSignedIn={isSignedIn} visible={showMarketing} />
+      <WorkspaceMarketing
+        copy={marketingCopy}
+        isSignedIn={isSignedIn}
+        visible={showMarketing}
+        locale={routeLocale}
+        billingEnabled={isBillingEnabled()}
+        onSeeSample={() => void loadDemoSample()}
+      />
 
       <main
         className={cn(
@@ -613,6 +661,12 @@ export default function ListingStudio() {
       >
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           <section id="listing-form" className="order-1 min-w-0 flex-1 scroll-mt-28">
+          {!isSignedIn ? (
+            <FreeTrialFormBanner
+              copy={marketingCopy}
+              onSignUp={() => setAuthOpen(true)}
+            />
+          ) : null}
           <ListingForm
             copy={copy}
             transactionType={transactionType}

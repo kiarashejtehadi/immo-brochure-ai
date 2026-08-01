@@ -22,7 +22,13 @@ function TrustBadge({ label }: { label: string }) {
   );
 }
 
-export function HeroSection({ copy }: { copy: MarketingCopy }) {
+export function HeroSection({
+  copy,
+  onSeeSample,
+}: {
+  copy: MarketingCopy;
+  onSeeSample?: () => void;
+}) {
   return (
     <section
       className={cn(
@@ -70,13 +76,27 @@ export function HeroSection({ copy }: { copy: MarketingCopy }) {
         </p>
 
         <div className="animate-fade-in-up animate-fade-in-up-delay-3 mt-8 flex flex-col items-center gap-4">
-          <button
-            type="button"
-            onClick={scrollToListingForm}
-            className={cn(btnPrimary, "animate-pulse-glow px-8")}
-          >
-            {copy.heroCta}
-          </button>
+          <div className="flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              onClick={scrollToListingForm}
+              className={cn(btnPrimary, "animate-pulse-glow w-full px-8 sm:w-auto")}
+            >
+              {copy.heroCta}
+            </button>
+            {onSeeSample ? (
+              <button
+                type="button"
+                onClick={onSeeSample}
+                className={cn(
+                  "w-full rounded-xl border-2 border-indigo-600 bg-transparent px-8 py-3.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50",
+                  "dark:border-indigo-500 dark:text-indigo-300 dark:hover:bg-indigo-950/40 sm:w-auto",
+                )}
+              >
+                {copy.heroCtaSample}
+              </button>
+            ) : null}
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <TrustBadge label={copy.heroBadgePdf} />
