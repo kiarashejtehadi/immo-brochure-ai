@@ -6,13 +6,16 @@ import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
 import { FormCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
 import type { BillingStatusResponse } from "@/types/billing";
 import type { FormCopy } from "@/lib/i18n-form";
+import type { WorkflowUiCopy } from "@/lib/i18n-workflow";
 import type {
   FeatureKey,
   ToneKey,
-  UiCopy,
   OutputLanguage,
+  UiCopy,
+  UiLocale,
 } from "@/lib/i18n";
 import { LOCALE_LABELS } from "@/lib/i18n";
+import { VoiceInputButton } from "@/components/listing/voice-input-button";
 import { EXPOSE_LANGUAGE_OPTIONS } from "@/lib/target-languages";
 import {
   CURRENCY_LABELS,
@@ -156,7 +159,8 @@ function NumericField({
 }
 
 export type ListingFormProps = {
-  copy: UiCopy & FormCopy;
+  copy: UiCopy & FormCopy & WorkflowUiCopy;
+  uiLocale: UiLocale;
   transactionType: TransactionType;
   onTransactionType: (type: TransactionType) => void;
   property: PropertyDetails;
@@ -209,6 +213,7 @@ export type ListingFormProps = {
 export function ListingForm(props: ListingFormProps) {
   const {
     copy,
+    uiLocale,
     transactionType,
     onTransactionType,
     property,
@@ -368,14 +373,26 @@ export function ListingForm(props: ListingFormProps) {
           <label htmlFor="address" className={labelClassName()}>
             {copy.address}
           </label>
-          <input
-            id="address"
-            type="text"
-            placeholder={copy.addressPlaceholder}
-            value={address}
-            onChange={(e) => onAddress(e.target.value)}
-            className={inputClassName()}
-          />
+          <div className="flex items-start gap-2">
+            <input
+              id="address"
+              type="text"
+              placeholder={copy.addressPlaceholder}
+              value={address}
+              onChange={(e) => onAddress(e.target.value)}
+              className={cn(inputClassName(), "min-w-0 flex-1")}
+            />
+            <VoiceInputButton
+              uiLocale={uiLocale}
+              ariaLabel={copy.voiceDictation}
+              listeningLabel={copy.voiceListening}
+              unsupportedLabel={copy.voiceUnsupported}
+              onTranscript={(text) =>
+                onAddress(address.trim() ? `${address.trim()} ${text}` : text)
+              }
+              className="shrink-0"
+            />
+          </div>
         </div>
       </FormCard>
 

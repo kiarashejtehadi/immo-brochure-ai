@@ -1,3 +1,4 @@
+import { ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION } from "@/lib/compliance-guardrail";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { formatPriceAmount, normalizeCurrency } from "@/lib/currency";
@@ -227,6 +228,8 @@ Audience: ${propertyPayload.audience}. Emphasize: ${propertyPayload.copyFocus}.
 Use only provided facts and observed details from the attached photos; do not invent certificates or prices not in JSON.
 If energy certificate is "na", omit claiming specific energy class values.
 
+${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}
+
 Schema:
 {"title":"...","summary":["..."],"fullDescription":"...","locationDescription":"...","socialCaptions":{"instagram":"...","linkedin":"...","facebook":"..."}}`;
 
@@ -247,8 +250,8 @@ Schema:
 
   const systemContent =
     images.length > 0
-      ? `Expert multilingual real estate copywriter with vision analysis. Valid JSON only. Language: ${outputLanguage}. Examine the attached property photos. Identify standout visual characteristics (such as floor material, lighting, layout style, view, kitchen/bathroom finishes) and integrate these observed visual details naturally into both the Exposé Story and the 3 Social Media Captions.`
-      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}.`;
+      ? `Expert multilingual real estate copywriter with vision analysis. Valid JSON only. Language: ${outputLanguage}. Examine the attached property photos. Identify standout visual characteristics (such as floor material, lighting, layout style, view, kitchen/bathroom finishes) and integrate these observed visual details naturally into both the Exposé Story and the 3 Social Media Captions. ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
+      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
 
   try {
     const completion = await openai.chat.completions.create({

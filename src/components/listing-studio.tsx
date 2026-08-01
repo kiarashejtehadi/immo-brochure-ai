@@ -30,6 +30,14 @@ import {
   type UiLocale,
 } from "@/lib/i18n";
 import { getFormCopy, isKnownDefaultLegalDisclaimer, resolveLegalDisclaimer } from "@/lib/i18n-form";
+import { getWorkflowUiCopy } from "@/lib/i18n-workflow";
+import {
+  buildRealEstateHashtags,
+  formatInstagramWithHashtags,
+  stripPlainSocialText,
+  truncateMlsCaption,
+} from "@/lib/social-copy-presets";
+import { CopyToastProvider, useCopyToast } from "@/components/ui/copy-toast";
 import {
   outputLanguageFromLocale,
   localeFromTargetLanguage,
@@ -112,10 +120,12 @@ function CopyButton({
   text,
   copyLabel,
   copiedLabel,
+  onCopied,
 }: {
   text: string;
   copyLabel: string;
   copiedLabel: string;
+  onCopied?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -123,6 +133,7 @@ function CopyButton({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
+      onCopied?.();
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
@@ -143,7 +154,66 @@ function CopyButton({
   );
 }
 
-export default function ListingStudio() {
+function ComplianceBadge({ label }: { label: string }) {
+  return (
+    <p
+      className="mx-2 mt-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200"
+      role="status"
+    >
+      {label}
+    </p>
+  );
+}
+
+function SocialCopyPresetButtons({
+  caption,
+  platform,
+  labels,
+  hashtags,
+  onCopied,
+}: {
+  caption: string;
+  platform: "instagram" | "linkedin" | "facebook";
+  labels: {
+    mls: string;
+    instagramHashtags: string;
+    plain: string;
+    copied: string;
+  };
+  hashtags: string[];
+  onCopied: () => void;
+}) {
+  const presets =
+    platform === "instagram"
+      ? [
+          { label: labels.mls, text: truncateMlsCaption(caption) },
+          {
+            label: labels.instagramHashtags,
+            text: formatInstagramWithHashtags(caption, hashtags),
+          },
+          { label: labels.plain, text: stripPlainSocialText(caption) },
+        ]
+      : [
+          { label: labels.mls, text: truncateMlsCaption(caption) },
+          { label: labels.plain, text: stripPlainSocialText(caption) },
+        ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {presets.map(({ label, text }) => (
+        <CopyButton
+          key={label}
+          text={text}
+          copyLabel={label}
+          copiedLabel={labels.copied}
+          onCopied={onCopied}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ListingStudioContent() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLElement>(null);
@@ -154,9 +224,18 @@ export default function ListingStudio() {
   const router = useRouter();
   const uiCopy = getUiCopy(uiLocale);
   const formCopy = getFormCopy(uiLocale);
+  const workflowCopy = useMemo(
+    () => getWorkflowUiCopy(uiLocale),
+    [uiLocale],
+  );
   const copy = useMemo(
-    () => ({ ...uiCopy, ...formCopy }),
-    [uiCopy, formCopy],
+    () => ({ ...uiCopy, ...formCopy, ...workflowCopy }),
+    [uiCopy, formCopy, workflowCopy],
+  );
+  const { showToast } = useCopyToast();
+  const notifyCopied = useCallback(
+    () => showToast(copy.copiedToClipboard),
+    [showToast, copy.copiedToClipboard],
   );
   const marketingCopy = useMemo(
     () => getMarketingCopy(uiLocale),
@@ -318,6 +397,16 @@ export default function ListingStudio() {
     const agentMerged = mergeAgentWithBranding(agentForLocale, brandingProfile);
     return reelBrandingFromProfile(brandingProfile, proReel, agentMerged);
   }, [agentForLocale, billingStatus, brandingProfile]);
+
+  const socialHashtags = useMemo(
+    () =>
+      buildRealEstateHashtags({
+        address,
+        transactionType,
+        propertyType: property.propertyType,
+      }),
+    [address, transactionType, property.propertyType],
+  );
 
   const reelPreviewInput = useMemo(
     () => ({
@@ -681,6 +770,7 @@ export default function ListingStudio() {
           ) : null}
           <ListingForm
             copy={copy}
+            uiLocale={uiLocale}
             transactionType={transactionType}
             onTransactionType={setTransactionType}
             property={property}
@@ -772,6 +862,11 @@ export default function ListingStudio() {
                 </button>
               ))}
             </div>
+            {result && hasGenerated ? (
+              <div className="mt-3 px-2">
+                <ComplianceBadge label={copy.complianceBadge} />
+              </div>
+            ) : null}
             <div className="mt-3 px-2 pb-4">
               <button
                 type="button"
@@ -860,6 +955,7 @@ export default function ListingStudio() {
                       text={result.title}
                       copyLabel={copy.copy}
                       copiedLabel={copy.copied}
+                      onCopied={notifyCopied}
                     />
                   </div>
                   <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
@@ -888,6 +984,7 @@ export default function ListingStudio() {
                         text={result.fullDescription}
                         copyLabel={copy.copy}
                         copiedLabel={copy.copied}
+                        onCopied={notifyCopied}
                       />
                       <button
                         type="button"
@@ -914,6 +1011,7 @@ export default function ListingStudio() {
                     text={result.locationDescription}
                     copyLabel={copy.copy}
                     copiedLabel={copy.copied}
+                    onCopied={notifyCopied}
                   />
                 </div>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
@@ -933,7 +1031,7 @@ export default function ListingStudio() {
                     key={key}
                     className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50"
                   >
-                    <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-medium text-zinc-500">
                         {label}
                       </span>
@@ -941,6 +1039,21 @@ export default function ListingStudio() {
                         text={text}
                         copyLabel={copy.copy}
                         copiedLabel={copy.copied}
+                        onCopied={notifyCopied}
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <SocialCopyPresetButtons
+                        caption={text}
+                        platform={key}
+                        hashtags={socialHashtags}
+                        labels={{
+                          mls: copy.copyMlsShort,
+                          instagramHashtags: copy.copyInstagramHashtags,
+                          plain: copy.copyPlainText,
+                          copied: copy.copied,
+                        }}
+                        onCopied={notifyCopied}
                       />
                     </div>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
@@ -957,5 +1070,13 @@ export default function ListingStudio() {
       </main>
       <AuthEmailModal open={authOpen} onClose={() => setAuthOpen(false)} onSent={() => setAuthOpen(false)} />
     </div>
+  );
+}
+
+export default function ListingStudio() {
+  return (
+    <CopyToastProvider>
+      <ListingStudioContent />
+    </CopyToastProvider>
   );
 }
