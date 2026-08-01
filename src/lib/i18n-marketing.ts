@@ -8,6 +8,8 @@ export type MarketingCopy = {
   heroBadgePdf: string;
   heroBadgeBranding: string;
   heroBadgeLanguages: string;
+  heroBadgeVision: string;
+  heroBadgeVideoReels: string;
   howItWorksTitle: string;
   howItWorksSubtitle: string;
   step1Title: string;
@@ -35,6 +37,8 @@ const en: MarketingCopy = {
   heroBadgePdf: "Instant 3-Page PDF Generation",
   heroBadgeBranding: "Custom Agency Branding",
   heroBadgeLanguages: "Multi-language Support (EN / DE / FR)",
+  heroBadgeVision: "AI Vision Analysis (Extracts visual details directly from photos)",
+  heroBadgeVideoReels: "15s HD Social Media Video Reels (Instagram / TikTok ready)",
   howItWorksTitle: "How it works",
   howItWorksSubtitle: "From raw listing data to a client-ready exposé in three simple steps.",
   step1Title: "1. Fill Listing Basics",
@@ -57,7 +61,8 @@ const en: MarketingCopy = {
     "Outputs plain text only—no PDF design or layout",
     "No agency logo, branding, or color customization",
     "Cannot format floor plans or property photo grids",
-    "No AI Video Reels export",
+    "Manual prompt required for visual image recognition",
+    "No branded video reels export",
     "Requires 10–15 minutes of tedious copy-pasting",
   ],
   comparisonImmoItems: [
@@ -66,7 +71,8 @@ const en: MarketingCopy = {
     "Automatic agency logo & custom brand colors",
     "Automated photo placement & floor plan layout",
     "Instant social media captions + location story",
-    "AI Video Reels Export (15s Instagram/TikTok)",
+    "Visual Image Recognition (GPT Vision)",
+    "Branded Video Reels Export",
     "Done in under 60 seconds",
   ],
   purchaseSuccessMessage: "Purchase successful — you're ready to create your exposé.",
@@ -81,6 +87,8 @@ const de: Partial<MarketingCopy> = {
   heroBadgePdf: "Sofortiges 3-seitiges PDF",
   heroBadgeBranding: "Individuelles Agentur-Branding",
   heroBadgeLanguages: "Mehrsprachig (DE / EN / FR)",
+  heroBadgeVision: "KI-Bildanalyse (Extrahiert visuelle Details direkt aus Fotos)",
+  heroBadgeVideoReels: "15s HD Social-Media-Video-Reels (Instagram / TikTok ready)",
   howItWorksTitle: "So funktioniert's",
   howItWorksSubtitle: "In drei Schritten vom Listing zum kundenfertigen Exposé.",
   step1Title: "1. Objektdaten erfassen",
@@ -103,7 +111,8 @@ const de: Partial<MarketingCopy> = {
     "Nur Fließtext — kein PDF-Layout oder Design",
     "Kein Agentur-Logo, Branding oder Farbanpassung",
     "Keine automatische Foto- oder Grundriss-Platzierung",
-    "Kein AI-Video-Reels-Export",
+    "Manueller Prompt für visuelle Bilderkennung nötig",
+    "Kein gebrandeter Video-Reels-Export",
     "10–15 Minuten Copy-Paste-Aufwand",
   ],
   comparisonImmoItems: [
@@ -112,7 +121,8 @@ const de: Partial<MarketingCopy> = {
     "Automatisches Logo & individuelle Markenfarben",
     "Automatische Foto- und Grundriss-Layouts",
     "Sofort Social Captions + Lage-Story",
-    "AI-Video-Reels-Export (15 s Instagram/TikTok)",
+    "Visuelle Bilderkennung (GPT Vision)",
+    "Gebrandeter Video-Reels-Export",
     "Fertig in unter 60 Sekunden",
   ],
   purchaseSuccessMessage: "Kauf erfolgreich — Sie können jetzt Ihr Exposé erstellen.",
@@ -127,6 +137,8 @@ const fr: Partial<MarketingCopy> = {
   heroBadgePdf: "PDF 3 pages instantané",
   heroBadgeBranding: "Branding agence personnalisé",
   heroBadgeLanguages: "Multilingue (FR / EN / DE)",
+  heroBadgeVision: "Analyse visuelle IA (Détails visuels extraits directement des photos)",
+  heroBadgeVideoReels: "Reels vidéo HD 15 s (Instagram / TikTok ready)",
   howItWorksTitle: "Comment ça marche",
   howItWorksSubtitle: "De la fiche brute à l'exposé client en trois étapes.",
   step1Title: "1. Saisir les bases",
@@ -149,7 +161,8 @@ const fr: Partial<MarketingCopy> = {
     "Texte brut uniquement — pas de mise en page PDF",
     "Pas de logo agence, branding ni couleurs personnalisées",
     "Pas de grilles photos ou plans automatiques",
-    "Pas d'export de reels vidéo IA",
+    "Prompt manuel requis pour la reconnaissance visuelle",
+    "Pas d'export de reels vidéo brandés",
     "10–15 minutes de copier-coller fastidieux",
   ],
   comparisonImmoItems: [
@@ -158,7 +171,8 @@ const fr: Partial<MarketingCopy> = {
     "Logo agence & couleurs de marque automatiques",
     "Placement photos & plan intégré automatiquement",
     "Légendes réseaux sociaux + texte local instantanés",
-    "Export reels vidéo IA (15 s Instagram/TikTok)",
+    "Reconnaissance visuelle (GPT Vision)",
+    "Export de reels vidéo brandés",
     "Prêt en moins de 60 secondes",
   ],
   purchaseSuccessMessage: "Achat réussi — vous pouvez créer votre exposé.",

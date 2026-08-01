@@ -49,8 +49,9 @@ export type BillingCopy = {
   featureWatermarkFree: string;
   featureAiCopy: string;
   featureCustomBrandingExcluded: string;
-  featureVideoReelsExcluded: string;
-  featureVideoReelsIncluded: string;
+  featureVideoReelsDemo: string;
+  featureVideoReelsPro: string;
+  featureAiVision: string;
   featureUnlimitedGenerations: string;
   featureFullBranding: string;
   featurePrioritySpeed: string;
@@ -153,8 +154,11 @@ const en: BillingCopy = {
   featureAiCopy: "AI Exposé Copy & Social Captions",
   featureCustomBrandingExcluded:
     "Custom Logo & Agency Branding (Pro Subscriptions Only)",
-  featureVideoReelsExcluded: "Property Video Reels (Pro Subscriptions Only)",
-  featureVideoReelsIncluded: "AI Property Video Reels (15s Instagram/TikTok Format)",
+  featureVideoReelsDemo: "AI Property Video Reels (Includes demo watermark)",
+  featureVideoReelsPro:
+    "Unlimited Watermark-Free HD Video Reels with Agency Branding",
+  featureAiVision:
+    "AI Vision Engine (Auto-detects materials, lighting, & luxury finishes from photos)",
   featureUnlimitedGenerations: "Unlimited / High-volume Generations",
   featureFullBranding: "Full Custom Agency Logo & Brand Colors",
   featurePrioritySpeed: "Priority AI Generation Speed",
@@ -252,9 +256,11 @@ const de: Partial<BillingCopy> = {
   featureAiCopy: "KI-Exposé-Texte & Social Captions",
   featureCustomBrandingExcluded:
     "Individuelles Logo & Agentur-Branding (nur Pro-Abo)",
-  featureVideoReelsExcluded: "Property-Video-Reels (nur Pro-Abonnements)",
-  featureVideoReelsIncluded:
-    "KI Property-Video-Reels (15 s Instagram/TikTok-Format)",
+  featureVideoReelsDemo: "KI Property-Video-Reels (mit Demo-Wasserzeichen)",
+  featureVideoReelsPro:
+    "Unbegrenzte HD-Video-Reels ohne Wasserzeichen mit Agentur-Branding",
+  featureAiVision:
+    "KI-Vision-Engine (Material, Beleuchtung & Luxus-Details aus Fotos)",
   featureUnlimitedGenerations: "Unbegrenzte / hohe Generierungsmenge",
   featureFullBranding: "Volles Agentur-Logo & Markenfarben",
   featurePrioritySpeed: "Priorisierte KI-Generierung",
@@ -351,9 +357,11 @@ const fr: Partial<BillingCopy> = {
   featureAiCopy: "Textes exposé IA & légendes social",
   featureCustomBrandingExcluded:
     "Logo & branding agence (abonnements Pro uniquement)",
-  featureVideoReelsExcluded: "Reels vidéo immobiliers (abonnements Pro uniquement)",
-  featureVideoReelsIncluded:
-    "Reels vidéo IA (15 s format Instagram/TikTok)",
+  featureVideoReelsDemo: "Reels vidéo IA (avec filigrane démo)",
+  featureVideoReelsPro:
+    "Reels vidéo HD sans filigrane illimités avec branding agence",
+  featureAiVision:
+    "Moteur vision IA (matériaux, éclairage & finitions haut de gamme)",
   featureUnlimitedGenerations: "Générations illimitées / volume élevé",
   featureFullBranding: "Logo agence & couleurs de marque complets",
   featurePrioritySpeed: "Génération IA prioritaire",
@@ -450,9 +458,11 @@ const es: Partial<BillingCopy> = {
   featureAiCopy: "Textos exposé IA y captions sociales",
   featureCustomBrandingExcluded:
     "Logo y branding de agencia (solo suscripciones Pro)",
-  featureVideoReelsExcluded: "Reels de vídeo inmobiliario (solo suscripciones Pro)",
-  featureVideoReelsIncluded:
-    "Reels de vídeo IA (15 s formato Instagram/TikTok)",
+  featureVideoReelsDemo: "Reels de vídeo IA (incluye marca de agua demo)",
+  featureVideoReelsPro:
+    "Reels HD sin marca de agua ilimitados con branding de agencia",
+  featureAiVision:
+    "Motor de visión IA (materiales, iluminación y acabados de lujo)",
   featureUnlimitedGenerations: "Generaciones ilimitadas / alto volumen",
   featureFullBranding: "Logo de agencia y colores de marca completos",
   featurePrioritySpeed: "Generación IA prioritaria",
@@ -549,9 +559,11 @@ const it: Partial<BillingCopy> = {
   featureAiCopy: "Testi exposé IA e caption social",
   featureCustomBrandingExcluded:
     "Logo e branding agenzia (solo abbonamenti Pro)",
-  featureVideoReelsExcluded: "Reel video immobiliari (solo abbonamenti Pro)",
-  featureVideoReelsIncluded:
-    "Reel video IA immobiliari (15 s formato Instagram/TikTok)",
+  featureVideoReelsDemo: "Reel video IA (include filigrana demo)",
+  featureVideoReelsPro:
+    "Reel video HD senza filigrana illimitati con branding agenzia",
+  featureAiVision:
+    "Motore visione IA (materiali, illuminazione e finiture di lusso)",
   featureUnlimitedGenerations: "Generazioni illimitate / alto volume",
   featureFullBranding: "Logo agenzia e colori brand completi",
   featurePrioritySpeed: "Generazione IA prioritaria",
@@ -648,9 +660,11 @@ const nl: Partial<BillingCopy> = {
   featureAiCopy: "AI-exposéteksten & social captions",
   featureCustomBrandingExcluded:
     "Logo & bureau-branding (alleen Pro-abonnementen)",
-  featureVideoReelsExcluded: "Property-video-reels (alleen Pro-abonnementen)",
-  featureVideoReelsIncluded:
-    "AI property-video-reels (15 s Instagram/TikTok-formaat)",
+  featureVideoReelsDemo: "AI property-video-reels (inclusief demo-watermerk)",
+  featureVideoReelsPro:
+    "Onbeperkte HD-video-reels zonder watermerk met bureau-branding",
+  featureAiVision:
+    "AI Vision Engine (materialen, belichting & luxe afwerking uit foto's)",
   featureUnlimitedGenerations: "Onbeperkt / hoog volume genereren",
   featureFullBranding: "Volledig bureau-logo & huisstijlkleuren",
   featurePrioritySpeed: "Prioritaire AI-generatie",
@@ -747,9 +761,11 @@ const pl: Partial<BillingCopy> = {
   featureAiCopy: "Teksty exposé AI i opisy social",
   featureCustomBrandingExcluded:
     "Logo i branding agencji (tylko subskrypcje Pro)",
-  featureVideoReelsExcluded: "Reels wideo nieruchomości (tylko subskrypcje Pro)",
-  featureVideoReelsIncluded:
-    "Reels wideo AI (15 s format Instagram/TikTok)",
+  featureVideoReelsDemo: "Reels wideo AI (z demo znakiem wodnym)",
+  featureVideoReelsPro:
+    "Nieograniczone reels HD bez znaku wodnego z brandingiem agencji",
+  featureAiVision:
+    "Silnik AI Vision (materiały, oświetlenie i luksusowe wykończenia)",
   featureUnlimitedGenerations: "Nieograniczone / duża liczba generacji",
   featureFullBranding: "Pełne logo agencji i kolory marki",
   featurePrioritySpeed: "Priorytetowa generacja AI",
@@ -846,9 +862,11 @@ const fa: Partial<BillingCopy> = {
   featureAiCopy: "متن exposé هوش مصنوعی و کپشن شبکه‌های اجتماعی",
   featureCustomBrandingExcluded:
     "لوگو و برندسازی آژانس (فقط اشتراک Pro)",
-  featureVideoReelsExcluded: "ریل‌های ویدیویی ملک (فقط اشتراک Pro)",
-  featureVideoReelsIncluded:
-    "ریل ویدیوی AI ملک (۱۵ ثانیه فرمت Instagram/TikTok)",
+  featureVideoReelsDemo: "ریل ویدیوی AI ملک (با واترمارک دمو)",
+  featureVideoReelsPro:
+    "ریل‌های HD بدون واترمارک نامحدود با برندسازی آژانس",
+  featureAiVision:
+    "موتور بینایی AI (جنس، نور و جزئیات لوکس از روی عکس‌ها)",
   featureUnlimitedGenerations: "تولید نامحدود / حجم بالا",
   featureFullBranding: "لوگو و رنگ‌های برند کامل آژانس",
   featurePrioritySpeed: "اولویت در تولید هوش مصنوعی",
@@ -945,9 +963,11 @@ const ar: Partial<BillingCopy> = {
   featureAiCopy: "نصوص exposé بالذكاء الاصطناعي وتعليقات اجتماعية",
   featureCustomBrandingExcluded:
     "الشعار والعلامة التجارية (اشتراكات Pro فقط)",
-  featureVideoReelsExcluded: "ريل فيديو العقار (اشتراكات Pro فقط)",
-  featureVideoReelsIncluded:
-    "ريل فيديو AI للعقار (15 ثانية Instagram/TikTok)",
+  featureVideoReelsDemo: "ريل فيديو AI للعقار (يتضمن علامة demo)",
+  featureVideoReelsPro:
+    "ريل HD بلا علامة مائية غير محدود مع علامة الوكالة",
+  featureAiVision:
+    "محرك الرؤية AI (المواد والإضاءة والتشطيبات الفاخرة من الصور)",
   featureUnlimitedGenerations: "توليد غير محدود / حجم كبير",
   featureFullBranding: "شعار الوكالة الكامل وألوان العلامة",
   featurePrioritySpeed: "أولوية في التوليد بالذكاء الاصطناعي",

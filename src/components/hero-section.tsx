@@ -82,6 +82,8 @@ export function HeroSection({ copy }: { copy: MarketingCopy }) {
             <TrustBadge label={copy.heroBadgePdf} />
             <TrustBadge label={copy.heroBadgeBranding} />
             <TrustBadge label={copy.heroBadgeLanguages} />
+            <TrustBadge label={copy.heroBadgeVision} />
+            <TrustBadge label={copy.heroBadgeVideoReels} />
           </div>
         </div>
       </div>
