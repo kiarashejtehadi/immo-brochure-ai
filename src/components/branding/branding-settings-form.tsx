@@ -9,9 +9,20 @@ import { ProBadge, UpgradeProModal } from "@/components/billing/upgrade-pro-moda
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { DEFAULT_BRAND_COLOR, type UserBrandingProfile } from "@/types/branding";
 import { readJsonResponse } from "@/lib/http/read-json-response";
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy } from "@/lib/i18n-billing";
+import {
+  formatTrialCreditsLeft,
+  getBrandingCopy,
+  getBrandingFieldLabels,
+} from "@/lib/i18n-branding";
 import { cn } from "@/lib/utils";
 
 export function BrandingSettingsForm({ locale }: { locale: string }) {
+  const uiLocale = locale as UiLocale;
+  const billingCopy = getBillingCopy(uiLocale);
+  const copy = getBrandingCopy(uiLocale);
+  const fieldLabels = getBrandingFieldLabels(uiLocale);
   const { status, refresh } = useBillingStatus();
   const [branding, setBranding] = useState<UserBrandingProfile>({
     logoUrl: null,
@@ -41,7 +52,7 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
     try {
       const res = await fetch("/api/branding/profile", { credentials: "same-origin" });
       if (res.status === 401) {
-        setError("Sign in to manage branding.");
+        setError(copy.signInToManage);
         return;
       }
       const data = await readJsonResponse<{ branding?: UserBrandingProfile }>(res);
@@ -53,11 +64,11 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         }));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load branding.");
+      setError(err instanceof Error ? err.message : copy.loadFailed);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [copy.loadFailed, copy.signInToManage]);
 
   useEffect(() => {
     void load();
@@ -82,12 +93,12 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         }),
       });
       const data = await readJsonResponse<{ branding?: UserBrandingProfile; error?: string }>(res);
-      if (!res.ok) throw new Error(data.error ?? "Save failed.");
+      if (!res.ok) throw new Error(data.error ?? copy.saveFailed);
       if (data.branding) setBranding((b) => ({ ...b, ...data.branding }));
-      setMessage("Saved.");
+      setMessage(copy.saved);
       void refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(err instanceof Error ? err.message : copy.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -110,18 +121,18 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         body: form,
       });
       const data = await readJsonResponse<{ logoUrl?: string; error?: string }>(res);
-      if (!res.ok) throw new Error(data.error ?? "Upload failed.");
+      if (!res.ok) throw new Error(data.error ?? copy.uploadFailed);
       setBranding((b) => ({ ...b, logoUrl: data.logoUrl ?? b.logoUrl }));
-      setMessage("Logo uploaded.");
+      setMessage(copy.logoUploaded);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : copy.uploadFailed);
     } finally {
       setUploading(false);
     }
   }
 
   if (loading) {
-    return <p className="text-sm text-zinc-500">Loading branding…</p>;
+    return <p className="text-sm text-zinc-500">{copy.loadingBranding}</p>;
   }
 
   return (
@@ -131,7 +142,7 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
           href="/"
           className="inline-flex items-center rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
         >
-          ← Back to studio
+          {billingCopy.backToStudio}
         </Link>
       </div>
 
@@ -139,14 +150,11 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
 
       <div className="space-y-8">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Branding settings</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Custom logo and colors apply to PDF brochures on Monthly &amp; Yearly Pro plans.
-          </p>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{copy.settingsTitle}</h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{copy.settingsSubtitle}</p>
           {status?.trialCredits ? (
             <p className="mt-2 text-sm text-emerald-800 dark:text-emerald-200">
-              You have {status.trialCredits} free trial credit{status.trialCredits === 1 ? "" : "s"} left
-              (watermarked PDFs).
+              {formatTrialCreditsLeft(uiLocale, status.trialCredits)}
             </p>
           ) : null}
         </div>
@@ -170,7 +178,7 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         >
           <section className="space-y-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">Agency logo</h3>
+              <h3 className="text-sm font-semibold">{copy.agencyLogo}</h3>
               <ProBadge />
             </div>
             <div className="flex flex-wrap items-center gap-4">
@@ -178,12 +186,12 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={branding.logoUrl}
-                  alt="Agency logo"
+                  alt={copy.agencyLogoAlt}
                   className="h-14 max-w-[160px] object-contain"
                 />
               ) : (
                 <div className="flex h-14 w-32 items-center justify-center rounded border border-dashed border-zinc-300 text-xs text-zinc-400">
-                  No logo
+                  {copy.noLogo}
                 </div>
               )}
               <input
@@ -199,14 +207,14 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
                 onClick={() => (isPro ? fileRef.current?.click() : setUpgradeOpen(true))}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-600"
               >
-                {uploading ? "Uploading…" : isPro ? "Upload logo" : "Upload logo (Pro)"}
+                {uploading ? copy.uploading : isPro ? copy.uploadLogo : copy.uploadLogoPro}
               </button>
             </div>
           </section>
 
           <section className="space-y-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">Brand color</h3>
+              <h3 className="text-sm font-semibold">{copy.brandColor}</h3>
               <ProBadge />
             </div>
             <div className="flex items-center gap-3">
@@ -234,11 +242,11 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         <section className="grid gap-4 sm:grid-cols-2">
           {(
             [
-              ["agencyName", "Agency name"],
-              ["brokerName", "Broker name"],
-              ["contactPhone", "Phone"],
-              ["contactEmail", "Contact email"],
-              ["website", "Website"],
+              ["agencyName", fieldLabels.agencyName],
+              ["brokerName", fieldLabels.brokerName],
+              ["contactPhone", fieldLabels.contactPhone],
+              ["contactEmail", fieldLabels.contactEmail],
+              ["website", fieldLabels.website],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="block text-sm">
@@ -255,20 +263,18 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
 
         <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold">PDF watermark</h3>
+            <h3 className="text-sm font-semibold">{copy.pdfWatermark}</h3>
             {!cleanPdfExports ? <ProBadge /> : null}
           </div>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {cleanPdfExports
-              ? "Your PDF exports are watermark-free."
-              : "Trial PDFs include a watermark. Buy a credit pack or subscribe to export clean brochures."}
+            {cleanPdfExports ? copy.pdfWatermarkClean : copy.pdfWatermarkTrial}
           </p>
           {!cleanPdfExports ? (
             <Link
               href="/pricing"
               className="mt-3 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
             >
-              View plans
+              {copy.viewPlans}
             </Link>
           ) : null}
         </section>
@@ -279,7 +285,7 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
           onClick={() => void saveFields()}
           className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
         >
-          {saving ? "Saving…" : "Save contact & branding"}
+          {saving ? copy.saving : copy.saveContactBranding}
         </button>
       </div>
       <UpgradeProModal

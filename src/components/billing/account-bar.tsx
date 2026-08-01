@@ -3,19 +3,22 @@
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { Lock } from "lucide-react";
-import { planDisplayName } from "@/lib/billing/config";
 import { isCreditPackPlan } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { readJsonResponse } from "@/lib/http/read-json-response";
 import { CreditPackUsage, shouldShowCreditPackUsage } from "@/components/billing/credit-pack-usage";
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy, interpolate, planDisplayNameLocalized } from "@/lib/i18n-billing";
 
 const supabaseConfigured = Boolean(
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_SUPABASE_URL?.trim(),
 );
 
 export function AccountBar({ locale }: { locale: string }) {
+  const uiLocale = locale as UiLocale;
+  const copy = getBillingCopy(uiLocale);
   const { status, loading, refresh } = useBillingStatus();
   const [browserEmail, setBrowserEmail] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -62,12 +65,12 @@ export function AccountBar({ locale }: { locale: string }) {
       });
       const data = await readJsonResponse<{ url?: string; error?: string }>(res);
       if (!res.ok || !data.url) {
-        setPortalError(data.error ?? "Could not open subscription portal.");
+        setPortalError(data.error ?? copy.portalError);
         return;
       }
       window.location.href = data.url;
     } catch (err) {
-      setPortalError(err instanceof Error ? err.message : "Could not open subscription portal.");
+      setPortalError(err instanceof Error ? err.message : copy.portalError);
     } finally {
       setPortalLoading(false);
     }
@@ -84,12 +87,12 @@ export function AccountBar({ locale }: { locale: string }) {
   const planLabel =
     email && billingEnabled
       ? status?.hasActiveSubscription
-        ? planDisplayName(status.planId)
+        ? planDisplayNameLocalized(status.planId, uiLocale)
         : shouldShowCreditPackUsage(status)
           ? null
           : (status?.remainingCredits ?? 0) > 0
-            ? `${status.remainingCredits} credits`
-            : "No plan"
+            ? interpolate(copy.creditsCount, { count: status.remainingCredits })
+            : copy.noPlan
       : null;
 
   const needsPlan =
@@ -103,10 +106,10 @@ export function AccountBar({ locale }: { locale: string }) {
   return (
     <>
       <div className="flex flex-col items-stretch gap-2 sm:items-end">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Account</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{copy.account}</p>
         <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
           {!ready && !email ? (
-            <span className="text-xs text-zinc-400">Loading…</span>
+            <span className="text-xs text-zinc-400">{copy.loading}</span>
           ) : email ? (
             <>
               <span className="max-w-[14rem] truncate text-xs text-zinc-600 dark:text-zinc-400">
@@ -117,21 +120,21 @@ export function AccountBar({ locale }: { locale: string }) {
                   {planLabel}
                 </span>
               ) : null}
-              {billingEnabled ? <CreditPackUsage status={status} variant="compact" /> : null}
+              {billingEnabled ? <CreditPackUsage status={status} variant="compact" locale={uiLocale} /> : null}
               {billingEnabled ? (
                 needsPlan ? (
                   <Link
                     href="/checkout"
                     className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
                   >
-                    Choose plan
+                    {copy.choosePlan}
                   </Link>
                 ) : (
                   <Link
                     href="/pricing"
                     className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
                   >
-                    Pricing
+                    {copy.pricingLink}
                   </Link>
                 )
               ) : null}
@@ -143,7 +146,7 @@ export function AccountBar({ locale }: { locale: string }) {
                     disabled={portalLoading}
                     className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
                   >
-                    {portalLoading ? "…" : "Manage subscription"}
+                    {portalLoading ? "…" : copy.manageSubscription}
                   </button>
                   {portalError ? (
                     <p className="w-full text-right text-xs text-red-600 dark:text-red-400" role="alert">
@@ -156,7 +159,7 @@ export function AccountBar({ locale }: { locale: string }) {
                 href="/settings"
                 className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
               >
-                Branding
+                {copy.branding}
                 {brandingLocked ? (
                   <Lock className="h-3 w-3 text-amber-600 dark:text-amber-400" aria-hidden />
                 ) : null}
@@ -167,7 +170,7 @@ export function AccountBar({ locale }: { locale: string }) {
                 disabled={signingOut}
                 className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
-                {signingOut ? "…" : "Sign out"}
+                {signingOut ? "…" : copy.signOut}
               </button>
             </>
           ) : (
@@ -177,11 +180,11 @@ export function AccountBar({ locale }: { locale: string }) {
                 onClick={() => setAuthOpen(true)}
                 className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
               >
-                Sign in
+                {copy.signIn}
               </button>
               {billingEnabled ? (
                 <Link href="/checkout" className="text-xs font-medium underline">
-                  View pricing
+                  {copy.viewPricing}
                 </Link>
               ) : null}
             </>

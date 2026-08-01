@@ -14,6 +14,8 @@ import {
   refreshBrowserAuthSession,
 } from "@/lib/supabase/client-session";
 import { readJsonResponse } from "@/lib/http/read-json-response";
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy, interpolate } from "@/lib/i18n-billing";
 import { cn } from "@/lib/utils";
 
 async function postCheckout(plan: BillingPlanKey, locale: string) {
@@ -62,18 +64,20 @@ export function PricingSection({
   compact?: boolean;
   subscriptionOnly?: boolean;
 }) {
+  const uiLocale = locale as UiLocale;
+  const copy = getBillingCopy(uiLocale);
   const router = useRouter();
   const { status, loading: statusLoading, refresh, isSignedIn } = useBillingStatus();
   const [loadingPlan, setLoadingPlan] = useState<BillingPlanKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
-  const plans = getPlanCardDefinitions().filter(
+  const plans = getPlanCardDefinitions(uiLocale).filter(
     (plan) => !subscriptionOnly || plan.key !== "credits_pack",
   );
 
   async function startCheckout(plan: BillingPlanKey) {
     if (!billingEnabled) {
-      setError("Billing is not configured on this server.");
+      setError(copy.billingNotConfiguredServer);
       return;
     }
 
@@ -95,11 +99,11 @@ export function PricingSection({
 
       const data = await readJsonResponse<{ url?: string; error?: string }>(res);
       if (!res.ok || !data.url) {
-        throw new Error(data.error ?? "Checkout failed.");
+        throw new Error(data.error ?? copy.checkoutFailed);
       }
       await openLemonSqueezyCheckout(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed.");
+      setError(err instanceof Error ? err.message : copy.checkoutFailed);
     } finally {
       setLoadingPlan(null);
     }
@@ -110,31 +114,22 @@ export function PricingSection({
       {!compact ? (
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Pricing & Plans
+            {copy.pricingTitle}
           </h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Choose credits for occasional use or subscribe for unlimited generation, custom branding,
-            and watermark-free PDFs.
-          </p>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{copy.pricingSubtitle}</p>
           {isSignedIn && status?.email ? (
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Signed in as{" "}
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">{status.email}</span>
-              {" — "}
-              checkout opens with this email pre-filled.
+              {interpolate(copy.signedInAs, { email: status.email })}
             </p>
           ) : !statusLoading && billingEnabled ? (
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Sign in when prompted — your email will be pre-filled at checkout.
-            </p>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{copy.signInWhenPrompted}</p>
           ) : null}
         </div>
       ) : null}
 
       {!billingEnabled ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-          Set <code className="text-xs">BILLING_ENABLED=true</code> with Supabase and Lemon Squeezy keys to
-          enable checkout.
+          {copy.billingNotConfiguredEnv}
         </p>
       ) : null}
 
@@ -191,7 +186,7 @@ export function PricingSection({
                 (!billingEnabled || loadingPlan === plan.key || statusLoading) && "opacity-60",
               )}
             >
-              {loadingPlan === plan.key ? "Opening checkout…" : plan.cta}
+              {loadingPlan === plan.key ? copy.openingCheckout : plan.cta}
             </button>
             <PricingLegalNotice variant="inline" className="mt-3" />
           </article>

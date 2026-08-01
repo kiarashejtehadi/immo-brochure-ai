@@ -2,12 +2,17 @@
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { Lock } from "lucide-react";
+import { useLocale } from "next-intl";
 import { isCreditPackPlan } from "@/lib/billing/client-access";
 import { useBillingStatus } from "@/hooks/use-billing-status";
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy } from "@/lib/i18n-billing";
 import { cn } from "@/lib/utils";
 
 export function SettingsNav() {
   const pathname = usePathname();
+  const locale = useLocale() as UiLocale;
+  const copy = getBillingCopy(locale);
   const { status } = useBillingStatus();
   const brandingLocked = isCreditPackPlan(status);
   const onBranding = pathname === "/settings";
@@ -26,16 +31,16 @@ export function SettingsNav() {
             : "border-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
         )}
       >
-        Branding
+        {copy.settingsBranding}
         {brandingLocked ? (
-          <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-label="Pro feature" />
+          <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-label={copy.proFeatureAria} />
         ) : null}
       </Link>
       <Link
         href="/pricing"
         className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
       >
-        Plans &amp; billing
+        {copy.settingsPlansBilling}
       </Link>
     </nav>
   );

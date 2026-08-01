@@ -1,3 +1,5 @@
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy, interpolate } from "@/lib/i18n-billing";
 import type { BillingPlanKey } from "@/types/billing";
 import { creditsPerPack, getPlanDisplayPrices } from "@/lib/billing/config";
 
@@ -16,53 +18,54 @@ export type PlanCardDefinition = {
   highlight?: boolean;
 };
 
-export function getPlanCardDefinitions(): PlanCardDefinition[] {
+export function getPlanCardDefinitions(locale: UiLocale): PlanCardDefinition[] {
+  const copy = getBillingCopy(locale);
   const packSize = creditsPerPack();
   const prices = getPlanDisplayPrices();
 
   return [
     {
       key: "credits_pack",
-      title: "Credit Pack",
-      priceLabel: `${prices.creditsPack} / ${packSize} Credits`,
+      title: copy.creditPackTitle,
+      priceLabel: `${prices.creditsPack}${interpolate(copy.perCredits, { count: packSize })}`,
       features: [
-        { text: `${packSize} High-res PDF Exports`, included: true },
-        { text: "Watermark-Free PDF Exports (Watermark removed)", included: true },
-        { text: "AI Exposé Copy & Social Captions", included: true },
         {
-          text: "Custom Logo & Agency Branding (Pro Subscriptions Only)",
-          included: false,
+          text: interpolate(copy.featureHighResExports, { count: packSize }),
+          included: true,
         },
+        { text: copy.featureWatermarkFree, included: true },
+        { text: copy.featureAiCopy, included: true },
+        { text: copy.featureCustomBrandingExcluded, included: false },
       ],
-      cta: "Buy credits",
+      cta: copy.ctaBuyCredits,
     },
     {
       key: "monthly",
-      title: "Monthly Subscription",
-      priceLabel: `${prices.monthly} / month`,
-      badge: "Popular for Agents",
+      title: copy.monthlyTitle,
+      priceLabel: `${prices.monthly}${copy.perMonth}`,
+      badge: copy.badgePopular,
       highlight: true,
       features: [
-        { text: "Unlimited / High-volume Generations", included: true },
-        { text: "Full Custom Agency Logo & Brand Colors", included: true },
-        { text: "Watermark-Free PDF Exports", included: true },
-        { text: "Priority AI Generation Speed", included: true },
+        { text: copy.featureUnlimitedGenerations, included: true },
+        { text: copy.featureFullBranding, included: true },
+        { text: copy.featureWatermarkFree, included: true },
+        { text: copy.featurePrioritySpeed, included: true },
       ],
-      cta: "Subscribe monthly",
+      cta: copy.ctaSubscribeMonthly,
     },
     {
       key: "yearly",
-      title: "Yearly Subscription",
-      priceLabel: `${prices.yearly} / year (Save ~23%)`,
-      badge: "Best Value",
+      title: copy.yearlyTitle,
+      priceLabel: `${prices.yearly}${copy.perYearSave}`,
+      badge: copy.badgeBestValue,
       features: [
-        { text: "Unlimited / High-volume Generations", included: true },
-        { text: "Full Custom Agency Logo & Brand Colors", included: true },
-        { text: "Watermark-Free PDF Exports", included: true },
-        { text: "Priority AI Generation Speed", included: true },
-        { text: "Discounted Annual Rate (€10/mo equivalent)", included: true },
+        { text: copy.featureUnlimitedGenerations, included: true },
+        { text: copy.featureFullBranding, included: true },
+        { text: copy.featureWatermarkFree, included: true },
+        { text: copy.featurePrioritySpeed, included: true },
+        { text: copy.featureAnnualDiscount, included: true },
       ],
-      cta: "Subscribe yearly",
+      cta: copy.ctaSubscribeYearly,
     },
   ];
 }

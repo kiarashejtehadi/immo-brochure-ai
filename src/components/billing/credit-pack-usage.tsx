@@ -1,6 +1,9 @@
 "use client";
 
 import type { BillingStatusResponse } from "@/types/billing";
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy, interpolate } from "@/lib/i18n-billing";
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export function shouldShowCreditPackUsage(status: BillingStatusResponse | null): boolean {
@@ -13,12 +16,18 @@ type Variant = "compact" | "panel";
 export function CreditPackUsage({
   status,
   variant = "compact",
+  locale: localeProp,
   className,
 }: {
   status: BillingStatusResponse | null;
   variant?: Variant;
+  locale?: UiLocale;
   className?: string;
 }) {
+  const routeLocale = useLocale() as UiLocale;
+  const locale = localeProp ?? routeLocale;
+  const copy = getBillingCopy(locale);
+
   if (!shouldShowCreditPackUsage(status)) return null;
 
   const used = status!.creditsUsed ?? 0;
@@ -27,16 +36,20 @@ export function CreditPackUsage({
   const consumedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
 
   if (variant === "compact") {
+    const trialSuffix =
+      status!.trialCredits > 0
+        ? ` ${interpolate(copy.creditPackTrialSuffix, { count: status!.trialCredits })}`
+        : "";
     return (
       <span
         className={cn(
           "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100",
           className,
         )}
-        title={`${used} generation${used === 1 ? "" : "s"} used, ${remaining} remaining of ${total} credit-pack total`}
+        title={interpolate(copy.creditPackUsedOf, { used, remaining })}
       >
-        Credits: {used} used · {remaining} left
-        {status!.trialCredits > 0 ? ` (${status!.trialCredits} trial)` : ""}
+        {interpolate(copy.creditPackCompact, { used, remaining })}
+        {trialSuffix}
       </span>
     );
   }
@@ -47,15 +60,19 @@ export function CreditPackUsage({
         "rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/30",
         className,
       )}
-      aria-label="Credit pack usage"
+      aria-label={copy.creditPackPanelTitle}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-emerald-950 dark:text-emerald-50">Credit pack</h3>
+        <h3 className="text-sm font-semibold text-emerald-950 dark:text-emerald-50">
+          {copy.creditPackPanelTitle}
+        </h3>
         <p className="text-sm tabular-nums text-emerald-900 dark:text-emerald-100">
-          <span className="font-medium">{used}</span> used ·{" "}
-          <span className="font-medium">{remaining}</span> remaining
+          {interpolate(copy.creditPackUsedOf, { used, remaining })}
           {total > 0 ? (
-            <span className="text-emerald-800/80 dark:text-emerald-200/80"> (of {total} total)</span>
+            <span className="text-emerald-800/80 dark:text-emerald-200/80">
+              {" "}
+              {interpolate(copy.creditPackOfTotal, { total })}
+            </span>
           ) : null}
         </p>
       </div>
@@ -68,13 +85,11 @@ export function CreditPackUsage({
             aria-valuenow={used}
             aria-valuemin={0}
             aria-valuemax={total}
-            aria-label={`${used} of ${total} credits used`}
+            aria-label={interpolate(copy.creditPackUsedOf, { used, remaining })}
           />
         </div>
       ) : null}
-      <p className="mt-2 text-xs text-emerald-800 dark:text-emerald-200/90">
-        Each successful exposé generation uses one credit when you are on a pay-per-use plan.
-      </p>
+      <p className="mt-2 text-xs text-emerald-800 dark:text-emerald-200/90">{copy.creditPackHint}</p>
     </section>
   );
 }

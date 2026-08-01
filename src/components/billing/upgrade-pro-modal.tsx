@@ -3,6 +3,8 @@
 import { Link } from "@/i18n/navigation";
 import { PricingSection } from "@/components/billing/pricing-section";
 import { isBillingEnabled } from "@/lib/billing/config";
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy } from "@/lib/i18n-billing";
 import { cn } from "@/lib/utils";
 
 export function UpgradeProModal({
@@ -16,6 +18,8 @@ export function UpgradeProModal({
   locale: string;
   subscriptionOnly?: boolean;
 }) {
+  const uiLocale = locale as UiLocale;
+  const copy = getBillingCopy(uiLocale);
   const billingEnabled = isBillingEnabled();
 
   if (!open) return null;
@@ -31,12 +35,10 @@ export function UpgradeProModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id="upgrade-pro-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Upgrade to Pro
+              {copy.upgradeTitle}
             </h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              {subscriptionOnly
-                ? "Unlock custom logo, brand colors, and broker signatures on every PDF with a monthly or yearly plan."
-                : "Unlock custom logo & brand colors with a monthly or yearly plan. Credit packs and subscriptions also remove PDF watermarks."}
+              {subscriptionOnly ? copy.upgradeSubtitleSubscriptionOnly : copy.upgradeSubtitleGeneral}
             </p>
           </div>
           <button
@@ -44,7 +46,7 @@ export function UpgradeProModal({
             onClick={onClose}
             className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
-            Close
+            {copy.authClose}
           </button>
         </div>
         {billingEnabled ? (
@@ -57,14 +59,12 @@ export function UpgradeProModal({
             />
           </div>
         ) : (
-          <p className="mt-4 text-sm text-amber-800 dark:text-amber-200">
-            Billing is not enabled on this deployment.
-          </p>
+          <p className="mt-4 text-sm text-amber-800 dark:text-amber-200">{copy.upgradeBillingDisabled}</p>
         )}
         <p className="mt-4 text-center text-xs text-zinc-500">
-          Or{" "}
+          {copy.upgradeOrPrefix}{" "}
           <Link href="/pricing" className="underline" onClick={onClose}>
-            open pricing page
+            {copy.upgradeOpenPricing}
           </Link>
         </p>
       </div>

@@ -1,6 +1,9 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy } from "@/lib/i18n-billing";
 import { cn } from "@/lib/utils";
 
 export function BrandingProGate({
@@ -10,6 +13,9 @@ export function BrandingProGate({
   onUpgrade: () => void;
   className?: string;
 }) {
+  const locale = useLocale() as UiLocale;
+  const copy = getBillingCopy(locale);
+
   return (
     <div
       className={cn(
@@ -18,17 +24,14 @@ export function BrandingProGate({
       )}
     >
       <div className="absolute right-4 top-4 rounded-full bg-indigo-600/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
-        Pro feature
+        {copy.proFeatureBadge}
       </div>
       <p className="text-2xl" aria-hidden>
         🎨
       </p>
-      <h3 className="mt-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
-        Custom Branding is available on Monthly &amp; Yearly Pro plans
-      </h3>
+      <h3 className="mt-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">{copy.proGateTitle}</h3>
       <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-        Upgrade to add your agency logo, custom colors, and broker signatures to your PDFs. Your credit
-        pack includes watermark-free exports and AI copy — branding unlocks with a Pro subscription.
+        {copy.proGateBody}
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <button
@@ -36,13 +39,13 @@ export function BrandingProGate({
           onClick={onUpgrade}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
         >
-          Upgrade to Pro
+          {copy.upgradeToPro}
         </button>
         <Link
           href="/pricing"
           className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-white/80 dark:border-zinc-600 dark:hover:bg-zinc-900"
         >
-          Compare plans
+          {copy.comparePlans}
         </Link>
       </div>
     </div>

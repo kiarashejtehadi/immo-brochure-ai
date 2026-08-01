@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { authCallbackUrl, pathToSaveBeforeMagicLink, savePostAuthRedirect } from "@/lib/supabase/auth-redirect";
+import type { UiLocale } from "@/lib/i18n";
+import { getBillingCopy } from "@/lib/i18n-billing";
 import { cn } from "@/lib/utils";
 
 export function AuthEmailModal({
@@ -14,6 +17,8 @@ export function AuthEmailModal({
   onClose: () => void;
   onSent?: (email: string) => void;
 }) {
+  const locale = useLocale() as UiLocale;
+  const copy = getBillingCopy(locale);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -30,19 +35,16 @@ export function AuthEmailModal({
       const supabase = createSupabaseBrowserClient();
       const nextPath = pathToSaveBeforeMagicLink(window.location.pathname || "/de");
       savePostAuthRedirect(nextPath);
-      // No query on redirect URL — must match Supabase allowlist exactly.
       const redirectTo = authCallbackUrl(window.location.origin);
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: { emailRedirectTo: redirectTo },
       });
       if (signInError) throw signInError;
-      setMessage(
-        "Check your inbox for the magic link. Open it in this same browser on this device (do not switch to phone or another app).",
-      );
+      setMessage(copy.authMagicLinkSent);
       onSent?.(email.trim());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send magic link.");
+      setError(err instanceof Error ? err.message : copy.authSendFailed);
     } finally {
       setLoading(false);
     }
@@ -57,11 +59,9 @@ export function AuthEmailModal({
     >
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
         <h2 id="auth-modal-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Sign in with email
+          {copy.authTitle}
         </h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Passwordless login — we&apos;ll email you a secure magic link.
-        </p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{copy.authSubtitle}</p>
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <input
             type="email"
@@ -86,7 +86,7 @@ export function AuthEmailModal({
               onClick={onClose}
               className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
-              Close
+              {copy.authClose}
             </button>
             <button
               type="submit"
@@ -96,7 +96,7 @@ export function AuthEmailModal({
                 loading && "opacity-60",
               )}
             >
-              {loading ? "Sending…" : "Send magic link"}
+              {loading ? copy.authSending : copy.authSendMagicLink}
             </button>
           </div>
         </form>
