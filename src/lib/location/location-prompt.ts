@@ -1,13 +1,17 @@
 import type { ListingAddress } from "@/types/listing";
 import type { LocationEnrichment, NearbyPoi } from "@/types/location-poi";
+import {
+  DISTANCE_FORMATTING_RULES,
+  humanizeDistanceForPrompt,
+} from "@/lib/location/distance-format";
 
 function formatPoiList(items: NearbyPoi[]): string {
   if (items.length === 0) return "None verified within search radius";
   return items
     .map((poi) => {
-      const distance = `${Math.round(poi.distanceMeters)} m`;
+      const distance = humanizeDistanceForPrompt(poi.distanceMeters);
       const subtype = poi.subtype ? ` (${poi.subtype})` : "";
-      return `${poi.name}${subtype} — ~${distance}`;
+      return `${poi.name}${subtype} — ${distance}`;
     })
     .join("; ");
 }
@@ -33,5 +37,7 @@ You are provided with verified location data for the property at ${locationLine}
 - Shopping/Dining: ${formatPoiList(enrichment.shopping)}
 - Highway/Airport Connectivity: ${formatPoiList(enrichment.connectivity)}
 
-Write a compelling, professional 'Location & Neighborhood' section in the locationDescription field. STRICTLY restrict all claims about transit distances, parks, and nearby amenities to the verified POI facts listed above. Do NOT invent or assume any schools, shops, or facilities that are not present in the verified location data.`;
+Write a compelling, professional 'Location & Neighborhood' section in the locationDescription field. STRICTLY restrict all claims about transit distances, parks, and nearby amenities to the verified POI facts listed above. Do NOT invent or assume any schools, shops, or facilities that are not present in the verified location data.
+
+${DISTANCE_FORMATTING_RULES}`;
 }

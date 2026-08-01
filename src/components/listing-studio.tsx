@@ -55,7 +55,7 @@ import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl, resol
 import { reelBrandingFromProfile } from "@/lib/property-reel";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
-import { shouldShowStagingDisclaimer } from "@/lib/furnishing-guardrail";
+import { getFurnishingDisclaimerText } from "@/lib/furnishing-guardrail";
 import { StagingDisclaimerFooter } from "@/components/listing/staging-disclaimer";
 import type { UserBrandingProfile } from "@/types/branding";
 import { PropertyReelPreview } from "@/components/reel/property-reel-preview";
@@ -412,6 +412,20 @@ function ListingStudioContent() {
   }, [agentForLocale, billingStatus, brandingProfile]);
 
   const formattedAddress = useMemo(() => formatListingAddress(address), [address]);
+
+  const furnishingDisclaimerText = useMemo(
+    () =>
+      getFurnishingDisclaimerText(property.furnishingStatus, photos.length, {
+        stagingDisclaimerUnfurnished: exposeFormCopy.stagingDisclaimerUnfurnished,
+        stagingDisclaimerPartially: exposeFormCopy.stagingDisclaimerPartially,
+      }),
+    [
+      property.furnishingStatus,
+      photos.length,
+      exposeFormCopy.stagingDisclaimerUnfurnished,
+      exposeFormCopy.stagingDisclaimerPartially,
+    ],
+  );
 
   const socialHashtags = useMemo(
     () =>
@@ -1016,9 +1030,9 @@ function ListingStudioContent() {
                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
                     {result.fullDescription}
                   </p>
-                  {shouldShowStagingDisclaimer(property.furnishingStatus, photos.length) ? (
+                  {furnishingDisclaimerText ? (
                     <div className="mt-3">
-                      <StagingDisclaimerFooter text={exposeFormCopy.stagingDisclaimerFooter} />
+                      <StagingDisclaimerFooter text={furnishingDisclaimerText} />
                     </div>
                   ) : null}
                 </div>
@@ -1039,6 +1053,11 @@ function ListingStudioContent() {
                 <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
                   {result.locationDescription}
                 </p>
+                {furnishingDisclaimerText ? (
+                  <div className="mt-3">
+                    <StagingDisclaimerFooter text={furnishingDisclaimerText} />
+                  </div>
+                ) : null}
               </div>
             ) : result && previewTab === "social" ? (
               <ul className="space-y-4">

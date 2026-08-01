@@ -15,7 +15,7 @@ import type { CurrencyCode } from "@/lib/currency";
 import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
 import { propertyOverviewRows, certificateTypeLabel, heatingSourceLabel } from "@/lib/listing-property-labels";
 import { filterPdfTableRows } from "@/lib/pdf-table-rows";
-import { shouldShowStagingDisclaimer } from "@/lib/furnishing-guardrail";
+import { getFurnishingDisclaimerText } from "@/lib/furnishing-guardrail";
 import { formatListingAddress } from "@/lib/location/format-address";
 
 /** Strip EPC value/class when no certificate applies. */
@@ -147,12 +147,14 @@ export function buildBrochurePdfProps(input: {
     energyLines,
     agent: input.agent,
     legalDisclaimerFallback: input.form.defaultLegalDisclaimer,
-    stagingDisclaimer: shouldShowStagingDisclaimer(
+    stagingDisclaimer: getFurnishingDisclaimerText(
       input.property.furnishingStatus,
       input.photoCount ?? 0,
-    )
-      ? input.form.stagingDisclaimerFooter
-      : undefined,
+      {
+        stagingDisclaimerUnfurnished: input.form.stagingDisclaimerUnfurnished,
+        stagingDisclaimerPartially: input.form.stagingDisclaimerPartially,
+      },
+    ),
     brandColor: input.branding?.brandColor,
     logoDataUrl: input.branding?.logoDataUrl,
     website: input.branding?.website,

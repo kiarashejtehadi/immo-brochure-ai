@@ -102,7 +102,8 @@ export type FormCopy = {
   furnishingFully: string;
   isStagedOrModel: string;
   isStagedOrModelHint: string;
-  stagingDisclaimerFooter: string;
+  stagingDisclaimerUnfurnished: string;
+  stagingDisclaimerPartially: string;
 };
 
 const en: FormCopy = {
@@ -213,8 +214,10 @@ const en: FormCopy = {
   isStagedOrModel: "Photos show staging / model unit",
   isStagedOrModelHint:
     "Check if photos include virtual staging, sample decor, or a show apartment that is not delivered as shown.",
-  stagingDisclaimerFooter:
-    "Note: Furnishings shown are for illustrative/staging purposes only. Property is offered unfurnished.",
+  stagingDisclaimerUnfurnished:
+    "Note: Interior furniture shown is for staging/visualization purposes only; the unit is offered unfurnished.",
+  stagingDisclaimerPartially:
+    "Note: Interior furniture shown is for staging purposes only. The unit is delivered partially furnished with built-in fixtures as specified.",
 };
 
 const de: Partial<FormCopy> = {
@@ -324,8 +327,10 @@ const de: Partial<FormCopy> = {
   isStagedOrModel: "Fotos zeigen Staging / Musterwohnung",
   isStagedOrModelHint:
     "Aktivieren, wenn Fotos Virtual Staging, Beispiel-Dekor oder eine nicht übernommene Musterwohnung zeigen.",
-  stagingDisclaimerFooter:
-    "Hinweis: Gezeigte Einrichtung dient nur der Illustration/Staging. Das Objekt wird unmöbliert übergeben.",
+  stagingDisclaimerUnfurnished:
+    "Hinweis: Gezeigte Einrichtung dient nur Staging/Visualisierung; das Objekt wird unmöbliert übergeben.",
+  stagingDisclaimerPartially:
+    "Hinweis: Gezeigte Einrichtung dient nur Staging-Zwecken. Das Objekt wird teilmöbliert mit den angegebenen Einbauten übergeben.",
 };
 
 const fr: Partial<FormCopy> = {
@@ -437,8 +442,10 @@ const fr: Partial<FormCopy> = {
   isStagedOrModel: "Photos avec staging / logement témoin",
   isStagedOrModelHint:
     "Cochez si les photos incluent du staging virtuel, une déco d'exemple ou un logement témoin non livré tel quel.",
-  stagingDisclaimerFooter:
-    "Note : Le mobilier visible est illustratif/staging uniquement. Le bien est proposé non meublé.",
+  stagingDisclaimerUnfurnished:
+    "Note : Le mobilier visible sert uniquement au staging/visualisation ; le bien est proposé non meublé.",
+  stagingDisclaimerPartially:
+    "Note : Le mobilier visible sert uniquement au staging. Le bien est livré partiellement meublé avec les équipements intégrés indiqués.",
 };
 
 const es: Partial<FormCopy> = {

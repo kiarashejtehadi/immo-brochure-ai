@@ -478,11 +478,6 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
           )}
         </View>
         <Text style={s.body}>{props.fullDescription}</Text>
-        {props.stagingDisclaimer ? (
-          <View style={s.stagingDisclaimer}>
-            <Text style={s.stagingDisclaimerText}>{props.stagingDisclaimer}</Text>
-          </View>
-        ) : null}
 
         {props.energyLines.length > 0 ? (
           <>
@@ -511,7 +506,14 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
           badge={props.transactionBadge}
         />
         <Text style={[s.h2, { color: brandColor }]}>Location & neighborhood</Text>
-        <Text style={[s.body, { marginBottom: 14 }]}>{props.locationDescription}</Text>
+        <Text style={[s.body, { marginBottom: props.stagingDisclaimer ? 8 : 14 }]}>
+          {props.locationDescription}
+        </Text>
+        {props.stagingDisclaimer ? (
+          <View style={[s.stagingDisclaimer, { marginBottom: 14 }]}>
+            <Text style={s.stagingDisclaimerText}>{props.stagingDisclaimer}</Text>
+          </View>
+        ) : null}
 
         {props.floorPlanDataUrl ? (
           <>

@@ -5,11 +5,53 @@ export function hasFittedKitchen(features: FeatureKey[]): boolean {
   return features.includes("Fitted Kitchen");
 }
 
+export function shouldShowFurnishingDisclaimer(
+  furnishingStatus: FurnishingStatus,
+  imageCount: number,
+): boolean {
+  return (
+    imageCount > 0 &&
+    (furnishingStatus === "unfurnished" || furnishingStatus === "partially_furnished")
+  );
+}
+
+/** @deprecated Use shouldShowFurnishingDisclaimer */
 export function shouldShowStagingDisclaimer(
   furnishingStatus: FurnishingStatus,
   imageCount: number,
 ): boolean {
-  return furnishingStatus === "unfurnished" && imageCount > 0;
+  return shouldShowFurnishingDisclaimer(furnishingStatus, imageCount);
+}
+
+export type FurnishingDisclaimerCopy = {
+  stagingDisclaimerUnfurnished: string;
+  stagingDisclaimerPartially: string;
+};
+
+export function getFurnishingDisclaimerText(
+  furnishingStatus: FurnishingStatus,
+  imageCount: number,
+  copy: FurnishingDisclaimerCopy,
+): string | undefined {
+  if (!shouldShowFurnishingDisclaimer(furnishingStatus, imageCount)) return undefined;
+
+  if (furnishingStatus === "partially_furnished") {
+    return copy.stagingDisclaimerPartially;
+  }
+
+  return copy.stagingDisclaimerUnfurnished;
+}
+
+export function furnishingStoryDisclaimerSentence(
+  furnishingStatus: FurnishingStatus,
+): string | undefined {
+  if (furnishingStatus === "unfurnished") {
+    return "Note: Interior furniture shown is for staging/visualization purposes only; the unit is offered unfurnished.";
+  }
+  if (furnishingStatus === "partially_furnished") {
+    return "Note: Interior furniture shown is for staging purposes only. The unit is delivered partially furnished with built-in fixtures as specified.";
+  }
+  return undefined;
 }
 
 export function buildFurnishingSystemInstruction(input: {
@@ -36,12 +78,17 @@ export function buildFurnishingSystemInstruction(input: {
 
   const needsStoryDisclaimer =
     input.isStagedOrModel ||
-    (input.furnishingStatus === "unfurnished" && input.hasImages);
+    ((input.furnishingStatus === "unfurnished" ||
+      input.furnishingStatus === "partially_furnished") &&
+      input.hasImages);
 
-  const stagingRule = needsStoryDisclaimer
-    ? `3. MODEL / VIRTUAL STAGING DISCLAIMER:
-   - If isStagedOrModel is true OR furnishingStatus is 'unfurnished' while photos show furnished rooms: Add this sentence at the END of fullDescription (Property Story): "Please note: Interior furniture and staging elements shown in photos are for illustrative purposes only; the unit is delivered unfurnished."`
-    : "";
+  const storyDisclaimer = furnishingStoryDisclaimerSentence(input.furnishingStatus);
+
+  const stagingRule =
+    needsStoryDisclaimer && storyDisclaimer
+      ? `3. MODEL / VIRTUAL STAGING DISCLAIMER:
+   - If isStagedOrModel is true OR photos show furnished rooms while furnishingStatus is unfurnished or partially_furnished: Add this exact sentence at the END of fullDescription (Property Story): "${storyDisclaimer}"`
+      : "";
 
   return [
     "CRITICAL PHYSICAL PROPERTY RULES:",
