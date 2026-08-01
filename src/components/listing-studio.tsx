@@ -28,6 +28,7 @@ import {
 import { getFormCopy, isKnownDefaultLegalDisclaimer, resolveLegalDisclaimer } from "@/lib/i18n-form";
 import {
   outputLanguageFromLocale,
+  localeFromTargetLanguage,
 } from "@/lib/target-languages";
 import {
   getDefaultCurrencyForLocale,
@@ -160,6 +161,19 @@ export default function ListingStudio() {
 
   const [targetLanguage, setTargetLanguage] = useState<OutputLanguage>(() =>
     outputLanguageFromLocale(routeLocale),
+  );
+
+  const exposeLocale = useMemo(
+    () => localeFromTargetLanguage(targetLanguage),
+    [targetLanguage],
+  );
+  const exposeFormCopy = useMemo(
+    () => getFormCopy(exposeLocale),
+    [exposeLocale],
+  );
+  const exposeUiCopy = useMemo(
+    () => getUiCopy(exposeLocale),
+    [exposeLocale],
   );
 
   useEffect(() => {
@@ -303,9 +317,10 @@ export default function ListingStudio() {
       property,
       rent,
       sale,
-      formCopy,
-      priceOnRequestLabel: copy.priceOnRequest,
-      perMonthSuffix: copy.reelPerMonth,
+      formCopy: exposeFormCopy,
+      priceOnRequestLabel: exposeUiCopy.priceOnRequest,
+      perMonthSuffix: exposeFormCopy.reelPerMonth,
+      roomsSuffix: exposeFormCopy.reelRoomsSuffix,
       headline: result?.title,
       ...reelBranding,
     }),
@@ -319,9 +334,8 @@ export default function ListingStudio() {
       property,
       rent,
       sale,
-      formCopy,
-      copy.priceOnRequest,
-      copy.reelPerMonth,
+      exposeFormCopy,
+      exposeUiCopy.priceOnRequest,
       result?.title,
       reelBranding,
     ],
@@ -499,8 +513,8 @@ export default function ListingStudio() {
       }
       const pdfProps = buildBrochurePdfProps({
         transactionType,
-        form: formCopy,
-        ui: uiCopy,
+        form: exposeFormCopy,
+        ui: exposeUiCopy,
         currency: activeCurrency,
         address,
         size,

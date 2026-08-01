@@ -62,6 +62,7 @@ export type PropertyReelPreviewInput = {
   formCopy: Parameters<typeof buildPropertyReelProps>[0]["formCopy"];
   priceOnRequestLabel: string;
   perMonthSuffix: string;
+  roomsSuffix: string;
   headline?: string;
   agencyLogoUrl?: string;
   brandColor?: string;
@@ -86,6 +87,7 @@ function buildReelProps(
     formCopy: input.formCopy,
     priceOnRequestLabel: input.priceOnRequestLabel,
     perMonthSuffix: input.perMonthSuffix,
+    roomsSuffix: input.roomsSuffix,
     headline: input.headline,
     agencyLogoUrl: input.agencyLogoUrl,
     brandColor: input.brandColor,
@@ -186,6 +188,7 @@ export function PropertyReelPreview({
         formCopy: input.formCopy,
         priceOnRequestLabel: input.priceOnRequestLabel,
         perMonthSuffix: input.perMonthSuffix,
+        roomsSuffix: input.roomsSuffix,
         headline: input.headline,
         agencyLogoUrl,
         brandColor: input.brandColor,

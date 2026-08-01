@@ -253,9 +253,7 @@ function ReelTextOverlay({
     config: SPRING_TEXT,
   });
 
-  const specsParts = [propertyType, size, rooms ? `${rooms} rooms` : null].filter(
-    Boolean,
-  ) as string[];
+  const specsParts = [propertyType, size, rooms].filter(Boolean) as string[];
 
   const panelY = interpolate(panelEnter, [0, 1], [48, 0]);
   const headlineY = interpolate(headlineEnter, [0, 1], [-24, 0]);

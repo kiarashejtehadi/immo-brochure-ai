@@ -67,6 +67,7 @@ export function buildPropertyReelProps(input: {
   formCopy: FormCopy;
   priceOnRequestLabel: string;
   perMonthSuffix: string;
+  roomsSuffix: string;
   headline?: string;
   agencyLogoUrl?: string;
   brandColor?: string;
@@ -96,12 +97,16 @@ export function buildPropertyReelProps(input: {
       ? propertyTypeLabel(input.property.propertyType, input.formCopy)
       : undefined;
 
+  const roomsLabel = input.rooms.trim()
+    ? `${input.rooms.trim()} ${input.roomsSuffix}`
+    : undefined;
+
   return {
     photos: input.photoUrls.slice(0, 5),
     price,
     size: formatReelSize(input.size),
     location: input.address.trim(),
-    rooms: input.rooms.trim() || undefined,
+    rooms: roomsLabel,
     propertyType,
     headline: input.headline?.trim() || undefined,
     agencyLogoUrl: input.showDemoWatermark ? undefined : input.agencyLogoUrl,

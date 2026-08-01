@@ -7,10 +7,8 @@ import {
 /** Target language selector (UI locale + AI output). */
 export const TARGET_LANGUAGE_OPTIONS = OUTPUT_LANGUAGE_OPTIONS;
 
-/** Primary exposé output languages shown in the listing form. */
-export const EXPOSE_LANGUAGE_OPTIONS = OUTPUT_LANGUAGE_OPTIONS.filter((o) =>
-  (["en", "de", "fr"] as UiLocale[]).includes(o.locale),
-);
+/** All UI locales available as exposé output languages. */
+export const EXPOSE_LANGUAGE_OPTIONS = OUTPUT_LANGUAGE_OPTIONS;
 
 export function localeFromTargetLanguage(lang: OutputLanguage): UiLocale {
   return (

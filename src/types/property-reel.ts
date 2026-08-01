@@ -14,7 +14,7 @@ export type PropertyReelProps = {
   size: string;
   /** Address or neighborhood, e.g. "10115 Berlin". */
   location: string;
-  /** Optional room count, e.g. "3". */
+  /** Optional room count label, e.g. "3 rooms" or "3 Zimmer". */
   rooms?: string;
   /** Optional property type label, e.g. "Apartment". */
   propertyType?: string;
