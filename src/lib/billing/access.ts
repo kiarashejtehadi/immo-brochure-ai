@@ -128,3 +128,45 @@ export async function getBillingStatusForClient(): Promise<BillingStatusResponse
     currentPeriodEnd: subscription?.current_period_end ?? null,
   };
 }
+
+const PRO_REEL_PLANS = new Set(["monthly", "yearly"]);
+
+export type ProReelAccessResult =
+  | { ok: true; userId: string }
+  | { ok: false; status: 401 | 403; error: string; code: "unauthenticated" | "pro_required" | "billing_disabled" };
+
+/** Server-side gate for property video reel export. */
+export async function assertProReelAccess(): Promise<ProReelAccessResult> {
+  if (!isBillingEnabled()) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Video Reels are exclusive to Monthly and Yearly Pro plans.",
+      code: "pro_required",
+    };
+  }
+
+  const authUser = await getSessionUser();
+  if (!authUser?.email) {
+    return {
+      ok: false,
+      status: 401,
+      error: "Sign in to export video reels.",
+      code: "unauthenticated",
+    };
+  }
+
+  await upsertUserFromAuth({ id: authUser.id, email: authUser.email });
+  const subscription = await getActiveSubscription(authUser.id);
+
+  if (!subscription || !PRO_REEL_PLANS.has(subscription.plan_id)) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Video Reels are exclusive to Monthly and Yearly Pro plans.",
+      code: "pro_required",
+    };
+  }
+
+  return { ok: true, userId: authUser.id };
+}

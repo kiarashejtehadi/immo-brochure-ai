@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, type ComponentType } from "react";
 import dynamic from "next/dynamic";
+import { Lock } from "lucide-react";
 import { canRenderMediaOnWeb, renderMediaOnWeb } from "@remotion/web-renderer";
 import { PropertyReel } from "@/remotion/PropertyReel";
 import {
@@ -17,6 +18,10 @@ import {
   downloadBlob,
   photosToDataUrls,
 } from "@/lib/property-reel";
+import { hasProReelAccess } from "@/lib/billing/client-access";
+import { ProBadge, UpgradeProModal } from "@/components/billing/upgrade-pro-modal";
+import { useBillingStatus } from "@/hooks/use-billing-status";
+import { readJsonResponse } from "@/lib/http/read-json-response";
 import { cn } from "@/lib/utils";
 
 const RemotionPlayer = dynamic(
@@ -37,6 +42,7 @@ type ReelPreviewCopy = {
   reelHint: string;
   reelExportUnsupported: string;
   reelExportFailed: string;
+  reelProOnly: string;
 };
 
 export type PropertyReelPreviewInput = {
@@ -59,15 +65,24 @@ export type PropertyReelPreviewInput = {
 export function PropertyReelPreview({
   input,
   copy,
+  locale,
+  onSignIn,
   className,
 }: {
   input: PropertyReelPreviewInput;
   copy: ReelPreviewCopy;
+  locale: string;
+  onSignIn?: () => void;
   className?: string;
 }) {
+  const { status } = useBillingStatus();
+  const proReelAccess = hasProReelAccess(status);
+  const signedIn = Boolean(status?.email);
+
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportProgress, setExportProgress] = useState<number | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const previewProps = useMemo(
     (): PropertyReelProps =>
@@ -95,6 +110,18 @@ export function PropertyReelPreview({
     setExportProgress(0);
 
     try {
+      const authRes = await fetch("/api/reel/export", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const authData = await readJsonResponse<{ ok?: boolean; error?: string; code?: string }>(
+        authRes,
+      );
+
+      if (!authRes.ok) {
+        throw new Error(authData.error ?? copy.reelProOnly);
+      }
+
       const readiness = await canRenderMediaOnWeb({
         container: "mp4",
         width: PROPERTY_REEL_WIDTH,
@@ -153,52 +180,89 @@ export function PropertyReelPreview({
       setExporting(false);
       setExportProgress(null);
     }
-  }, [copy.reelExportFailed, copy.reelExportUnsupported, input]);
+  }, [copy.reelExportFailed, copy.reelExportUnsupported, copy.reelProOnly, input]);
+
+  function handleExportClick() {
+    if (!proReelAccess) {
+      setExportError(null);
+      if (!signedIn) {
+        onSignIn?.();
+        return;
+      }
+      setUpgradeOpen(true);
+      return;
+    }
+    void handleExport();
+  }
 
   return (
-    <div className={cn("flex flex-col items-center gap-4", className)}>
-      <div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-700">
-        <RemotionPlayer
-          component={PropertyReel as ComponentType<Record<string, unknown>>}
-          inputProps={previewProps as Record<string, unknown>}
-          durationInFrames={PROPERTY_REEL_DURATION_FRAMES}
-          compositionWidth={PROPERTY_REEL_WIDTH}
-          compositionHeight={PROPERTY_REEL_HEIGHT}
-          fps={PROPERTY_REEL_FPS}
-          style={{
-            width: "100%",
-            aspectRatio: "9 / 16",
-          }}
-          controls
-          loop
-          acknowledgeRemotionLicense
-        />
+    <>
+      <div className={cn("flex flex-col items-center gap-4", className)}>
+        <div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-700">
+          <RemotionPlayer
+            component={PropertyReel as ComponentType<Record<string, unknown>>}
+            inputProps={previewProps as Record<string, unknown>}
+            durationInFrames={PROPERTY_REEL_DURATION_FRAMES}
+            compositionWidth={PROPERTY_REEL_WIDTH}
+            compositionHeight={PROPERTY_REEL_HEIGHT}
+            fps={PROPERTY_REEL_FPS}
+            style={{
+              width: "100%",
+              aspectRatio: "9 / 16",
+            }}
+            controls
+            loop
+            acknowledgeRemotionLicense
+          />
+        </div>
+
+        <div className="w-full max-w-sm space-y-2">
+          <button
+            type="button"
+            onClick={handleExportClick}
+            disabled={exporting && proReelAccess}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
+              proReelAccess
+                ? "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-500"
+                : "border-zinc-300 bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700",
+            )}
+          >
+            {!proReelAccess ? <Lock className="h-4 w-4 shrink-0" aria-hidden /> : null}
+            <span>
+              {exporting && proReelAccess
+                ? exportProgress !== null
+                  ? `${copy.exportingReel} (${exportProgress}%)`
+                  : copy.exportingReel
+                : copy.exportReel}
+            </span>
+            {!proReelAccess ? <ProBadge /> : null}
+          </button>
+
+          {!proReelAccess ? (
+            <p className="text-center text-xs leading-relaxed text-amber-800 dark:text-amber-200">
+              {copy.reelProOnly}
+            </p>
+          ) : (
+            <p className="text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {copy.reelHint}
+            </p>
+          )}
+
+          {exportError ? (
+            <p className="text-center text-xs text-red-600 dark:text-red-400" role="alert">
+              {exportError}
+            </p>
+          ) : null}
+        </div>
       </div>
 
-      <div className="w-full max-w-sm space-y-2">
-        <button
-          type="button"
-          onClick={() => void handleExport()}
-          disabled={exporting}
-          className={cn(
-            "w-full rounded-lg border border-indigo-600 bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60",
-          )}
-        >
-          {exporting
-            ? exportProgress !== null
-              ? `${copy.exportingReel} (${exportProgress}%)`
-              : copy.exportingReel
-            : copy.exportReel}
-        </button>
-        <p className="text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-          {copy.reelHint}
-        </p>
-        {exportError ? (
-          <p className="text-center text-xs text-red-600 dark:text-red-400" role="alert">
-            {exportError}
-          </p>
-        ) : null}
-      </div>
-    </div>
+      <UpgradeProModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        locale={locale}
+        subscriptionOnly
+      />
+    </>
   );
 }

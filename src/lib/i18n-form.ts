@@ -82,6 +82,7 @@ export type FormCopy = {
   reelExportUnsupported: string;
   reelExportFailed: string;
   reelPerMonth: string;
+  reelProOnly: string;
   headline: string;
   summaryLabel: string;
   locationLabel: string;
@@ -176,6 +177,7 @@ const en: FormCopy = {
     "Your browser cannot export MP4 reels. Try Chrome or Edge on desktop.",
   reelExportFailed: "Reel export failed. Please try again.",
   reelPerMonth: " / month",
+  reelProOnly: "Video Reels are exclusive to Monthly and Yearly Pro plans.",
   headline: "Headline",
   summaryLabel: "Key highlights",
   locationLabel: "Neighborhood & location",
@@ -273,6 +275,7 @@ const de: Partial<FormCopy> = {
     "Ihr Browser kann kein MP4-Reel exportieren. Bitte Chrome oder Edge am Desktop nutzen.",
   reelExportFailed: "Reel-Export fehlgeschlagen. Bitte erneut versuchen.",
   reelPerMonth: " / Monat",
+  reelProOnly: "Video-Reels sind exklusiv für Monats- und Jahres-Pro-Tarife.",
   headline: "Überschrift",
   summaryLabel: "Highlights",
   locationLabel: "Lage & Umgebung",
@@ -340,6 +343,7 @@ const fr: Partial<FormCopy> = {
     "Votre navigateur ne peut pas exporter de reel MP4. Essayez Chrome ou Edge.",
   reelExportFailed: "Échec de l'export du reel. Réessayez.",
   reelPerMonth: " / mois",
+  reelProOnly: "Les reels vidéo sont réservés aux offres Pro mensuelles et annuelles.",
   headline: "Titre",
   summaryLabel: "Points clés",
   locationLabel: "Quartier & localisation",
@@ -410,6 +414,7 @@ const es: Partial<FormCopy> = {
     "Su navegador no puede exportar reels MP4. Pruebe Chrome o Edge.",
   reelExportFailed: "Error al exportar el reel. Inténtelo de nuevo.",
   reelPerMonth: " / mes",
+  reelProOnly: "Los reels de vídeo son exclusivos de los planes Pro mensual y anual.",
   headline: "Titular",
   summaryLabel: "Puntos destacados",
   locationLabel: "Barrio y entorno",
@@ -480,6 +485,7 @@ const it: Partial<FormCopy> = {
     "Il browser non può esportare reel MP4. Prova Chrome o Edge.",
   reelExportFailed: "Esportazione reel non riuscita. Riprova.",
   reelPerMonth: " / mese",
+  reelProOnly: "I reel video sono esclusivi dei piani Pro mensili e annuali.",
   headline: "Titolo",
   summaryLabel: "Punti salienti",
   locationLabel: "Quartiere e zona",
@@ -550,6 +556,7 @@ const nl: Partial<FormCopy> = {
     "Uw browser kan geen MP4-reels exporteren. Probeer Chrome of Edge.",
   reelExportFailed: "Reel-export mislukt. Probeer opnieuw.",
   reelPerMonth: " / maand",
+  reelProOnly: "Video-reels zijn exclusief voor maandelijkse en jaarlijkse Pro-abonnementen.",
   headline: "Kop",
   summaryLabel: "Belangrijkste punten",
   locationLabel: "Buurt & ligging",
@@ -620,6 +627,7 @@ const fa: Partial<FormCopy> = {
     "مرورگر شما نمی‌تواند ریل MP4 صادر کند. Chrome یا Edge را امتحان کنید.",
   reelExportFailed: "خروجی ریل ناموفق بود. دوباره تلاش کنید.",
   reelPerMonth: " / ماه",
+  reelProOnly: "ریل‌های ویدیویی مختص طرح‌های Pro ماهانه و سالانه هستند.",
   headline: "عنوان",
   summaryLabel: "نکات کلیدی",
   locationLabel: "محله و موقعیت",
@@ -690,6 +698,7 @@ const ar: Partial<FormCopy> = {
     "متصفحك لا يدعم تصدير ريل MP4. جرّب Chrome أو Edge.",
   reelExportFailed: "فشل تصدير الريل. حاول مرة أخرى.",
   reelPerMonth: " / شهر",
+  reelProOnly: "ريل الفيديو حصري لخطط Pro الشهرية والسنوية.",
   headline: "العنوان",
   summaryLabel: "أبرز النقاط",
   locationLabel: "الحي والموقع",
@@ -760,6 +769,7 @@ const pl: Partial<FormCopy> = {
     "Twoja przeglądarka nie obsługuje eksportu reel MP4. Użyj Chrome lub Edge.",
   reelExportFailed: "Eksport reela nie powiódł się. Spróbuj ponownie.",
   reelPerMonth: " / mies.",
+  reelProOnly: "Reels wideo są dostępne tylko w planach Pro miesięcznym i rocznym.",
   headline: "Nagłówek",
   summaryLabel: "Najważniejsze atuty",
   locationLabel: "Okolica i lokalizacja",
