@@ -119,7 +119,46 @@ const fr: DemoListingContent = {
   },
 };
 
-const byLocale: Partial<Record<UiLocale, DemoListingContent>> = { de, fr };
+const fa: DemoListingContent = {
+  ...en,
+  address: "Herneweg 12, 10115 Berlin",
+  rent: {
+    ...en.rent,
+    availableFrom: "فوری",
+    minimumLeaseTerm: "۱۲ ماه",
+    petPolicy: "با توافق",
+  },
+  property: {
+    ...en.property,
+    floorLevel: "طبقه ۳",
+    condition: "modernized",
+  },
+  result: {
+    ...en.result,
+    title: "آپارتمان ۲ خوابه شیک با امکانات مدرن در Herneweg",
+    summary: [
+      "فضای نشیمن روشن با پنجره‌های سرتاسری",
+      "آشپزخانه طراح با لوازم توکار",
+      "جای پارک زیرزمینی شامل",
+      "خیابان آرام مسکونی نزدیک Mitte",
+      "ساختمان بهینه‌سازی‌شده با گرمایش مدرن",
+    ],
+    fullDescription:
+      "این آپارتمان دو خوابه با چیدمان حرفه‌ای، زندگی شهری معاصر در یکی از محبوب‌ترین محله‌های برلین ارائه می‌دهد. فضای نشیمن باز با نور طبیعی فراوان از پنجره‌های بزرگ، کفپوش بلوط گرم و خطوط معماری تمیز را برجسته می‌کند.\n\nآشپزخانه مجهز با سنگ‌کاری، لوازم Siemens توکار و فضای ذخیره‌سازی کافی — ایده‌آل برای آشپزی روزمره و پذیرایی. هر دو اتاق خواب متناسب هستند و سوئیت اصلی کمد دیواری دارد.\n\nیک جای پارک زیرزمینی شامل است. ساختمان در ۲۰۲۱ به‌طور کامل مدرن‌سازی شده با گرمایش کارآمد و عایق‌بندی عالی. فوری برای مستاجران بلندمدت که کیفیت، راحتی و دسترسی می‌خواهند.",
+    locationDescription:
+      "Herneweg در بخش آرام برلین-Mitte قرار دارد، در فاصله پیاده تا کافه‌ها، بازارهای ارگانیک و خط U8. خانواده‌ها پارک‌ها و مسیرهای دوچرخه نزدیک را دوست دارند؛ حرفه‌ای‌ها ۱۲ دقیقه تا Friedrichstraße راه دارند.",
+    socialCaptions: {
+      instagram:
+        "زندگی شهری ۲ خوابه در Herneweg ✨ نور فراوان، آشپزخانه طراح و پارکینگ. ۲٬۰۰۰ یورو/ماه — برای بازدید پیام دهید! #املاک #برلین",
+      linkedin:
+        "آگهی اجاره جدید: آپارتمان ۲ خوابه شیک در برلین-Mitte (Herneweg). آشپزخانه مجهز، پارکینگ زیرزمینی، تحویل فوری. ۲٬۰۰۰ یورو/ماه.",
+      facebook:
+        "تازه ثبت شد: آپارتمان روشن ۲ خوابه در Herneweg — آشپزخانه مدرن، نور عالی و پارکینگ. ۲٬۰۰۰ یورو/ماه. برای بازدید پیام دهید!",
+    },
+  },
+};
+
+const byLocale: Partial<Record<UiLocale, DemoListingContent>> = { de, fr, fa };
 
 export function getDemoListingContent(locale: UiLocale): DemoListingContent {
   return byLocale[locale] ?? en;

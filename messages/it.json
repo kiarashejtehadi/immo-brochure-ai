@@ -1,11 +1,15 @@
 {
+  "meta": {
+    "siteName": "ImmoCaption AI"
+  },
   "footer": {
     "imprint": "Note legali / Impressum",
     "privacy": "Informativa sulla privacy",
     "terms": "Termini e condizioni",
     "cookies": "Preferenze cookie",
     "rights": "Tutti i diritti riservati.",
-    "studio": "Studio"
+    "studio": "Studio",
+    "pricing": "Prezzi e piani"
   },
   "legal": {
     "lastUpdated": "Ultimo aggiornamento",
@@ -17,20 +21,25 @@
     "acceptNecessary": "Solo necessari",
     "manage": "Gestisci preferenze",
     "preferencesTitle": "Preferenze cookie e archiviazione",
-    "save": "Salva"
+    "necessaryTitle": "Strettamente necessari",
+    "necessaryDesc": "Richiesti per autenticazione, sicurezza sessione e memoria del consenso. Sempre attivi.",
+    "analyticsTitle": "Analitiche (opzionale)",
+    "analyticsDesc": "Analitiche rispettose della privacy — caricate solo dopo opt-in.",
+    "save": "Salva preferenze",
+    "analyticsOffNotice": "Le analitiche non sono attive in questo deployment. La scelta viene salvata per quando saranno aggiunte."
   },
   "checkout": {
-    "title": "Pricing & Plans",
-    "subtitle": "Choose a plan — checkout opens in a secure Lemon Squeezy overlay.",
-    "legalHeading": "Legal information",
-    "termsCheckbox": "I agree to the Terms of Service and Privacy Policy.",
-    "withdrawalCheckbox": "I expressly request immediate execution of the digital service and acknowledge that I forfeit my 14-day right of withdrawal once generation or subscription performance begins.",
-    "purchaseLegalInline": "By continuing, you agree to our",
-    "withdrawalInline": "Digital delivery starts immediately after payment.",
-    "purchaseLegalHint": "Selecting a plan above confirms both statements and opens secure checkout.",
-    "payButton": "Continue to secure checkout",
-    "payDisabledHint": "Please confirm both checkboxes to continue.",
-    "paymentNotConfigured": "Payments are not configured yet.",
-    "planLabel": "Pro plan (example)"
+    "title": "Prezzi e piani",
+    "subtitle": "Scegli un piano — il checkout si apre in un overlay sicuro Lemon Squeezy.",
+    "legalHeading": "Informazioni legali",
+    "termsCheckbox": "Accetto i Termini di servizio e l'Informativa sulla privacy.",
+    "withdrawalCheckbox": "Richiedo espressamente l'esecuzione immediata del servizio digitale e riconosco di perdere il diritto di recesso di 14 giorni all'avvio della prestazione.",
+    "purchaseLegalInline": "Continuando, accetti i nostri",
+    "withdrawalInline": "La consegna digitale inizia immediatamente dopo il pagamento.",
+    "purchaseLegalHint": "Selezionare un piano conferma entrambe le dichiarazioni e apre il checkout sicuro.",
+    "payButton": "Continua al pagamento sicuro",
+    "payDisabledHint": "Conferma entrambe le caselle per continuare.",
+    "paymentNotConfigured": "I pagamenti non sono ancora configurati.",
+    "planLabel": "Piano Pro (esempio)"
   }
 }

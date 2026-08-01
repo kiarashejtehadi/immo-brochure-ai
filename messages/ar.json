@@ -1,11 +1,15 @@
 {
+  "meta": {
+    "siteName": "ImmoCaption AI"
+  },
   "footer": {
     "imprint": "إشعار قانوني / Impressum",
     "privacy": "سياسة الخصوصية",
     "terms": "الشروط والأحكام",
     "cookies": "تفضيلات ملفات تعريف الارتباط",
     "rights": "جميع الحقوق محفوظة.",
-    "studio": "الاستوديو"
+    "studio": "الاستوديو",
+    "pricing": "الأسعار والخطط"
   },
   "legal": {
     "lastUpdated": "آخر تحديث",
@@ -17,20 +21,25 @@
     "acceptNecessary": "الضروري فقط",
     "manage": "إدارة التفضيلات",
     "preferencesTitle": "تفضيلات الكوكيز والتخزين",
-    "save": "حفظ"
+    "necessaryTitle": "ضروري تماماً",
+    "necessaryDesc": "مطلوب للمصادقة وأمان الجلسة وتذكر الموافقة. دائماً نشط.",
+    "analyticsTitle": "التحليلات (اختياري)",
+    "analyticsDesc": "تحليلات استخدام تحترم الخصوصية — لا تُحمّل إلا بعد الموافقة.",
+    "save": "حفظ التفضيلات",
+    "analyticsOffNotice": "التحليلات غير مفعّلة في هذا النشر. يتم حفظ اختيارك لوقت التفعيل."
   },
   "checkout": {
-    "title": "Pricing & Plans",
-    "subtitle": "Choose a plan — checkout opens in a secure Lemon Squeezy overlay.",
-    "legalHeading": "Legal information",
-    "termsCheckbox": "I agree to the Terms of Service and Privacy Policy.",
-    "withdrawalCheckbox": "I expressly request immediate execution of the digital service and acknowledge that I forfeit my 14-day right of withdrawal once generation or subscription performance begins.",
-    "purchaseLegalInline": "By continuing, you agree to our",
-    "withdrawalInline": "Digital delivery starts immediately after payment.",
-    "purchaseLegalHint": "Selecting a plan above confirms both statements and opens secure checkout.",
-    "payButton": "Continue to secure checkout",
-    "payDisabledHint": "Please confirm both checkboxes to continue.",
-    "paymentNotConfigured": "Payments are not configured yet.",
-    "planLabel": "Pro plan (example)"
+    "title": "الأسعار والخطط",
+    "subtitle": "اختر خطة — يفتح الدفع في overlay آمن من Lemon Squeezy.",
+    "legalHeading": "معلومات قانونية",
+    "termsCheckbox": "أوافق على شروط الخدمة وسياسة الخصوصية.",
+    "withdrawalCheckbox": "أطلب صراحةً التنفيذ الفوري للخدمة الرقمية وأقر بأنني أفقد حق الانسحاب لمدة 14 يوماً بمجرد بدء الخدمة.",
+    "purchaseLegalInline": "بالمتابعة، فإنك توافق على",
+    "withdrawalInline": "يبدأ التسليم الرقمي فوراً بعد الدفع.",
+    "purchaseLegalHint": "اختيار خطة أعلاه يؤكد البيانين ويفتح الدفع الآمن.",
+    "payButton": "المتابعة إلى الدفع الآمن",
+    "payDisabledHint": "يرجى تأكيد كلا الخيارين.",
+    "paymentNotConfigured": "المدفوعات غير مُعدّة بعد.",
+    "planLabel": "خطة Pro (مثال)"
   }
 }

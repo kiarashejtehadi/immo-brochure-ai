@@ -1,11 +1,15 @@
 {
+  "meta": {
+    "siteName": "ImmoCaption AI"
+  },
   "footer": {
     "imprint": "Colofon / Impressum",
     "privacy": "Privacyverklaring",
     "terms": "Algemene voorwaarden",
     "cookies": "Cookievoorkeuren",
     "rights": "Alle rechten voorbehouden.",
-    "studio": "Studio"
+    "studio": "Studio",
+    "pricing": "Prijzen & plannen"
   },
   "legal": {
     "lastUpdated": "Laatst bijgewerkt",
@@ -17,20 +21,25 @@
     "acceptNecessary": "Alleen noodzakelijk",
     "manage": "Voorkeuren beheren",
     "preferencesTitle": "Cookie- en opslagvoorkeuren",
-    "save": "Opslaan"
+    "necessaryTitle": "Strikt noodzakelijk",
+    "necessaryDesc": "Vereist voor authenticatie, sessiebeveiliging en consentgeheugen. Altijd actief.",
+    "analyticsTitle": "Analytics (optioneel)",
+    "analyticsDesc": "Privacyvriendelijke gebruiksanalyse — pas geladen na opt-in.",
+    "save": "Voorkeuren opslaan",
+    "analyticsOffNotice": "Analytics is niet actief in deze deployment. Uw keuze wordt opgeslagen voor wanneer het wordt toegevoegd."
   },
   "checkout": {
-    "title": "Pricing & Plans",
-    "subtitle": "Choose a plan — checkout opens in a secure Lemon Squeezy overlay.",
-    "legalHeading": "Legal information",
-    "termsCheckbox": "I agree to the Terms of Service and Privacy Policy.",
-    "withdrawalCheckbox": "I expressly request immediate execution of the digital service and acknowledge that I forfeit my 14-day right of withdrawal once generation or subscription performance begins.",
-    "purchaseLegalInline": "By continuing, you agree to our",
-    "withdrawalInline": "Digital delivery starts immediately after payment.",
-    "purchaseLegalHint": "Selecting a plan above confirms both statements and opens secure checkout.",
-    "payButton": "Continue to secure checkout",
-    "payDisabledHint": "Please confirm both checkboxes to continue.",
-    "paymentNotConfigured": "Payments are not configured yet.",
-    "planLabel": "Pro plan (example)"
+    "title": "Prijzen & plannen",
+    "subtitle": "Kies een plan — checkout opent in een beveiligde Lemon Squeezy-overlay.",
+    "legalHeading": "Juridische informatie",
+    "termsCheckbox": "Ik ga akkoord met de Servicevoorwaarden en het Privacybeleid.",
+    "withdrawalCheckbox": "Ik verzoek uitdrukkelijk om onmiddellijke uitvoering van de digitale dienst en erken dat ik mijn 14-daagse herroepingsrecht verlies zodra de dienst start.",
+    "purchaseLegalInline": "Door verder te gaan, gaat u akkoord met onze",
+    "withdrawalInline": "Digitale levering start onmiddellijk na betaling.",
+    "purchaseLegalHint": "Een plan selecteren bevestigt beide verklaringen en opent beveiligde checkout.",
+    "payButton": "Doorgaan naar beveiligde checkout",
+    "payDisabledHint": "Bevestig beide vakjes om door te gaan.",
+    "paymentNotConfigured": "Betalingen zijn nog niet geconfigureerd.",
+    "planLabel": "Pro-plan (voorbeeld)"
   }
 }

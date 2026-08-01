@@ -1,5 +1,9 @@
 import { getLegalBusinessConfig } from "@/config/legal-business";
 import {
+  buildConvenienceLegalDocument,
+  isConvenienceLegalLocale,
+} from "@/content/legal/convenience";
+import {
   buildImprintDe,
   buildImprintEn,
   buildPrivacyDe,
@@ -10,18 +14,7 @@ import {
 import { bindingLegalLocales, type AppLocale } from "@/i18n/routing";
 import type { LegalDocument, LegalPageKind } from "@/types/legal-content";
 
-function resolveDocumentLocale(
-  requested: AppLocale,
-  kind: LegalPageKind,
-): AppLocale {
-  void kind;
-  if (bindingLegalLocales.includes(requested)) {
-    return requested;
-  }
-  return "en";
-}
-
-function build(kind: LegalPageKind, locale: AppLocale): LegalDocument {
+function buildBinding(kind: LegalPageKind, locale: "en" | "de"): LegalDocument {
   const cfg = getLegalBusinessConfig();
   switch (kind) {
     case "imprint":
@@ -39,19 +32,63 @@ export function getLegalDocument(
   kind: LegalPageKind,
   requestedLocale: AppLocale,
 ): LegalDocument {
-  const documentLocale = resolveDocumentLocale(requestedLocale, kind);
-  const doc = build(kind, documentLocale);
-  const showConvenienceNotice =
-    requestedLocale !== documentLocale &&
-    !bindingLegalLocales.includes(requestedLocale);
+  const cfg = getLegalBusinessConfig();
 
+  if (bindingLegalLocales.includes(requestedLocale)) {
+    const doc = buildBinding(kind, requestedLocale as "en" | "de");
+    return {
+      ...doc,
+      locale: requestedLocale,
+      showConvenienceNotice: false,
+      bindingReferenceLocales: bindingLegalLocales,
+    };
+  }
+
+  if (isConvenienceLegalLocale(requestedLocale)) {
+    return buildConvenienceLegalDocument(kind, requestedLocale, cfg);
+  }
+
+  const doc = buildBinding(kind, "en");
   return {
     ...doc,
-    locale: documentLocale,
-    showConvenienceNotice,
+    locale: "en",
+    showConvenienceNotice: true,
     bindingReferenceLocales: bindingLegalLocales,
   };
 }
+
+const convenienceNoticeCopy: Partial<
+  Record<AppLocale, { title: string; body: string }>
+> = {
+  fr: {
+    title: "Traduction de convenance",
+    body: "Ce texte est une traduction de convenance. Les versions juridiquement contraignantes sont l'anglais (en) et l'allemand (de).",
+  },
+  es: {
+    title: "Traducción de cortesía",
+    body: "Este texto es una traducción de cortesía. Las versiones legalmente vinculantes son inglés (en) y alemán (de).",
+  },
+  it: {
+    title: "Traduzione di cortesia",
+    body: "Questo testo è una traduzione di cortesia. Le versioni legalmente vincolanti sono inglese (en) e tedesco (de).",
+  },
+  nl: {
+    title: "Vertaling voor het gemak",
+    body: "Deze tekst is een vertaling voor het gemak. De juridisch bindende versies zijn Engels (en) en Duits (de).",
+  },
+  pl: {
+    title: "Tłumaczenie pomocnicze",
+    body: "Ten tekst jest tłumaczeniem pomocniczym. Wersje prawnie wiążące to angielski (en) i niemiecki (de).",
+  },
+  fa: {
+    title: "ترجمه راهنما (غیرالزام‌آور)",
+    body: "این متن ترجمه راهنماست. نسخه‌های حقوقی لازم‌الاجرا انگلیسی (en) و آلمانی (de) هستند.",
+  },
+  ar: {
+    title: "ترجمة للتسهيل",
+    body: "هذا النص ترجمة للتسهيل. النسخ الملزمة قانوناً هي الإنجليزية (en) والألمانية (de).",
+  },
+};
 
 export function getConvenienceNotice(
   requestedLocale: AppLocale,
@@ -69,8 +106,10 @@ export function getConvenienceNotice(
       body: "This English text is legally binding together with the German master version where provided.",
     };
   }
-  return {
-    title: "Convenience translation",
-    body: "This page displays the English legally binding master text. The German version (Deutsch) is equally binding where you select locale “de”. Placeholder operator details are filled from the same configuration on all locales.",
-  };
+  return (
+    convenienceNoticeCopy[requestedLocale] ?? {
+      title: "Convenience translation",
+      body: "This page is a convenience translation. The legally binding master texts are English (en) and German (de).",
+    }
+  );
 }

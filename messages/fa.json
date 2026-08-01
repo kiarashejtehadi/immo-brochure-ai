@@ -1,11 +1,15 @@
 {
+  "meta": {
+    "siteName": "ImmoCaption AI"
+  },
   "footer": {
     "imprint": "اطلاعات حقوقی / Impressum",
     "privacy": "سیاست حفظ حریم خصوصی",
     "terms": "شرایط و ضوابط",
     "cookies": "تنظیمات کوکی",
     "rights": "تمامی حقوق محفوظ است.",
-    "studio": "استودیو"
+    "studio": "استودیو",
+    "pricing": "قیمت‌ها و طرح‌ها"
   },
   "legal": {
     "lastUpdated": "آخرین به‌روزرسانی",
@@ -13,24 +17,29 @@
   },
   "cookies": {
     "bannerTitle": "تنظیمات کوکی",
-    "bannerBody": "فقط ذخیره‌سازی ضروری برای امنیت و نشست فعال است. تحلیل اختیاری فقط با opt-in.",
+    "bannerBody": "فقط ذخیره‌سازی ضروری برای امنیت و نشست شما استفاده می‌شود. تحلیل اختیاری فقط با opt-in فعال می‌شود.",
     "acceptNecessary": "فقط ضروری",
     "manage": "مدیریت تنظیمات",
     "preferencesTitle": "ترجیحات کوکی و ذخیره‌سازی",
-    "save": "ذخیره"
+    "necessaryTitle": "کاملاً ضروری",
+    "necessaryDesc": "برای احراز هویت، امنیت نشست و ذخیره رضایت شما لازم است. همیشه فعال.",
+    "analyticsTitle": "تحلیل (اختیاری)",
+    "analyticsDesc": "تحلیل استفاده با حفظ حریم خصوصی — تا opt-in بارگذاری نمی‌شود.",
+    "save": "ذخیره تنظیمات",
+    "analyticsOffNotice": "تحلیل در این محیط فعال نیست. انتخاب شما برای زمانی که اضافه شود ذخیره می‌شود."
   },
   "checkout": {
-    "title": "Pricing & Plans",
-    "subtitle": "Choose a plan — checkout opens in a secure Lemon Squeezy overlay.",
-    "legalHeading": "Legal information",
-    "termsCheckbox": "I agree to the Terms of Service and Privacy Policy.",
-    "withdrawalCheckbox": "I expressly request immediate execution of the digital service and acknowledge that I forfeit my 14-day right of withdrawal once generation or subscription performance begins.",
-    "purchaseLegalInline": "By continuing, you agree to our",
-    "withdrawalInline": "Digital delivery starts immediately after payment.",
-    "purchaseLegalHint": "Selecting a plan above confirms both statements and opens secure checkout.",
-    "payButton": "Continue to secure checkout",
-    "payDisabledHint": "Please confirm both checkboxes to continue.",
-    "paymentNotConfigured": "Payments are not configured yet.",
-    "planLabel": "Pro plan (example)"
+    "title": "قیمت‌ها و طرح‌ها",
+    "subtitle": "یک طرح انتخاب کنید — پرداخت در overlay امن Lemon Squeezy باز می‌شود.",
+    "legalHeading": "اطلاعات حقوقی",
+    "termsCheckbox": "با شرایط استفاده و سیاست حفظ حریم خصوصی موافقم.",
+    "withdrawalCheckbox": "صراحتاً اجرای فوری سرویس دیجیتال را درخواست می‌کنم و می‌دانم با شروع ارائه سرویس، حق انصراف ۱۴ روزه خود را از دست می‌دهم.",
+    "purchaseLegalInline": "با ادامه، با موارد زیر موافقت می‌کنید:",
+    "withdrawalInline": "تحویل دیجیتال بلافاصله پس از پرداخت آغاز می‌شود.",
+    "purchaseLegalHint": "انتخاب طرح بالا هر دو تأیید را ثبت کرده و checkout امن را باز می‌کند.",
+    "payButton": "ادامه به پرداخت امن",
+    "payDisabledHint": "لطفاً هر دو گزینه را تأیید کنید.",
+    "paymentNotConfigured": "پرداخت هنوز پیکربندی نشده است.",
+    "planLabel": "طرح Pro (نمونه)"
   }
 }
