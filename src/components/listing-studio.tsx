@@ -244,6 +244,7 @@ export default function ListingStudio() {
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("story");
   const [result, setResult] = useState<GenerateResult | null>(null);
+  const [isDemoSample, setIsDemoSample] = useState(false);
   const [pdfWatermark, setPdfWatermark] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -273,6 +274,15 @@ export default function ListingStudio() {
     !purchaseSuccess && !hasPurchasedBillingAccess(billingStatus);
   const isSignedIn = Boolean(billingStatus?.email) || browserSignedIn;
   const isWorkspace = isSignedIn || !showMarketing;
+
+  // Demo preview lives in React state only — clear it when visitors switch UI language.
+  useEffect(() => {
+    if (isSignedIn) return;
+    setResult(null);
+    setHasGenerated(false);
+    setIsDemoSample(false);
+    setGenerateError(null);
+  }, [routeLocale, isSignedIn]);
 
   useEffect(() => {
     if (!billingStatus?.email) return;
@@ -356,6 +366,7 @@ export default function ListingStudio() {
     setFeatures(["Balcony Terrace", "Fitted Kitchen", "Elevator"]);
     setResult({ ...demo.result, watermarkPdf: true });
     setHasGenerated(true);
+    setIsDemoSample(true);
     setGenerateError(null);
     setPreviewTab("reel");
 
@@ -513,6 +524,7 @@ export default function ListingStudio() {
         watermarkPdf: data.watermarkPdf,
       });
       setPdfWatermark(Boolean(data.watermarkPdf));
+      setIsDemoSample(false);
       setHasGenerated(true);
       setPreviewTab("story");
       window.dispatchEvent(new Event(BILLING_REFRESH_EVENT));
@@ -728,6 +740,14 @@ export default function ListingStudio() {
             <h2 className="px-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {copy.preview}
             </h2>
+            {isDemoSample ? (
+              <p
+                className="mx-2 mt-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-950 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-100"
+                role="note"
+              >
+                {marketingCopy.demoPreviewNotice}
+              </p>
+            ) : null}
             <div className="mt-3 flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
               {(
                 [

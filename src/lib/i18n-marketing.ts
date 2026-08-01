@@ -35,6 +35,7 @@ export type MarketingCopy = {
   freeTrialBannerTitle: string;
   freeTrialBannerCta: string;
   purchaseSuccessMessage: string;
+  demoPreviewNotice: string;
 };
 
 const en: MarketingCopy = {
@@ -95,6 +96,8 @@ const en: MarketingCopy = {
   freeTrialBannerTitle: "Get 2 Free Credits — No Credit Card Required",
   freeTrialBannerCta: "Sign Up Free",
   purchaseSuccessMessage: "Purchase successful — you're ready to create your exposé.",
+  demoPreviewNotice:
+    "Sample preview — demo listing data (not saved). Sign up to generate your own exposé.",
 };
 
 const de: Partial<MarketingCopy> = {
@@ -155,6 +158,8 @@ const de: Partial<MarketingCopy> = {
   freeTrialBannerTitle: "2 Gratis-Credits — Keine Kreditkarte nötig",
   freeTrialBannerCta: "Kostenlos registrieren",
   purchaseSuccessMessage: "Kauf erfolgreich — Sie können jetzt Ihr Exposé erstellen.",
+  demoPreviewNotice:
+    "Beispiel-Vorschau — Demo-Objektdaten (nicht gespeichert). Registrieren Sie sich für Ihr eigenes Exposé.",
 };
 
 const fr: Partial<MarketingCopy> = {
@@ -215,6 +220,8 @@ const fr: Partial<MarketingCopy> = {
   freeTrialBannerTitle: "2 crédits gratuits — Sans carte bancaire",
   freeTrialBannerCta: "Inscription gratuite",
   purchaseSuccessMessage: "Achat réussi — vous pouvez créer votre exposé.",
+  demoPreviewNotice:
+    "Aperçu exemple — données de démonstration (non enregistrées). Inscrivez-vous pour générer votre propre exposé.",
 };
 
 const es: Partial<MarketingCopy> = {
@@ -273,6 +280,8 @@ const es: Partial<MarketingCopy> = {
   freeTrialBannerTitle: "2 créditos gratis — Sin tarjeta de crédito",
   freeTrialBannerCta: "Registro gratuito",
   purchaseSuccessMessage: "Compra realizada — ya puede crear su exposé.",
+  demoPreviewNotice:
+    "Vista previa de ejemplo — datos demo (no guardados). Regístrese para generar su propio exposé.",
 };
 
 const it: Partial<MarketingCopy> = {
@@ -331,6 +340,8 @@ const it: Partial<MarketingCopy> = {
   freeTrialBannerTitle: "2 crediti gratis — Nessuna carta di credito",
   freeTrialBannerCta: "Registrati gratis",
   purchaseSuccessMessage: "Acquisto completato — puoi creare il tuo exposé.",
+  demoPreviewNotice:
+    "Anteprima esempio — dati demo (non salvati). Registrati per generare il tuo exposé.",
 };
 
 const nl: Partial<MarketingCopy> = {
@@ -389,6 +400,8 @@ const nl: Partial<MarketingCopy> = {
   freeTrialBannerTitle: "2 gratis credits — Geen creditcard nodig",
   freeTrialBannerCta: "Gratis registreren",
   purchaseSuccessMessage: "Aankoop geslaagd — u kunt nu uw exposé maken.",
+  demoPreviewNotice:
+    "Voorbeeldweergave — demogegevens (niet opgeslagen). Meld u aan om uw eigen exposé te maken.",
 };
 
 const fa: Partial<MarketingCopy> = {
@@ -447,6 +460,8 @@ const fa: Partial<MarketingCopy> = {
   freeTrialBannerTitle: "۲ اعتبار رایگان — بدون نیاز به کارت بانکی",
   freeTrialBannerCta: "ثبت‌نام رایگان",
   purchaseSuccessMessage: "خرید موفق — اکنون می‌توانید exposé خود را بسازید.",
+  demoPreviewNotice:
+    "پیش‌نمایش نمونه — داده‌های دمو (ذخیره نمی‌شود). برای ساخت exposé خود ثبت‌نام کنید.",
 };
 
 const ar: Partial<MarketingCopy> = {
@@ -505,6 +520,8 @@ const ar: Partial<MarketingCopy> = {
   freeTrialBannerTitle: "رصيدان مجانيان — بدون بطاقة ائتمان",
   freeTrialBannerCta: "التسجيل مجاناً",
   purchaseSuccessMessage: "تم الشراء بنجاح — يمكنك الآن إنشاء exposé الخاص بك.",
+  demoPreviewNotice:
+    "معاينة تجريبية — بيانات demo (غير محفوظة). سجّل لإنشاء exposé الخاص بك.",
 };
 
 const pl: Partial<MarketingCopy> = {
@@ -563,6 +580,8 @@ const pl: Partial<MarketingCopy> = {
   freeTrialBannerTitle: "2 darmowe kredyty — Bez karty kredytowej",
   freeTrialBannerCta: "Zarejestruj się za darmo",
   purchaseSuccessMessage: "Zakup zakończony — możesz teraz utworzyć exposé.",
+  demoPreviewNotice:
+    "Podgląd przykładu — dane demo (niezapisane). Zarejestruj się, aby wygenerować własne exposé.",
 };
 
 const marketingByLocale: Record<UiLocale, Partial<MarketingCopy>> = {
