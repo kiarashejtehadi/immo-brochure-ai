@@ -50,6 +50,8 @@ import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl, resol
 import { reelBrandingFromProfile } from "@/lib/property-reel";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
+import { shouldShowStagingDisclaimer } from "@/lib/furnishing-guardrail";
+import { StagingDisclaimerFooter } from "@/components/listing/staging-disclaimer";
 import type { UserBrandingProfile } from "@/types/branding";
 import { PropertyReelPreview } from "@/components/reel/property-reel-preview";
 import { cn } from "@/lib/utils";
@@ -105,6 +107,8 @@ const DEFAULT_PROPERTY: PropertyDetails = {
   parking: "",
   parkingFee: "",
   condition: "",
+  furnishingStatus: "unfurnished",
+  isStagedOrModel: false,
 };
 
 const DEFAULT_ENERGY: EnergyFormData = {
@@ -657,6 +661,7 @@ function ListingStudioContent() {
         energy,
         agent: agentForPdf,
         result,
+        photoCount: photos.length,
         branding: {
           brandColor: brand.brandColor,
           logoDataUrl,
@@ -999,6 +1004,11 @@ function ListingStudioContent() {
                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
                     {result.fullDescription}
                   </p>
+                  {shouldShowStagingDisclaimer(property.furnishingStatus, photos.length) ? (
+                    <div className="mt-3">
+                      <StagingDisclaimerFooter text={exposeFormCopy.stagingDisclaimerFooter} />
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ) : result && previewTab === "location" ? (

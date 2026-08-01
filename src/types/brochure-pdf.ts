@@ -25,6 +25,7 @@ export type BrochurePdfProps = {
     legalDisclaimer: string;
   };
   legalDisclaimerFallback: string;
+  stagingDisclaimer?: string;
   photoDataUrls: string[];
   floorPlanDataUrl?: string;
   brandColor?: string;

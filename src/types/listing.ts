@@ -18,12 +18,19 @@ export type PropertyCondition =
   | "well_maintained"
   | "needs_renovation";
 
+export type FurnishingStatus =
+  | "unfurnished"
+  | "partially_furnished"
+  | "fully_furnished";
+
 export type PropertyDetails = {
   propertyType: PropertyType | "";
   floorLevel: string;
   parking: ParkingType | "";
   parkingFee: string;
   condition: PropertyCondition | "";
+  furnishingStatus: FurnishingStatus;
+  isStagedOrModel: boolean;
 };
 
 export type EnergyCertificateType = "consumption" | "demand" | "na";

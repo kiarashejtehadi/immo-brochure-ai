@@ -30,6 +30,8 @@ const en: DemoListingContent = {
     parking: "underground",
     parkingFee: "",
     condition: "modernized",
+    furnishingStatus: "fully_furnished",
+    isStagedOrModel: false,
   },
   rent: {
     netColdRent: "1800",

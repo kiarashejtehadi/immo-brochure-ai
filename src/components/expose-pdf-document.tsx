@@ -185,6 +185,20 @@ const s = StyleSheet.create({
     color: "#a1a1aa",
     textAlign: "center",
   },
+  stagingDisclaimer: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    backgroundColor: "#fffbeb",
+    borderRadius: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  stagingDisclaimerText: {
+    fontSize: 7,
+    lineHeight: 1.35,
+    color: "#92400e",
+  },
   floorPlan: {
     width: "100%",
     maxHeight: 350,
@@ -464,6 +478,11 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
           )}
         </View>
         <Text style={s.body}>{props.fullDescription}</Text>
+        {props.stagingDisclaimer ? (
+          <View style={s.stagingDisclaimer}>
+            <Text style={s.stagingDisclaimerText}>{props.stagingDisclaimer}</Text>
+          </View>
+        ) : null}
 
         {props.energyLines.length > 0 ? (
           <>

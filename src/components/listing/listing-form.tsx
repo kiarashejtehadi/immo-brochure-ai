@@ -42,6 +42,7 @@ import type {
   PropertyDetails,
   PropertyType,
   ParkingType,
+  FurnishingStatus,
   RentFormData,
   SaleFormData,
   TransactionType,
@@ -58,6 +59,12 @@ const FEATURE_KEYS: FeatureKey[] = [
   "Guest WC",
   "Cellar",
   "Wheelchair Accessible",
+];
+
+const FURNISHING_STATUSES: FurnishingStatus[] = [
+  "unfurnished",
+  "partially_furnished",
+  "fully_furnished",
 ];
 
 const TONE_KEYS: ToneKey[] = ["Luxurious", "Professional", "Friendly"];
@@ -733,6 +740,51 @@ export function ListingForm(props: ListingFormProps) {
       </FormCard>
 
       <FormCard title={`4. ${copy.sectionFeatures}`}>
+        <div className="mb-4">
+          <FormGrid>
+            <div>
+              <label htmlFor="furnishingStatus" className={labelClassName()}>
+                {copy.furnishingStatus}
+              </label>
+              <select
+                id="furnishingStatus"
+                value={property.furnishingStatus}
+                onChange={(e) =>
+                  onProperty({
+                    furnishingStatus: e.target.value as FurnishingStatus,
+                  })
+                }
+                className={inputClassName()}
+              >
+                {FURNISHING_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status === "unfurnished"
+                      ? copy.furnishingUnfurnished
+                      : status === "partially_furnished"
+                        ? copy.furnishingPartially
+                        : copy.furnishingFully}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-2 flex items-end">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-3 dark:border-zinc-700 dark:bg-zinc-950/40">
+                <input
+                  type="checkbox"
+                  checked={property.isStagedOrModel}
+                  onChange={(e) => onProperty({ isStagedOrModel: e.target.checked })}
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>
+                  <span className={labelClassName()}>{copy.isStagedOrModel}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    {copy.isStagedOrModelHint}
+                  </span>
+                </span>
+              </label>
+            </div>
+          </FormGrid>
+        </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {FEATURE_KEYS.map((feature) => {
             const active = features.includes(feature);

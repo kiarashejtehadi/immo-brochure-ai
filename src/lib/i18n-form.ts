@@ -96,6 +96,13 @@ export type FormCopy = {
   socialFacebook: string;
   fullDescriptionLabel: string;
   defaultLegalDisclaimer: string;
+  furnishingStatus: string;
+  furnishingUnfurnished: string;
+  furnishingPartially: string;
+  furnishingFully: string;
+  isStagedOrModel: string;
+  isStagedOrModelHint: string;
+  stagingDisclaimerFooter: string;
 };
 
 const en: FormCopy = {
@@ -199,6 +206,15 @@ const en: FormCopy = {
   fullDescriptionLabel: "Full description",
   defaultLegalDisclaimer:
     "All information is provided without guarantee. This exposé does not constitute a binding offer. Agent and agency details apply per local imprint requirements.",
+  furnishingStatus: "Furnishing status",
+  furnishingUnfurnished: "Unfurnished",
+  furnishingPartially: "Partially furnished",
+  furnishingFully: "Fully furnished",
+  isStagedOrModel: "Photos show staging / model unit",
+  isStagedOrModelHint:
+    "Check if photos include virtual staging, sample decor, or a show apartment that is not delivered as shown.",
+  stagingDisclaimerFooter:
+    "Note: Furnishings shown are for illustrative/staging purposes only. Property is offered unfurnished.",
 };
 
 const de: Partial<FormCopy> = {
@@ -301,6 +317,15 @@ const de: Partial<FormCopy> = {
   fullDescriptionLabel: "Ausführliche Beschreibung",
   defaultLegalDisclaimer:
     "Alle Angaben ohne Gewähr. Dieses Exposé stellt kein bindendes Angebot dar. Angaben zu Makler und Firma gemäß Impressum.",
+  furnishingStatus: "Möblierungsstatus",
+  furnishingUnfurnished: "Unmöbliert",
+  furnishingPartially: "Teilmöbliert",
+  furnishingFully: "Voll möbliert",
+  isStagedOrModel: "Fotos zeigen Staging / Musterwohnung",
+  isStagedOrModelHint:
+    "Aktivieren, wenn Fotos Virtual Staging, Beispiel-Dekor oder eine nicht übernommene Musterwohnung zeigen.",
+  stagingDisclaimerFooter:
+    "Hinweis: Gezeigte Einrichtung dient nur der Illustration/Staging. Das Objekt wird unmöbliert übergeben.",
 };
 
 const fr: Partial<FormCopy> = {
@@ -405,6 +430,15 @@ const fr: Partial<FormCopy> = {
   fullDescriptionLabel: "Description complète",
   defaultLegalDisclaimer:
     "Informations sans garantie. Cet exposé ne constitue pas une offre ferme. Coordonnées agent et agence selon mentions légales locales.",
+  furnishingStatus: "Statut du meublé",
+  furnishingUnfurnished: "Non meublé",
+  furnishingPartially: "Partiellement meublé",
+  furnishingFully: "Entièrement meublé",
+  isStagedOrModel: "Photos avec staging / logement témoin",
+  isStagedOrModelHint:
+    "Cochez si les photos incluent du staging virtuel, une déco d'exemple ou un logement témoin non livré tel quel.",
+  stagingDisclaimerFooter:
+    "Note : Le mobilier visible est illustratif/staging uniquement. Le bien est proposé non meublé.",
 };
 
 const es: Partial<FormCopy> = {

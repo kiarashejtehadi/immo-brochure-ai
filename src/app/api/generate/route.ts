@@ -1,4 +1,9 @@
 import { ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION } from "@/lib/compliance-guardrail";
+import {
+  buildFurnishingSystemInstruction,
+  buildVisionAnalysisNote,
+  hasFittedKitchen,
+} from "@/lib/furnishing-guardrail";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { formatPriceAmount, normalizeCurrency } from "@/lib/currency";
@@ -92,7 +97,13 @@ function buildPropertyPayload(body: GenerateRequestPayload, outputLanguage: Outp
     parking: "",
     parkingFee: "",
     condition: "",
+    furnishingStatus: "unfurnished",
+    isStagedOrModel: false,
   };
+
+  const furnishingStatus = property.furnishingStatus ?? "unfurnished";
+  const isStagedOrModel = property.isStagedOrModel === true;
+  const fittedKitchen = hasFittedKitchen(body.features ?? []);
 
   const common = {
     transactionType: body.transactionType,
@@ -105,6 +116,9 @@ function buildPropertyPayload(body: GenerateRequestPayload, outputLanguage: Outp
       ? format(property.parkingFee)
       : "Not specified",
     condition: property.condition || "Not specified",
+    furnishingStatus,
+    isStagedOrModel,
+    hasFittedKitchen: fittedKitchen,
     sizeSqm: body.size?.trim() || "Not specified",
     rooms: body.rooms?.trim() || "Not specified",
     features: body.features?.length ? body.features.join(", ") : "None selected",
@@ -200,11 +214,24 @@ export async function POST(request: Request) {
   const propertyPayload = buildPropertyPayload(body, outputLanguage);
 
   const images = (body.images ?? []).slice(0, MAX_VISION_IMAGES);
+  const furnishingStatus = body.property?.furnishingStatus ?? "unfurnished";
+  const isStagedOrModel = body.property?.isStagedOrModel === true;
+  const fittedKitchen = hasFittedKitchen(body.features ?? []);
+  const furnishingRules = buildFurnishingSystemInstruction({
+    furnishingStatus,
+    isStagedOrModel,
+    hasFittedKitchen: fittedKitchen,
+    hasImages: images.length > 0,
+  });
   const openai = new OpenAI({ apiKey, timeout: 90_000, maxRetries: 1 });
 
   const photoVisionNote =
     images.length > 0
-      ? `\n${images.length} property photo(s) are attached below. Examine them for visual details to weave into the exposé story and all three social captions.\n`
+      ? `\n${images.length} property photo(s) are attached below. ${buildVisionAnalysisNote({
+          furnishingStatus,
+          isStagedOrModel,
+          hasFittedKitchen: fittedKitchen,
+        })}\n`
       : "";
 
   const userText = `You are creating a multi-page real estate exposé and social pack.
@@ -228,6 +255,8 @@ Audience: ${propertyPayload.audience}. Emphasize: ${propertyPayload.copyFocus}.
 Use only provided facts and observed details from the attached photos; do not invent certificates or prices not in JSON.
 If energy certificate is "na", omit claiming specific energy class values.
 
+${furnishingRules}
+
 ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}
 
 Schema:
@@ -250,8 +279,12 @@ Schema:
 
   const systemContent =
     images.length > 0
-      ? `Expert multilingual real estate copywriter with vision analysis. Valid JSON only. Language: ${outputLanguage}. Examine the attached property photos. Identify standout visual characteristics (such as floor material, lighting, layout style, view, kitchen/bathroom finishes) and integrate these observed visual details naturally into both the Exposé Story and the 3 Social Media Captions. ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
-      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
+      ? `Expert multilingual real estate copywriter with vision analysis. Valid JSON only. Language: ${outputLanguage}. ${buildVisionAnalysisNote({
+          furnishingStatus,
+          isStagedOrModel,
+          hasFittedKitchen: fittedKitchen,
+        })} ${furnishingRules} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
+      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${furnishingRules} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
 
   try {
     const completion = await openai.chat.completions.create({
