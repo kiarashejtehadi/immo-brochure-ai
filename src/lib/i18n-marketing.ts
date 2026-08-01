@@ -57,6 +57,7 @@ const en: MarketingCopy = {
     "Outputs plain text only—no PDF design or layout",
     "No agency logo, branding, or color customization",
     "Cannot format floor plans or property photo grids",
+    "No AI Video Reels export",
     "Requires 10–15 minutes of tedious copy-pasting",
   ],
   comparisonImmoItems: [
@@ -65,6 +66,7 @@ const en: MarketingCopy = {
     "Automatic agency logo & custom brand colors",
     "Automated photo placement & floor plan layout",
     "Instant social media captions + location story",
+    "AI Video Reels Export (15s Instagram/TikTok)",
     "Done in under 60 seconds",
   ],
   purchaseSuccessMessage: "Purchase successful — you're ready to create your exposé.",
@@ -101,6 +103,7 @@ const de: Partial<MarketingCopy> = {
     "Nur Fließtext — kein PDF-Layout oder Design",
     "Kein Agentur-Logo, Branding oder Farbanpassung",
     "Keine automatische Foto- oder Grundriss-Platzierung",
+    "Kein AI-Video-Reels-Export",
     "10–15 Minuten Copy-Paste-Aufwand",
   ],
   comparisonImmoItems: [
@@ -109,6 +112,7 @@ const de: Partial<MarketingCopy> = {
     "Automatisches Logo & individuelle Markenfarben",
     "Automatische Foto- und Grundriss-Layouts",
     "Sofort Social Captions + Lage-Story",
+    "AI-Video-Reels-Export (15 s Instagram/TikTok)",
     "Fertig in unter 60 Sekunden",
   ],
   purchaseSuccessMessage: "Kauf erfolgreich — Sie können jetzt Ihr Exposé erstellen.",
@@ -145,6 +149,7 @@ const fr: Partial<MarketingCopy> = {
     "Texte brut uniquement — pas de mise en page PDF",
     "Pas de logo agence, branding ni couleurs personnalisées",
     "Pas de grilles photos ou plans automatiques",
+    "Pas d'export de reels vidéo IA",
     "10–15 minutes de copier-coller fastidieux",
   ],
   comparisonImmoItems: [
@@ -153,6 +158,7 @@ const fr: Partial<MarketingCopy> = {
     "Logo agence & couleurs de marque automatiques",
     "Placement photos & plan intégré automatiquement",
     "Légendes réseaux sociaux + texte local instantanés",
+    "Export reels vidéo IA (15 s Instagram/TikTok)",
     "Prêt en moins de 60 secondes",
   ],
   purchaseSuccessMessage: "Achat réussi — vous pouvez créer votre exposé.",
