@@ -5,6 +5,7 @@ import type {
   EnergyFormData,
   GenerateRequestPayload,
   GenerateResult,
+  ListingAddress,
   PropertyDetails,
   RentFormData,
   SaleFormData,
@@ -15,6 +16,7 @@ import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
 import { propertyOverviewRows, certificateTypeLabel, heatingSourceLabel } from "@/lib/listing-property-labels";
 import { filterPdfTableRows } from "@/lib/pdf-table-rows";
 import { shouldShowStagingDisclaimer } from "@/lib/furnishing-guardrail";
+import { formatListingAddress } from "@/lib/location/format-address";
 
 /** Strip EPC value/class when no certificate applies. */
 export function sanitizeEnergyForPayload(energy: EnergyFormData): EnergyFormData {
@@ -28,7 +30,7 @@ export function buildGeneratePayload(input: {
   transactionType: TransactionType;
   targetLanguage: OutputLanguage;
   currency: CurrencyCode;
-  address: string;
+  address: ListingAddress;
   size: string;
   rooms: string;
   property: PropertyDetails;
@@ -49,7 +51,7 @@ export function buildBrochurePdfProps(input: {
   form: FormCopy;
   ui: UiCopy;
   currency: CurrencyCode;
-  address: string;
+  address: ListingAddress;
   size: string;
   rooms: string;
   property: PropertyDetails;
@@ -131,7 +133,7 @@ export function buildBrochurePdfProps(input: {
     transactionType: input.transactionType,
     transactionBadge: badge,
     title: input.result.title,
-    address: input.address,
+    address: formatListingAddress(input.address),
     size: input.size,
     rooms: input.rooms,
     currency: input.currency,

@@ -30,6 +30,7 @@ import {
   type CurrencyCode,
 } from "@/lib/currency";
 import { blockNonNumericKey, sanitizeNumericInput } from "@/lib/numeric-input";
+import { LISTING_COUNTRY_OPTIONS } from "@/lib/location/format-address";
 import { btnPrimaryCompact, chipActive, chipInactive, segmentActive } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type {
@@ -38,6 +39,7 @@ import type {
   EnergyClass,
   EnergyFormData,
   HeatingSource,
+  ListingAddress,
   PropertyCondition,
   PropertyDetails,
   PropertyType,
@@ -197,8 +199,8 @@ export type ListingFormProps = {
   onTransactionType: (type: TransactionType) => void;
   property: PropertyDetails;
   onProperty: (patch: Partial<PropertyDetails>) => void;
-  address: string;
-  onAddress: (value: string) => void;
+  address: ListingAddress;
+  onAddress: (patch: Partial<ListingAddress>) => void;
   size: string;
   onSize: (value: string) => void;
   rooms: string;
@@ -306,7 +308,8 @@ export function ListingForm(props: ListingFormProps) {
 
   const hasMinimumFields =
     property.propertyType !== "" &&
-    (address.trim() !== "" || size.trim() !== "");
+    ((address.streetAddress.trim() !== "" && address.city.trim() !== "") ||
+      size.trim() !== "");
   const showCreditCost =
     billingStatus?.billingEnabled === true &&
     !billingStatus.hasActiveSubscription &&
@@ -408,14 +411,51 @@ export function ListingForm(props: ListingFormProps) {
           </select>
         </div>
 
-        <VoiceTextInput
-          id="address"
-          label={copy.address}
-          placeholder={copy.addressPlaceholder}
-          value={address}
-          onChange={onAddress}
-          voice={voiceLabels}
-        />
+        <FormGrid>
+          <div className="sm:col-span-2">
+            <VoiceTextInput
+              id="streetAddress"
+              label={copy.streetAddress}
+              placeholder={copy.streetAddressPlaceholder}
+              value={address.streetAddress}
+              onChange={(value) => onAddress({ streetAddress: value })}
+              voice={voiceLabels}
+            />
+          </div>
+          <VoiceTextInput
+            id="postalCode"
+            label={copy.postalCode}
+            placeholder={copy.postalCodePlaceholder}
+            value={address.postalCode}
+            onChange={(value) => onAddress({ postalCode: value })}
+            voice={voiceLabels}
+          />
+          <VoiceTextInput
+            id="city"
+            label={copy.city}
+            placeholder={copy.cityPlaceholder}
+            value={address.city}
+            onChange={(value) => onAddress({ city: value })}
+            voice={voiceLabels}
+          />
+          <div>
+            <label htmlFor="country" className={labelClassName()}>
+              {copy.country}
+            </label>
+            <select
+              id="country"
+              value={address.country}
+              onChange={(e) => onAddress({ country: e.target.value })}
+              className={inputClassName()}
+            >
+              {LISTING_COUNTRY_OPTIONS.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+          </div>
+        </FormGrid>
       </FormCard>
 
       <FormCard title={`2. ${copy.sectionSpecsPricing}`}>

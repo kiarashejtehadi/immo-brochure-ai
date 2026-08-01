@@ -21,6 +21,11 @@ import {
   buildGeneratePayload,
 } from "@/lib/listing-pdf";
 import {
+  DEFAULT_LISTING_ADDRESS,
+  formatListingAddress,
+  getDefaultCountryForLocale,
+} from "@/lib/location/format-address";
+import {
   getUiCopy,
   LOCALE_LABELS,
   UI_LOCALES,
@@ -64,6 +69,7 @@ import type {
   GenerateResult,
   AgentFormData,
   PropertyDetails,
+  ListingAddress,
 } from "@/types/listing";
 
 const MAX_PHOTOS = 5;
@@ -295,7 +301,10 @@ function ListingStudioContent() {
   const [floorPlanFile, setFloorPlanFile] = useState<File | null>(null);
   const [floorPlanPreview, setFloorPlanPreview] = useState<string | null>(null);
 
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState<ListingAddress>(() => ({
+    ...DEFAULT_LISTING_ADDRESS,
+    country: getDefaultCountryForLocale(routeLocale),
+  }));
   const [size, setSize] = useState("");
   const [rooms, setRooms] = useState("");
   const [property, setProperty] = useState<PropertyDetails>({ ...DEFAULT_PROPERTY });
@@ -402,14 +411,17 @@ function ListingStudioContent() {
     return reelBrandingFromProfile(brandingProfile, proReel, agentMerged);
   }, [agentForLocale, billingStatus, brandingProfile]);
 
+  const formattedAddress = useMemo(() => formatListingAddress(address), [address]);
+
   const socialHashtags = useMemo(
     () =>
       buildRealEstateHashtags({
-        address,
+        city: address.city,
+        address: formattedAddress,
         transactionType,
         propertyType: property.propertyType,
       }),
-    [address, transactionType, property.propertyType],
+    [address.city, formattedAddress, transactionType, property.propertyType],
   );
 
   const reelPreviewInput = useMemo(
@@ -418,7 +430,7 @@ function ListingStudioContent() {
       photoPreviewUrls: photos.map((p) => p.url),
       transactionType,
       currency: activeCurrency,
-      address,
+      address: formattedAddress,
       size,
       rooms,
       property,
@@ -435,7 +447,7 @@ function ListingStudioContent() {
       photos,
       transactionType,
       activeCurrency,
-      address,
+      formattedAddress,
       size,
       rooms,
       property,
@@ -781,7 +793,7 @@ function ListingStudioContent() {
             property={property}
             onProperty={(patch) => setProperty((p) => ({ ...p, ...patch }))}
             address={address}
-            onAddress={setAddress}
+            onAddress={(patch) => setAddress((a) => ({ ...a, ...patch }))}
             size={size}
             onSize={setSize}
             rooms={rooms}

@@ -1,6 +1,7 @@
 import type { UiLocale } from "@/lib/i18n";
 import type {
   GenerateResult,
+  ListingAddress,
   PropertyDetails,
   RentFormData,
 } from "@/types/listing";
@@ -12,7 +13,7 @@ export const DEMO_PHOTO_URLS = [
 ] as const;
 
 export type DemoListingContent = {
-  address: string;
+  address: ListingAddress;
   size: string;
   rooms: string;
   property: PropertyDetails;
@@ -21,7 +22,12 @@ export type DemoListingContent = {
 };
 
 const en: DemoListingContent = {
-  address: "Herneweg 12, 10115 Berlin",
+  address: {
+    streetAddress: "Herneweg 12",
+    postalCode: "10115",
+    city: "Berlin",
+    country: "Germany",
+  },
   size: "67",
   rooms: "2",
   property: {
@@ -68,7 +74,6 @@ const en: DemoListingContent = {
 
 const de: DemoListingContent = {
   ...en,
-  address: "Herneweg 12, 10115 Berlin",
   result: {
     ...en.result,
     title: "Stilvolle 2-Zimmer-Wohnung mit modernem Komfort in Herneweg",
@@ -123,7 +128,6 @@ const fr: DemoListingContent = {
 
 const fa: DemoListingContent = {
   ...en,
-  address: "Herneweg 12, 10115 Berlin",
   rent: {
     ...en.rent,
     availableFrom: "فوری",

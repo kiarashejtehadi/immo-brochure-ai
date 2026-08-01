@@ -88,11 +88,18 @@ export type AgentFormData = {
   legalDisclaimer: string;
 };
 
+export type ListingAddress = {
+  streetAddress: string;
+  postalCode: string;
+  city: string;
+  country: string;
+};
+
 export type GenerateRequestPayload = {
   transactionType: TransactionType;
   targetLanguage: OutputLanguage;
   currency: CurrencyCode;
-  address: string;
+  address: ListingAddress;
   size: string;
   rooms: string;
   property: PropertyDetails;

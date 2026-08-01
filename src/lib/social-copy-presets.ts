@@ -40,10 +40,13 @@ export function extractCityTokenFromAddress(address: string): string | null {
 
 export function buildRealEstateHashtags(options: {
   address?: string;
+  city?: string;
   transactionType?: TransactionType;
   propertyType?: string;
 }): string[] {
-  const city = options.address ? extractCityTokenFromAddress(options.address) : null;
+  const city =
+    options.city?.trim() ||
+    (options.address ? extractCityTokenFromAddress(options.address) : null);
   const cityTag = city ? `#${city}RealEstate` : "#CityLiving";
   const rentOrSale =
     options.transactionType === "rent" ? "#ForRent" : "#ForSale";

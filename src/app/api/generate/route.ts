@@ -4,12 +4,18 @@ import {
   buildVisionAnalysisNote,
   hasFittedKitchen,
 } from "@/lib/furnishing-guardrail";
+import {
+  formatListingAddress,
+  normalizeListingAddress,
+} from "@/lib/location/format-address";
+import { fetchLocationEnrichment } from "@/lib/location/geocode-pois";
+import { buildLocationPromptInstructions } from "@/lib/location/location-prompt";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { formatPriceAmount, normalizeCurrency } from "@/lib/currency";
 import type { OutputLanguage } from "@/lib/i18n";
 import { getCaptionHashtags, normalizeOutputLanguage } from "@/lib/output-language";
-import type { GenerateResult, GenerateRequestPayload } from "@/types/listing";
+import type { GenerateResult, GenerateRequestPayload, ListingAddress } from "@/types/listing";
 import { isBillingEnabled } from "@/lib/billing/config";
 import { getSessionUser, resolveBillingAccess } from "@/lib/billing/access";
 import { isTrialOnlyCredits } from "@/lib/billing/client-access";
@@ -84,7 +90,12 @@ function parseGenerateResult(raw: string, instagramTags: string[]): GenerateResu
   };
 }
 
-function buildPropertyPayload(body: GenerateRequestPayload, outputLanguage: OutputLanguage) {
+function buildPropertyPayload(
+  body: GenerateRequestPayload,
+  outputLanguage: OutputLanguage,
+  listingAddress: ListingAddress,
+  formattedAddress: string,
+) {
   const currency = normalizeCurrency(body.currency);
   const format = (amount: string) =>
     amount.trim()
@@ -108,7 +119,11 @@ function buildPropertyPayload(body: GenerateRequestPayload, outputLanguage: Outp
   const common = {
     transactionType: body.transactionType,
     targetLanguage: outputLanguage,
-    address: body.address?.trim() || "Not specified",
+    address: formattedAddress || "Not specified",
+    streetAddress: listingAddress.streetAddress.trim() || "Not specified",
+    postalCode: listingAddress.postalCode.trim() || "Not specified",
+    city: listingAddress.city.trim() || "Not specified",
+    country: listingAddress.country.trim() || "Not specified",
     propertyType: property.propertyType || "Not specified",
     floorLevel: property.floorLevel?.trim() || "Not specified",
     parking: property.parking || "Not specified",
@@ -209,9 +224,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
+  const listingAddress = normalizeListingAddress(body.address);
+  const formattedAddress = formatListingAddress(listingAddress);
+
   const outputLanguage = normalizeOutputLanguage(body.targetLanguage);
   const instagramTags = getCaptionHashtags(outputLanguage);
-  const propertyPayload = buildPropertyPayload(body, outputLanguage);
+  const propertyPayload = buildPropertyPayload(
+    body,
+    outputLanguage,
+    listingAddress,
+    formattedAddress,
+  );
 
   const images = (body.images ?? []).slice(0, MAX_VISION_IMAGES);
   const furnishingStatus = body.property?.furnishingStatus ?? "unfurnished";
@@ -223,6 +246,15 @@ export async function POST(request: Request) {
     hasFittedKitchen: fittedKitchen,
     hasImages: images.length > 0,
   });
+
+  let locationRules = buildLocationPromptInstructions(listingAddress, null);
+  try {
+    const enrichment = await fetchLocationEnrichment(listingAddress);
+    locationRules = buildLocationPromptInstructions(listingAddress, enrichment);
+  } catch (err) {
+    console.warn("[api/generate] location enrichment failed", err);
+  }
+
   const openai = new OpenAI({ apiKey, timeout: 90_000, maxRetries: 1 });
 
   const photoVisionNote =
@@ -257,6 +289,8 @@ If energy certificate is "na", omit claiming specific energy class values.
 
 ${furnishingRules}
 
+${locationRules}
+
 ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}
 
 Schema:
@@ -283,8 +317,8 @@ Schema:
           furnishingStatus,
           isStagedOrModel,
           hasFittedKitchen: fittedKitchen,
-        })} ${furnishingRules} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
-      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${furnishingRules} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
+        })} ${furnishingRules} ${locationRules} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
+      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${furnishingRules} ${locationRules} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
 
   try {
     const completion = await openai.chat.completions.create({
