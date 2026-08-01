@@ -1,4 +1,7 @@
 {
+  "meta": {
+    "siteName": "ImmoCaption AI"
+  },
   "footer": {
     "imprint": "Mentions légales / Impressum",
     "privacy": "Politique de confidentialité",
@@ -18,7 +21,12 @@
     "acceptNecessary": "Uniquement nécessaires",
     "manage": "Gérer les préférences",
     "preferencesTitle": "Préférences cookies et stockage",
-    "save": "Enregistrer"
+    "necessaryTitle": "Strictement nécessaires",
+    "necessaryDesc": "Requis pour l'authentification, la sécurité de session et la mémorisation du consentement. Toujours actifs.",
+    "analyticsTitle": "Analytique (optionnel)",
+    "analyticsDesc": "Analytique respectueuse de la vie privée — chargée uniquement après opt-in.",
+    "save": "Enregistrer les préférences",
+    "analyticsOffNotice": "L'analytique n'est pas activée dans ce déploiement. Votre choix est enregistré pour une activation ultérieure."
   },
   "checkout": {
     "title": "Tarifs & offres",
