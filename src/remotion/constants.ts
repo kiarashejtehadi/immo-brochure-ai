@@ -1,0 +1,10 @@
+export const PROPERTY_REEL_FPS = 30;
+export const PROPERTY_REEL_DURATION_SECONDS = 15;
+export const PROPERTY_REEL_DURATION_FRAMES =
+  PROPERTY_REEL_FPS * PROPERTY_REEL_DURATION_SECONDS;
+export const PROPERTY_REEL_WIDTH = 1080;
+export const PROPERTY_REEL_HEIGHT = 1920;
+export const PROPERTY_REEL_COMPOSITION_ID = "PropertyReel";
+
+/** Frames used for slide enter/exit spring transitions. */
+export const SLIDE_TRANSITION_FRAMES = 18;

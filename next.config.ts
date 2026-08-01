@@ -5,7 +5,12 @@ import path from "node:path";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@react-pdf/renderer"],
+  transpilePackages: [
+    "@react-pdf/renderer",
+    "remotion",
+    "@remotion/player",
+    "@remotion/web-renderer",
+  ],
   /** Block remote image optimization/CDN fetches — UI assets are same-origin /public only. */
   images: {
     remotePatterns: [],

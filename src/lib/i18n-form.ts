@@ -75,6 +75,13 @@ export type FormCopy = {
   tabStory: string;
   tabLocation: string;
   tabSocial: string;
+  tabReel: string;
+  exportReel: string;
+  exportingReel: string;
+  reelHint: string;
+  reelExportUnsupported: string;
+  reelExportFailed: string;
+  reelPerMonth: string;
   headline: string;
   summaryLabel: string;
   locationLabel: string;
@@ -161,6 +168,14 @@ const en: FormCopy = {
   tabStory: "Exposé story",
   tabLocation: "Location",
   tabSocial: "Social media",
+  tabReel: "Video reel",
+  exportReel: "Export MP4 reel",
+  exportingReel: "Rendering reel…",
+  reelHint: "15-second vertical reel (1080×1920) for Instagram Reels and TikTok. Export requires Chrome or Edge.",
+  reelExportUnsupported:
+    "Your browser cannot export MP4 reels. Try Chrome or Edge on desktop.",
+  reelExportFailed: "Reel export failed. Please try again.",
+  reelPerMonth: " / month",
   headline: "Headline",
   summaryLabel: "Key highlights",
   locationLabel: "Neighborhood & location",
@@ -249,6 +264,15 @@ const de: Partial<FormCopy> = {
   tabStory: "Exposé",
   tabLocation: "Lage",
   tabSocial: "Social Media",
+  tabReel: "Video-Reel",
+  exportReel: "MP4-Reel exportieren",
+  exportingReel: "Reel wird gerendert…",
+  reelHint:
+    "15-Sekunden-Reel im Hochformat (1080×1920) für Instagram & TikTok. Export in Chrome oder Edge.",
+  reelExportUnsupported:
+    "Ihr Browser kann kein MP4-Reel exportieren. Bitte Chrome oder Edge am Desktop nutzen.",
+  reelExportFailed: "Reel-Export fehlgeschlagen. Bitte erneut versuchen.",
+  reelPerMonth: " / Monat",
   headline: "Überschrift",
   summaryLabel: "Highlights",
   locationLabel: "Lage & Umgebung",
@@ -307,6 +331,15 @@ const fr: Partial<FormCopy> = {
   tabStory: "Description",
   tabLocation: "Emplacement",
   tabSocial: "Réseaux sociaux",
+  tabReel: "Reel vidéo",
+  exportReel: "Exporter le reel MP4",
+  exportingReel: "Rendu du reel…",
+  reelHint:
+    "Reel vertical 15 s (1080×1920) pour Instagram et TikTok. Export via Chrome ou Edge.",
+  reelExportUnsupported:
+    "Votre navigateur ne peut pas exporter de reel MP4. Essayez Chrome ou Edge.",
+  reelExportFailed: "Échec de l'export du reel. Réessayez.",
+  reelPerMonth: " / mois",
   headline: "Titre",
   summaryLabel: "Points clés",
   locationLabel: "Quartier & localisation",
@@ -368,6 +401,15 @@ const es: Partial<FormCopy> = {
   tabStory: "Descripción",
   tabLocation: "Ubicación",
   tabSocial: "Redes sociales",
+  tabReel: "Reel de vídeo",
+  exportReel: "Exportar reel MP4",
+  exportingReel: "Renderizando reel…",
+  reelHint:
+    "Reel vertical de 15 s (1080×1920) para Instagram y TikTok. Exportar en Chrome o Edge.",
+  reelExportUnsupported:
+    "Su navegador no puede exportar reels MP4. Pruebe Chrome o Edge.",
+  reelExportFailed: "Error al exportar el reel. Inténtelo de nuevo.",
+  reelPerMonth: " / mes",
   headline: "Titular",
   summaryLabel: "Puntos destacados",
   locationLabel: "Barrio y entorno",
@@ -429,6 +471,15 @@ const it: Partial<FormCopy> = {
   tabStory: "Descrizione",
   tabLocation: "Posizione",
   tabSocial: "Social media",
+  tabReel: "Reel video",
+  exportReel: "Esporta reel MP4",
+  exportingReel: "Rendering reel…",
+  reelHint:
+    "Reel verticale 15 s (1080×1920) per Instagram e TikTok. Esporta con Chrome o Edge.",
+  reelExportUnsupported:
+    "Il browser non può esportare reel MP4. Prova Chrome o Edge.",
+  reelExportFailed: "Esportazione reel non riuscita. Riprova.",
+  reelPerMonth: " / mese",
   headline: "Titolo",
   summaryLabel: "Punti salienti",
   locationLabel: "Quartiere e zona",
@@ -490,6 +541,15 @@ const nl: Partial<FormCopy> = {
   tabStory: "Verhaal",
   tabLocation: "Locatie",
   tabSocial: "Social media",
+  tabReel: "Video-reel",
+  exportReel: "MP4-reel exporteren",
+  exportingReel: "Reel renderen…",
+  reelHint:
+    "15 seconden verticaal reel (1080×1920) voor Instagram en TikTok. Export in Chrome of Edge.",
+  reelExportUnsupported:
+    "Uw browser kan geen MP4-reels exporteren. Probeer Chrome of Edge.",
+  reelExportFailed: "Reel-export mislukt. Probeer opnieuw.",
+  reelPerMonth: " / maand",
   headline: "Kop",
   summaryLabel: "Belangrijkste punten",
   locationLabel: "Buurt & ligging",
@@ -551,6 +611,15 @@ const fa: Partial<FormCopy> = {
   tabStory: "توضیحات",
   tabLocation: "موقعیت",
   tabSocial: "شبکه‌های اجتماعی",
+  tabReel: "ویدیوی ریل",
+  exportReel: "خروجی MP4 ریل",
+  exportingReel: "در حال رندر ریل…",
+  reelHint:
+    "ریل عمودی ۱۵ ثانیه‌ای (1080×1920) برای اینستاگرام و تیک‌تاک. خروجی در Chrome یا Edge.",
+  reelExportUnsupported:
+    "مرورگر شما نمی‌تواند ریل MP4 صادر کند. Chrome یا Edge را امتحان کنید.",
+  reelExportFailed: "خروجی ریل ناموفق بود. دوباره تلاش کنید.",
+  reelPerMonth: " / ماه",
   headline: "عنوان",
   summaryLabel: "نکات کلیدی",
   locationLabel: "محله و موقعیت",
@@ -612,6 +681,15 @@ const ar: Partial<FormCopy> = {
   tabStory: "الوصف",
   tabLocation: "الموقع",
   tabSocial: "وسائل التواصل",
+  tabReel: "فيديو ريل",
+  exportReel: "تصدير ريل MP4",
+  exportingReel: "جارٍ عرض الريل…",
+  reelHint:
+    "ريل عمودي 15 ثانية (1080×1920) لإنستغرام وتيك توك. التصدير عبر Chrome أو Edge.",
+  reelExportUnsupported:
+    "متصفحك لا يدعم تصدير ريل MP4. جرّب Chrome أو Edge.",
+  reelExportFailed: "فشل تصدير الريل. حاول مرة أخرى.",
+  reelPerMonth: " / شهر",
   headline: "العنوان",
   summaryLabel: "أبرز النقاط",
   locationLabel: "الحي والموقع",
@@ -673,6 +751,15 @@ const pl: Partial<FormCopy> = {
   tabStory: "Opis",
   tabLocation: "Lokalizacja",
   tabSocial: "Media społecznościowe",
+  tabReel: "Wideo reel",
+  exportReel: "Eksportuj reel MP4",
+  exportingReel: "Renderowanie reela…",
+  reelHint:
+    "15-sekundowy pionowy reel (1080×1920) na Instagram i TikTok. Eksport w Chrome lub Edge.",
+  reelExportUnsupported:
+    "Twoja przeglądarka nie obsługuje eksportu reel MP4. Użyj Chrome lub Edge.",
+  reelExportFailed: "Eksport reela nie powiódł się. Spróbuj ponownie.",
+  reelPerMonth: " / mies.",
   headline: "Nagłówek",
   summaryLabel: "Najważniejsze atuty",
   locationLabel: "Okolica i lokalizacja",

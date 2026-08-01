@@ -37,6 +37,7 @@ import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl } from
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
 import type { UserBrandingProfile } from "@/types/branding";
+import { PropertyReelPreview } from "@/components/reel/property-reel-preview";
 import { cn } from "@/lib/utils";
 import type {
   TransactionType,
@@ -51,7 +52,7 @@ import type {
 
 const MAX_PHOTOS = 5;
 
-type PreviewTab = "story" | "location" | "social";
+type PreviewTab = "story" | "location" | "social" | "reel";
 
 type PhotoPreview = {
   id: string;
@@ -281,6 +282,40 @@ export default function ListingStudio() {
       return map[source];
     },
     [copy],
+  );
+
+  const reelPreviewInput = useMemo(
+    () => ({
+      photoFiles: photos.map((p) => p.file),
+      photoPreviewUrls: photos.map((p) => p.url),
+      transactionType,
+      currency: activeCurrency,
+      address,
+      size,
+      rooms,
+      property,
+      rent,
+      sale,
+      formCopy,
+      priceOnRequestLabel: copy.priceOnRequest,
+      perMonthSuffix: copy.reelPerMonth,
+      headline: result?.title,
+    }),
+    [
+      photos,
+      transactionType,
+      activeCurrency,
+      address,
+      size,
+      rooms,
+      property,
+      rent,
+      sale,
+      formCopy,
+      copy.priceOnRequest,
+      copy.reelPerMonth,
+      result?.title,
+    ],
   );
 
   const addPhotos = useCallback((files: FileList | File[]) => {
@@ -622,6 +657,7 @@ export default function ListingStudio() {
                   ["story", copy.tabStory],
                   ["location", copy.tabLocation],
                   ["social", copy.tabSocial],
+                  ["reel", copy.tabReel],
                 ] as const
               ).map(([tab, label]) => (
                 <button
@@ -629,7 +665,7 @@ export default function ListingStudio() {
                   type="button"
                   onClick={() => setPreviewTab(tab)}
                   className={cn(
-                    "flex-1 rounded-md py-2 text-sm font-medium transition",
+                    "flex-1 rounded-md px-1 py-2 text-xs font-medium transition sm:text-sm",
                     previewTab === tab
                       ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50"
                       : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400",
@@ -672,7 +708,18 @@ export default function ListingStudio() {
                 {generateError}
               </div>
             )}
-            {!hasGenerated && !isGenerating && !generateError ? (
+            {previewTab === "reel" ? (
+              <PropertyReelPreview
+                input={reelPreviewInput}
+                copy={{
+                  exportReel: copy.exportReel,
+                  exportingReel: copy.exportingReel,
+                  reelHint: copy.reelHint,
+                  reelExportUnsupported: copy.reelExportUnsupported,
+                  reelExportFailed: copy.reelExportFailed,
+                }}
+              />
+            ) : !hasGenerated && !isGenerating && !generateError ? (
               <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 px-6 text-center dark:border-zinc-700">
                 <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   {copy.noContent}

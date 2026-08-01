@@ -10,10 +10,15 @@
     "dev:turbo": "next dev --turbopack -H 127.0.0.1",
     "build": "next build",
     "start": "next start -H 127.0.0.1",
-    "lint": "eslint"
+    "lint": "eslint",
+    "remotion:studio": "remotion studio src/remotion/index.ts",
+    "remotion:render": "remotion render src/remotion/index.ts PropertyReel out/property-reel.mp4"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",
+    "@remotion/cli": "^4.0.503",
+    "@remotion/player": "^4.0.503",
+    "@remotion/web-renderer": "^4.0.503",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.8",
     "clsx": "^2.1.1",
@@ -23,6 +28,7 @@
     "openai": "^5.12.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "remotion": "^4.0.503",
     "standardwebhooks": "^1.0.0",
     "tailwind-merge": "^3.3.1"
   },
