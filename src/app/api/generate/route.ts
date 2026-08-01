@@ -17,6 +17,8 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 90;
 
+const MAX_VISION_IMAGES = 3;
+
 function ensureHashtags(caption: string, tags: string[]): string {
   let text = caption.trim();
   for (const tag of tags) {
@@ -196,14 +198,19 @@ export async function POST(request: Request) {
   const instagramTags = getCaptionHashtags(outputLanguage);
   const propertyPayload = buildPropertyPayload(body, outputLanguage);
 
-  const images = (body.images ?? []).slice(0, 5);
+  const images = (body.images ?? []).slice(0, MAX_VISION_IMAGES);
   const openai = new OpenAI({ apiKey, timeout: 90_000, maxRetries: 1 });
+
+  const photoVisionNote =
+    images.length > 0
+      ? `\n${images.length} property photo(s) are attached below. Examine them for visual details to weave into the exposé story and all three social captions.\n`
+      : "";
 
   const userText = `You are creating a multi-page real estate exposé and social pack.
 
 Property data (JSON):
 ${JSON.stringify(propertyPayload, null, 2)}
-
+${photoVisionNote}
 Write ALL output exclusively in ${outputLanguage}.
 
 Return JSON with:
@@ -217,7 +224,7 @@ Return JSON with:
   - facebook: short teaser suitable for Facebook or WhatsApp (~2-3 sentences)
 
 Audience: ${propertyPayload.audience}. Emphasize: ${propertyPayload.copyFocus}.
-Use only provided facts and visible photo cues; do not invent certificates or prices not in JSON.
+Use only provided facts and observed details from the attached photos; do not invent certificates or prices not in JSON.
 If energy certificate is "na", omit claiming specific energy class values.
 
 Schema:
@@ -233,10 +240,15 @@ Schema:
       type: "image_url",
       image_url: {
         url: `data:${image.mimeType};base64,${image.base64}`,
-        detail: "low",
+        detail: "high",
       },
     });
   }
+
+  const systemContent =
+    images.length > 0
+      ? `Expert multilingual real estate copywriter with vision analysis. Valid JSON only. Language: ${outputLanguage}. Examine the attached property photos. Identify standout visual characteristics (such as floor material, lighting, layout style, view, kitchen/bathroom finishes) and integrate these observed visual details naturally into both the Exposé Story and the 3 Social Media Captions.`
+      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}.`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -246,7 +258,7 @@ Schema:
       messages: [
         {
           role: "system",
-          content: `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}.`,
+          content: systemContent,
         },
         { role: "user", content: userContent },
       ],
