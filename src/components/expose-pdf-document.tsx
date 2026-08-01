@@ -8,6 +8,7 @@ import {
 } from "@react-pdf/renderer";
 import { formatPriceAmount, type CurrencyCode } from "@/lib/currency";
 import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
+import { filterPdfTableRows } from "@/lib/pdf-table-rows";
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
 import {
   PageBackdropWatermarks,
@@ -58,11 +59,35 @@ const s = StyleSheet.create({
   },
   hero: {
     width: "100%",
-    height: 260,
-    objectFit: "cover",
+    height: 220,
+    objectFit: "cover" as const,
     borderRadius: 6,
-    marginBottom: 16,
     backgroundColor: "#f4f4f5",
+  },
+  heroRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 14,
+  },
+  heroImageCol: {
+    width: "52%",
+  },
+  heroContentCol: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  heroPlaceholder: {
+    width: "100%",
+    height: 220,
+    borderRadius: 6,
+    backgroundColor: "#f4f4f5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  metricsCol: {
+    flexDirection: "column",
+    gap: 8,
+    marginTop: 10,
   },
   title: { fontSize: 22, fontWeight: 700, marginBottom: 6 },
   subtitle: { fontSize: 11, color: "#52525b", marginBottom: 14 },
@@ -142,11 +167,10 @@ const s = StyleSheet.create({
   },
   floorPlan: {
     width: "100%",
-    height: 180,
-    objectFit: "contain",
+    maxHeight: 350,
+    objectFit: "contain" as const,
     marginTop: 8,
     marginBottom: 12,
-    backgroundColor: "#fafafa",
   },
   flexSpacer: {
     flexGrow: 1,
@@ -183,6 +207,82 @@ function PdfPageChrome({
   );
 }
 
+function PdfTable({ rows }: { rows: { label: string; value: string }[] }) {
+  const visibleRows = filterPdfTableRows(rows);
+  if (visibleRows.length === 0) return null;
+
+  return (
+    <View style={s.box}>
+      {visibleRows.map((row, i) => (
+        <View key={`${row.label}-${i}`} style={s.tableRow}>
+          <Text style={s.tableLabel}>{row.label}</Text>
+          <Text style={s.tableValue}>{row.value}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function PdfHeroImage({
+  src,
+  showWatermark,
+}: {
+  src: string;
+  showWatermark: boolean;
+}) {
+  if (showWatermark) {
+    return (
+      <WatermarkedImage
+        src={src}
+        frameStyle={s.heroImageCol}
+        imageStyle={s.hero}
+        showWatermark={showWatermark}
+        diagonalSize={28}
+      />
+    );
+  }
+
+  return (
+    <View style={s.heroImageCol}>
+      {/* eslint-disable-next-line jsx-a11y/alt-text */}
+      <Image src={src} style={s.hero} />
+    </View>
+  );
+}
+
+function PdfContactBlock({
+  agent,
+  brandColor,
+  website,
+}: {
+  agent: BrochurePdfProps["agent"];
+  brandColor: string;
+  website?: string;
+}) {
+  const name = agent.name.trim();
+  const agency = agent.agency.trim();
+  const phone = agent.phone.trim();
+  const email = agent.email.trim();
+  const hasContact = name || agency || phone || email || website?.trim();
+
+  if (!hasContact) return null;
+
+  return (
+    <>
+      <Text style={[s.h2, { color: brandColor }]}>Your contact</Text>
+      <View style={[s.box, { borderColor: brandColor }]}>
+        {name ? <Text style={{ fontSize: 12, fontWeight: 700 }}>{name}</Text> : null}
+        {agency ? <Text style={{ marginTop: name ? 4 : 0 }}>{agency}</Text> : null}
+        {phone ? <Text style={{ marginTop: name || agency ? 4 : 0 }}>{phone}</Text> : null}
+        {email ? <Text style={{ marginTop: name || agency || phone ? 4 : 0 }}>{email}</Text> : null}
+        {website?.trim() ? (
+          <Text style={{ marginTop: 4 }}>{website.trim()}</Text>
+        ) : null}
+      </View>
+    </>
+  );
+}
+
 function PdfPageFooter({ pageLabel, showWatermark }: { pageLabel: string; showWatermark?: boolean }) {
   return (
     <View style={s.pageFooter} wrap={false}>
@@ -201,6 +301,11 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
   const gallery = props.photoDataUrls.slice(1, 5);
   const brandColor = props.brandColor ?? "#18181b";
   const showWatermark = props.showWatermark === true;
+  const priceDisplay = props.priceAmount.trim()
+    ? fmt(props.priceAmount, props.currency, props.priceOnRequestLabel)
+    : props.priceOnRequestLabel;
+  const sizeDisplay = props.size.trim() ? `${props.size} m²` : null;
+  const roomsDisplay = props.rooms.trim() || null;
 
   return (
     <Document title={`Exposé – ${props.title}`}>
@@ -213,38 +318,37 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
           logoDataUrl={props.logoDataUrl}
           badge={props.transactionBadge}
         />
-        {hero ? (
-          <WatermarkedImage
-            src={hero}
-            imageStyle={s.hero}
-            showWatermark={showWatermark}
-            diagonalSize={28}
-          />
-        ) : (
-          <View style={[s.hero, { alignItems: "center", justifyContent: "center" }]}>
-            <Text style={{ color: "#a1a1aa" }}>ImmoCaption AI</Text>
-          </View>
-        )}
-        <Text style={s.title}>{props.title}</Text>
-        <Text style={s.subtitle}>{props.address}</Text>
-        <View style={s.row}>
-          <View style={[s.specChip, { borderColor: brandColor }]}>
-            <Text style={s.specLabel}>{props.priceLabel}</Text>
-            <Text style={s.specValue}>
-              {props.priceAmount.trim()
-                ? fmt(props.priceAmount, props.currency, props.priceOnRequestLabel)
-                : props.priceOnRequestLabel}
-            </Text>
-          </View>
-          <View style={s.specChip}>
-            <Text style={s.specLabel}>Size</Text>
-            <Text style={s.specValue}>
-              {props.size.trim() ? `${props.size} m²` : "—"}
-            </Text>
-          </View>
-          <View style={s.specChip}>
-            <Text style={s.specLabel}>Rooms</Text>
-            <Text style={s.specValue}>{props.rooms.trim() || "—"}</Text>
+        <View style={s.heroRow}>
+          {hero ? (
+            <PdfHeroImage src={hero} showWatermark={showWatermark} />
+          ) : (
+            <View style={[s.heroImageCol, s.heroPlaceholder]}>
+              <Text style={{ color: "#a1a1aa", fontSize: 9 }}>Cover photo</Text>
+            </View>
+          )}
+          <View style={s.heroContentCol}>
+            <Text style={s.title}>{props.title}</Text>
+            {props.address.trim() ? (
+              <Text style={s.subtitle}>{props.address}</Text>
+            ) : null}
+            <View style={s.metricsCol}>
+              <View style={[s.specChip, { borderColor: brandColor }]}>
+                <Text style={s.specLabel}>{props.priceLabel}</Text>
+                <Text style={s.specValue}>{priceDisplay}</Text>
+              </View>
+              {sizeDisplay ? (
+                <View style={s.specChip}>
+                  <Text style={s.specLabel}>Size</Text>
+                  <Text style={s.specValue}>{sizeDisplay}</Text>
+                </View>
+              ) : null}
+              {roomsDisplay ? (
+                <View style={s.specChip}>
+                  <Text style={s.specLabel}>Rooms</Text>
+                  <Text style={s.specValue}>{roomsDisplay}</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
         </View>
         {props.summary.map((line, i) => (
@@ -284,25 +388,19 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         </View>
         <Text style={s.body}>{props.fullDescription}</Text>
 
-        <Text style={[s.h2, { color: brandColor }]}>Energy certificate</Text>
-        <View style={s.box}>
-          {props.energyLines.map((line, i) => (
-            <View key={i} style={s.tableRow}>
-              <Text style={s.tableLabel}>{line.label}</Text>
-              <Text style={s.tableValue}>{line.value || "—"}</Text>
-            </View>
-          ))}
-        </View>
+        {props.energyLines.length > 0 ? (
+          <>
+            <Text style={[s.h2, { color: brandColor }]}>Energy certificate</Text>
+            <PdfTable rows={props.energyLines} />
+          </>
+        ) : null}
 
-        <Text style={[s.h2, { color: brandColor }]}>Specifications</Text>
-        <View style={s.box}>
-          {props.specsTable.map((row, i) => (
-            <View key={i} style={s.tableRow}>
-              <Text style={s.tableLabel}>{row.label}</Text>
-              <Text style={s.tableValue}>{row.value || "—"}</Text>
-            </View>
-          ))}
-        </View>
+        {props.specsTable.length > 0 ? (
+          <>
+            <Text style={[s.h2, { color: brandColor }]}>Specifications</Text>
+            <PdfTable rows={props.specsTable} />
+          </>
+        ) : null}
         <View style={s.flexSpacer} />
         <PdfPageFooter pageLabel="ImmoCaption AI · Page 2 — Details" showWatermark={showWatermark} />
       </Page>
@@ -322,23 +420,23 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         {props.floorPlanDataUrl ? (
           <>
             <Text style={[s.h2, { color: brandColor }]}>Floor plan</Text>
-            <WatermarkedImage
-              src={props.floorPlanDataUrl}
-              imageStyle={s.floorPlan}
-              showWatermark={showWatermark}
-              diagonalSize={18}
-            />
+            <View style={{ width: "100%" }}>
+              <WatermarkedImage
+                src={props.floorPlanDataUrl}
+                frameStyle={{ width: "100%" }}
+                imageStyle={s.floorPlan}
+                showWatermark={showWatermark}
+                diagonalSize={18}
+              />
+            </View>
           </>
         ) : null}
 
-        <Text style={[s.h2, { color: brandColor }]}>Your contact</Text>
-        <View style={[s.box, { borderColor: brandColor }]}>
-          <Text style={{ fontSize: 12, fontWeight: 700 }}>{props.agent.name || "—"}</Text>
-          <Text style={{ marginTop: 4 }}>{props.agent.agency}</Text>
-          <Text style={{ marginTop: 4 }}>{props.agent.phone}</Text>
-          <Text>{props.agent.email}</Text>
-          {props.website ? <Text style={{ marginTop: 4 }}>{props.website}</Text> : null}
-        </View>
+        <PdfContactBlock
+          agent={props.agent}
+          brandColor={brandColor}
+          website={props.website}
+        />
 
         <Text style={[s.h2, { color: brandColor }]}>Legal notice</Text>
         <Text style={{ fontSize: 8, lineHeight: 1.35, color: "#52525b" }}>

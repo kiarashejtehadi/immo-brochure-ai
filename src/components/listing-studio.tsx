@@ -46,7 +46,7 @@ import {
   getDefaultCurrencyForLocale,
   type CurrencyCode,
 } from "@/lib/currency";
-import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl } from "@/lib/branding/pdf-branding";
+import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl, resolvePdfAgentContact } from "@/lib/branding/pdf-branding";
 import { reelBrandingFromProfile } from "@/lib/property-reel";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
@@ -637,7 +637,7 @@ function ListingStudioContent() {
     setPdfError(null);
     try {
       const isPro = billingStatus?.isPro === true;
-      const agentForPdf = mergeAgentWithBranding(agentForLocale, brandingProfile);
+      const agentForPdf = resolvePdfAgentContact(agentForLocale, brandingProfile);
       const brand = pdfBrandingFromProfile(brandingProfile, isPro);
       let logoDataUrl: string | undefined;
       if (brand.logoUrl) {

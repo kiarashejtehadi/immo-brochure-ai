@@ -12,7 +12,8 @@ import type {
 } from "@/types/listing";
 import type { CurrencyCode } from "@/lib/currency";
 import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
-import { propertyOverviewRows } from "@/lib/listing-property-labels";
+import { propertyOverviewRows, certificateTypeLabel, heatingSourceLabel } from "@/lib/listing-property-labels";
+import { filterPdfTableRows } from "@/lib/pdf-table-rows";
 
 /** Strip EPC value/class when no certificate applies. */
 export function sanitizeEnergyForPayload(energy: EnergyFormData): EnergyFormData {
@@ -89,28 +90,40 @@ export function buildBrochurePdfProps(input: {
           { label: input.form.rentalYield, value: input.sale.rentalYield },
         ];
 
-  const specsTable = [
+  const specsTable = filterPdfTableRows([
     ...propertyOverviewRows(input.property, input.form, input.currency),
     { label: input.ui.size, value: input.size.trim() ? `${input.size} m²` : "" },
-    { label: input.ui.rooms, value: input.rooms },
-    ...pricingRows,
-  ];
+    { label: input.ui.rooms, value: input.rooms.trim() },
+    ...pricingRows.map((row) => ({
+      label: row.label,
+      value: row.value.trim(),
+    })),
+  ]);
 
-  const energyLines = [
-    { label: input.form.certificateType, value: input.energy.certificateType },
+  const energyLines = filterPdfTableRows([
+    {
+      label: input.form.certificateType,
+      value: certificateTypeLabel(input.energy.certificateType, input.form),
+    },
     ...(input.energy.certificateType !== "na"
       ? [
-          { label: input.form.energyValue, value: input.energy.energyValue },
-          { label: input.form.energyClass, value: input.energy.energyClass },
+          { label: input.form.energyValue, value: input.energy.energyValue.trim() },
+          { label: input.form.energyClass, value: input.energy.energyClass.trim() },
         ]
       : []),
-    { label: input.form.heatingSource, value: input.energy.heatingSource },
-    { label: input.form.constructionYear, value: input.energy.constructionYear },
+    {
+      label: input.form.heatingSource,
+      value: heatingSourceLabel(input.energy.heatingSource, input.form),
+    },
+    {
+      label: input.form.constructionYear,
+      value: input.energy.constructionYear.trim(),
+    },
     {
       label: input.form.heatingInstallYear,
-      value: input.energy.heatingInstallYear,
+      value: input.energy.heatingInstallYear.trim(),
     },
-  ];
+  ]);
 
   return {
     transactionType: input.transactionType,

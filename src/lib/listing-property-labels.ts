@@ -1,5 +1,7 @@
 import type { FormCopy } from "@/lib/i18n-form";
 import type {
+  EnergyCertificateType,
+  HeatingSource,
   PropertyCondition,
   PropertyDetails,
   PropertyType,
@@ -25,6 +27,34 @@ export function parkingLabel(type: ParkingType, copy: FormCopy): string {
     underground: copy.parkingUnderground,
   };
   return map[type];
+}
+
+export function certificateTypeLabel(
+  type: EnergyCertificateType,
+  copy: FormCopy,
+): string {
+  const map: Record<EnergyCertificateType, string> = {
+    consumption: copy.certConsumption,
+    demand: copy.certDemand,
+    na: copy.certNa,
+  };
+  return map[type];
+}
+
+export function heatingSourceLabel(
+  source: HeatingSource | "",
+  copy: FormCopy,
+): string {
+  if (!source) return "";
+  const map: Record<HeatingSource, string> = {
+    heat_pump: copy.heatPump,
+    district_heating: copy.districtHeating,
+    gas: copy.gas,
+    oil: copy.oil,
+    electricity: copy.electricity,
+    solar: copy.solar,
+  };
+  return map[source];
 }
 
 export function conditionLabel(value: PropertyCondition, copy: FormCopy): string {

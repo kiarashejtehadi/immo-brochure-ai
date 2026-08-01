@@ -16,6 +16,20 @@ export function mergeAgentWithBranding(
   };
 }
 
+/** PDF contact block prefers listing form values; branding fills gaps only. */
+export function resolvePdfAgentContact(
+  agent: GenerateRequestPayload["agent"],
+  branding: UserBrandingProfile | null,
+): GenerateRequestPayload["agent"] {
+  return {
+    ...agent,
+    name: agent.name.trim() || branding?.brokerName?.trim() || "",
+    agency: agent.agency.trim() || branding?.agencyName?.trim() || "",
+    phone: agent.phone.trim() || branding?.contactPhone?.trim() || "",
+    email: agent.email.trim() || branding?.contactEmail?.trim() || "",
+  };
+}
+
 export function pdfBrandingFromProfile(
   branding: UserBrandingProfile | null,
   isPro: boolean,
