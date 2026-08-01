@@ -9,6 +9,7 @@ import {
 const wm = StyleSheet.create({
   imageFrame: {
     position: "relative",
+    overflow: "hidden",
   },
   diagonalLarge: {
     position: "absolute",

@@ -59,15 +59,20 @@ const s = StyleSheet.create({
   },
   hero: {
     width: "100%",
-    height: 220,
+    height: "100%",
     objectFit: "cover" as const,
+  },
+  heroImageWrap: {
+    width: "100%",
+    height: 220,
     borderRadius: 6,
+    overflow: "hidden",
     backgroundColor: "#f4f4f5",
   },
   heroRow: {
     flexDirection: "row",
     gap: 16,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   heroImageCol: {
     width: "52%",
@@ -75,6 +80,7 @@ const s = StyleSheet.create({
   heroContentCol: {
     flex: 1,
     justifyContent: "center",
+    minWidth: 0,
   },
   heroPlaceholder: {
     width: "100%",
@@ -84,28 +90,37 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  metricsCol: {
-    flexDirection: "column",
-    gap: 8,
-    marginTop: 10,
+  metricsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+    width: "100%",
   },
-  title: { fontSize: 22, fontWeight: 700, marginBottom: 6 },
-  subtitle: { fontSize: 11, color: "#52525b", marginBottom: 14 },
-  row: { flexDirection: "row", gap: 12, marginBottom: 8 },
-  specChip: {
+  metricCell: {
+    flex: 1,
     borderWidth: 1,
     borderColor: "#e4e4e7",
     borderRadius: 6,
-    padding: 8,
-    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    minWidth: 0,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  specLabel: {
+  metricLabel: {
     fontSize: 7,
     textTransform: "uppercase",
     color: "#71717a",
-    marginBottom: 2,
+    marginBottom: 4,
+    textAlign: "center",
   },
-  specValue: { fontSize: 11, fontWeight: 700 },
+  metricValue: {
+    fontSize: 11,
+    fontWeight: 700,
+    textAlign: "center",
+  },
+  title: { fontSize: 20, fontWeight: 700, marginBottom: 6 },
+  subtitle: { fontSize: 10, color: "#52525b", marginBottom: 0 },
   h2: {
     fontSize: 11,
     fontWeight: 700,
@@ -116,12 +131,17 @@ const s = StyleSheet.create({
   },
   body: { fontSize: 10, lineHeight: 1.45, textAlign: "justify" },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  gridImg: {
+  galleryCell: {
     width: "48%",
-    height: 100,
-    objectFit: "cover",
+    height: 108,
     borderRadius: 4,
+    overflow: "hidden",
     backgroundColor: "#f4f4f5",
+  },
+  galleryImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover" as const,
   },
   box: {
     borderWidth: 1,
@@ -207,6 +227,70 @@ function PdfPageChrome({
   );
 }
 
+function PdfMetricCell({
+  label,
+  value,
+  brandColor,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  brandColor: string;
+  highlight?: boolean;
+}) {
+  return (
+    <View
+      style={
+        highlight
+          ? [s.metricCell, { borderColor: brandColor }]
+          : s.metricCell
+      }
+    >
+      <Text style={s.metricLabel} wrap={false}>
+        {label}
+      </Text>
+      <Text style={s.metricValue} wrap={false}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function PdfMetricsRow({
+  priceLabel,
+  priceDisplay,
+  sizeDisplay,
+  roomsDisplay,
+  brandColor,
+}: {
+  priceLabel: string;
+  priceDisplay: string;
+  sizeDisplay: string | null;
+  roomsDisplay: string | null;
+  brandColor: string;
+}) {
+  return (
+    <View style={s.metricsRow}>
+      <PdfMetricCell
+        label={priceLabel}
+        value={priceDisplay}
+        brandColor={brandColor}
+        highlight
+      />
+      <PdfMetricCell
+        label="Size"
+        value={sizeDisplay ?? "—"}
+        brandColor={brandColor}
+      />
+      <PdfMetricCell
+        label="Rooms"
+        value={roomsDisplay ?? "—"}
+        brandColor={brandColor}
+      />
+    </View>
+  );
+}
+
 function PdfTable({ rows }: { rows: { label: string; value: string }[] }) {
   const visibleRows = filterPdfTableRows(rows);
   if (visibleRows.length === 0) return null;
@@ -232,20 +316,24 @@ function PdfHeroImage({
 }) {
   if (showWatermark) {
     return (
-      <WatermarkedImage
-        src={src}
-        frameStyle={s.heroImageCol}
-        imageStyle={s.hero}
-        showWatermark={showWatermark}
-        diagonalSize={28}
-      />
+      <View style={s.heroImageCol}>
+        <WatermarkedImage
+          src={src}
+          frameStyle={s.heroImageWrap}
+          imageStyle={s.hero}
+          showWatermark={showWatermark}
+          diagonalSize={28}
+        />
+      </View>
     );
   }
 
   return (
     <View style={s.heroImageCol}>
-      {/* eslint-disable-next-line jsx-a11y/alt-text */}
-      <Image src={src} style={s.hero} />
+      <View style={s.heroImageWrap}>
+        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+        <Image src={src} style={s.hero} />
+      </View>
     </View>
   );
 }
@@ -331,26 +419,15 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             {props.address.trim() ? (
               <Text style={s.subtitle}>{props.address}</Text>
             ) : null}
-            <View style={s.metricsCol}>
-              <View style={[s.specChip, { borderColor: brandColor }]}>
-                <Text style={s.specLabel}>{props.priceLabel}</Text>
-                <Text style={s.specValue}>{priceDisplay}</Text>
-              </View>
-              {sizeDisplay ? (
-                <View style={s.specChip}>
-                  <Text style={s.specLabel}>Size</Text>
-                  <Text style={s.specValue}>{sizeDisplay}</Text>
-                </View>
-              ) : null}
-              {roomsDisplay ? (
-                <View style={s.specChip}>
-                  <Text style={s.specLabel}>Rooms</Text>
-                  <Text style={s.specValue}>{roomsDisplay}</Text>
-                </View>
-              ) : null}
-            </View>
           </View>
         </View>
+        <PdfMetricsRow
+          priceLabel={props.priceLabel}
+          priceDisplay={priceDisplay}
+          sizeDisplay={sizeDisplay}
+          roomsDisplay={roomsDisplay}
+          brandColor={brandColor}
+        />
         {props.summary.map((line, i) => (
           <Text key={i} style={s.bullet}>
             • {line}
@@ -376,8 +453,8 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
               <WatermarkedImage
                 key={i}
                 src={src}
-                frameStyle={{ width: "48%" }}
-                imageStyle={s.gridImg}
+                frameStyle={s.galleryCell}
+                imageStyle={s.galleryImg}
                 showWatermark={showWatermark}
                 diagonalSize={12}
               />
