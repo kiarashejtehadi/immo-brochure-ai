@@ -732,7 +732,7 @@ function ListingStudioContent() {
               {copy.pageTitle}
             </h1>
           </div>
-          <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <div className="flex w-full flex-col-reverse items-stretch gap-3 sm:w-auto sm:flex-col sm:items-end">
             <AccountBar locale={routeLocale} />
             <div className="flex flex-col gap-1 sm:items-end">
             <label
@@ -749,7 +749,7 @@ function ListingStudioContent() {
                   locale: e.target.value as UiLocale,
                 })
               }
-              className="min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-full min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm sm:w-auto dark:border-zinc-700 dark:bg-zinc-900"
             >
               {UI_LOCALES.map((loc) => (
                 <option key={loc} value={loc}>

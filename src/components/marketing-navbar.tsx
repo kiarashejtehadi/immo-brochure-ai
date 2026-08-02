@@ -72,7 +72,7 @@ export function MarketingNavbar({
               onChange={(e) =>
                 router.replace(pathname, { locale: e.target.value as UiLocale })
               }
-              className="hidden rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs sm:block dark:border-zinc-700 dark:bg-zinc-900"
+              className="hidden rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs md:block dark:border-zinc-700 dark:bg-zinc-900"
             >
               {UI_LOCALES.map((loc) => (
                 <option key={loc} value={loc}>
@@ -100,7 +100,7 @@ export function MarketingNavbar({
         </div>
 
         <nav
-          className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-6 pb-3 md:hidden"
+          className="mx-auto flex max-w-6xl items-center gap-2 overflow-x-auto px-6 pb-3 md:hidden"
           aria-label="Marketing mobile"
         >
           {NAV_ITEMS.map(({ id, labelKey }) => (
@@ -113,6 +113,23 @@ export function MarketingNavbar({
               {copy[labelKey]}
             </button>
           ))}
+          <label className="sr-only" htmlFor="marketing-nav-locale-mobile">
+            Language
+          </label>
+          <select
+            id="marketing-nav-locale-mobile"
+            value={locale}
+            onChange={(e) =>
+              router.replace(pathname, { locale: e.target.value as UiLocale })
+            }
+            className="ml-auto shrink-0 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+          >
+            {UI_LOCALES.map((loc) => (
+              <option key={loc} value={loc}>
+                {LOCALE_LABELS[loc]}
+              </option>
+            ))}
+          </select>
         </nav>
       </header>
 
