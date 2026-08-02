@@ -1,5 +1,11 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { sanitizeVoiceParseResult } from "@/lib/listing-spec-validation";
+import {
+  CONTENT_FLAGGED_ERROR,
+  ModerationBlockedError,
+  assertContentNotFlagged,
+} from "@/lib/openai-moderation";
 import { VOICE_PARSE_SANITIZATION_INSTRUCTION } from "@/lib/professional-tone-guardrail";
 import type { VoiceParseResult } from "@/types/voice-parse";
 
@@ -95,6 +101,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No speech detected in recording." }, { status: 422 });
     }
 
+    try {
+      await assertContentNotFlagged(openai, transcript);
+    } catch (err) {
+      if (err instanceof ModerationBlockedError) {
+        return NextResponse.json({ error: CONTENT_FLAGGED_ERROR }, { status: 400 });
+      }
+      throw err;
+    }
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0,
@@ -131,7 +146,7 @@ ${transcript}`,
       throw new Error("Empty structured parse response");
     }
 
-    const fields = parseVoiceResult(content);
+    const fields = sanitizeVoiceParseResult(parseVoiceResult(content));
     return NextResponse.json({ transcript, fields });
   } catch (err) {
     console.error("[api/parse-voice]", err);

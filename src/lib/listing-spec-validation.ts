@@ -1,0 +1,166 @@
+import type { GenerateRequestPayload } from "@/types/listing";
+import type { VoiceParseResult } from "@/types/voice-parse";
+
+export const SIZE_MIN_SQM = 10;
+export const SIZE_MAX_SQM = 2000;
+export const ROOMS_MIN = 1;
+export const ROOMS_MAX = 30;
+
+export type ListingSpecValidationError = {
+  ok: false;
+  error: string;
+  field: string;
+};
+
+export type ListingSpecValidationSuccess = {
+  ok: true;
+  size: string;
+  rooms: string;
+};
+
+export type ListingSpecValidationResult =
+  | ListingSpecValidationSuccess
+  | ListingSpecValidationError;
+
+function parseNumericValue(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) return null;
+  const value = Number(trimmed);
+  if (!Number.isFinite(value)) return null;
+  return value;
+}
+
+function formatNumericValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(value);
+}
+
+export function validateSize(raw: string): number | null {
+  const value = parseNumericValue(raw);
+  if (value === null) return null;
+  if (value < SIZE_MIN_SQM || value > SIZE_MAX_SQM) return null;
+  return value;
+}
+
+export function validateRooms(raw: string): number | null {
+  const value = parseNumericValue(raw);
+  if (value === null) return null;
+  if (value < ROOMS_MIN || value > ROOMS_MAX) return null;
+  return value;
+}
+
+export function validatePositiveAmount(raw: string): number | null {
+  const value = parseNumericValue(raw);
+  if (value === null || value <= 0) return null;
+  return value;
+}
+
+export function validateListingSpecs(
+  body: GenerateRequestPayload,
+): ListingSpecValidationResult {
+  let size = body.size?.trim() ?? "";
+  let rooms = body.rooms?.trim() ?? "";
+
+  if (size) {
+    const parsed = validateSize(size);
+    if (parsed === null) {
+      return {
+        ok: false,
+        field: "size",
+        error: `Invalid size: must be a number between ${SIZE_MIN_SQM} and ${SIZE_MAX_SQM} m².`,
+      };
+    }
+    size = formatNumericValue(parsed);
+  }
+
+  if (rooms) {
+    const parsed = validateRooms(rooms);
+    if (parsed === null) {
+      return {
+        ok: false,
+        field: "rooms",
+        error: `Invalid rooms: must be a number between ${ROOMS_MIN} and ${ROOMS_MAX}.`,
+      };
+    }
+    rooms = formatNumericValue(parsed);
+  }
+
+  if (body.transactionType === "rent" && body.rent?.netColdRent?.trim()) {
+    const parsed = validatePositiveAmount(body.rent.netColdRent);
+    if (parsed === null) {
+      return {
+        ok: false,
+        field: "netColdRent",
+        error: "Invalid net rent: must be a positive number.",
+      };
+    }
+  }
+
+  return { ok: true, size, rooms };
+}
+
+export function sanitizeVoiceParseResult(fields: VoiceParseResult): VoiceParseResult {
+  const size = fields.size?.trim() ?? "";
+  const rooms = fields.rooms?.trim() ?? "";
+  const netRent = fields.netRent?.trim() ?? "";
+
+  const validatedSize = size ? validateSize(size) : null;
+  const validatedRooms = rooms ? validateRooms(rooms) : null;
+  const validatedNetRent = netRent ? validatePositiveAmount(netRent) : null;
+  const utilityCharges = fields.utilityCharges?.trim() ?? "";
+  const validatedUtilityCharges = utilityCharges
+    ? validatePositiveAmount(utilityCharges)
+    : null;
+
+  return {
+    streetAddress: fields.streetAddress,
+    postalCode: fields.postalCode,
+    city: fields.city,
+    size: validatedSize !== null ? formatNumericValue(validatedSize) : null,
+    rooms: validatedRooms !== null ? formatNumericValue(validatedRooms) : null,
+    floorLevel: fields.floorLevel,
+    netRent: validatedNetRent !== null ? formatNumericValue(validatedNetRent) : null,
+    utilityCharges:
+      validatedUtilityCharges !== null
+        ? formatNumericValue(validatedUtilityCharges)
+        : null,
+  };
+}
+
+export function collectGenerateModerationText(body: GenerateRequestPayload): string {
+  const parts = [
+    body.address?.streetAddress,
+    body.address?.postalCode,
+    body.address?.city,
+    body.address?.country,
+    body.size,
+    body.rooms,
+    body.property?.floorLevel,
+    body.property?.parkingFee,
+    body.rent?.netColdRent,
+    body.rent?.utilityCharges,
+    body.rent?.totalRent,
+    body.rent?.securityDeposit,
+    body.rent?.availableFrom,
+    body.rent?.minimumLeaseTerm,
+    body.rent?.petPolicy,
+    body.sale?.purchasePrice,
+    body.sale?.hoaFee,
+    body.sale?.rentalYield,
+    body.sale?.commissionTerms,
+    body.energy?.constructionYear,
+    body.energy?.heatingInstallYear,
+    body.energy?.energyValue,
+    body.agent?.name,
+    body.agent?.agency,
+    body.agent?.phone,
+    body.agent?.email,
+    body.agent?.legalDisclaimer,
+  ];
+
+  return parts
+    .filter((part): part is string => typeof part === "string")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join("\n");
+}

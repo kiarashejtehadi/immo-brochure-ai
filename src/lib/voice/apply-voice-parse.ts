@@ -1,4 +1,9 @@
 import { sanitizeNumericInput } from "@/lib/numeric-input";
+import {
+  validatePositiveAmount,
+  validateRooms,
+  validateSize,
+} from "@/lib/listing-spec-validation";
 import type { ListingAddress, PropertyDetails, RentFormData } from "@/types/listing";
 import type { VoiceParseResult } from "@/types/voice-parse";
 
@@ -33,13 +38,13 @@ export function applyVoiceParseResult(
   }
 
   const size = pickString(parsed.size);
-  if (size) {
+  if (size && validateSize(sanitizeNumericInput(size)) !== null) {
     handlers.onSize(sanitizeNumericInput(size));
     applied += 1;
   }
 
   const rooms = pickString(parsed.rooms);
-  if (rooms) {
+  if (rooms && validateRooms(sanitizeNumericInput(rooms)) !== null) {
     handlers.onRooms(sanitizeNumericInput(rooms));
     applied += 1;
   }
@@ -51,13 +56,16 @@ export function applyVoiceParseResult(
   }
 
   const netRent = pickString(parsed.netRent);
-  if (netRent) {
+  if (netRent && validatePositiveAmount(sanitizeNumericInput(netRent)) !== null) {
     handlers.onRent({ netColdRent: sanitizeNumericInput(netRent) });
     applied += 1;
   }
 
   const utilityCharges = pickString(parsed.utilityCharges);
-  if (utilityCharges) {
+  if (
+    utilityCharges &&
+    validatePositiveAmount(sanitizeNumericInput(utilityCharges)) !== null
+  ) {
     handlers.onRent({ utilityCharges: sanitizeNumericInput(utilityCharges) });
     applied += 1;
   }

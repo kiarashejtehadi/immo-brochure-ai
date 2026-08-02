@@ -1,5 +1,14 @@
 import { ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION } from "@/lib/compliance-guardrail";
-import { PROFESSIONAL_TONE_SYSTEM_INSTRUCTION } from "@/lib/professional-tone-guardrail";
+import {
+  collectGenerateModerationText,
+  validateListingSpecs,
+} from "@/lib/listing-spec-validation";
+import {
+  CONTENT_FLAGGED_ERROR,
+  ModerationBlockedError,
+  moderateTexts,
+} from "@/lib/openai-moderation";
+import { GENERATION_SAFETY_INSTRUCTIONS } from "@/lib/professional-tone-guardrail";
 import {
   buildFurnishingSystemInstruction,
   buildVisionAnalysisNote,
@@ -225,6 +234,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
+  const specValidation = validateListingSpecs(body);
+  if (!specValidation.ok) {
+    return NextResponse.json(
+      { error: specValidation.error, code: "validation_error", field: specValidation.field },
+      { status: 400 },
+    );
+  }
+
+  body = {
+    ...body,
+    size: specValidation.size,
+    rooms: specValidation.rooms,
+  };
+
+  const openai = new OpenAI({ apiKey, timeout: 90_000, maxRetries: 1 });
+
+  try {
+    await moderateTexts(openai, [collectGenerateModerationText(body)]);
+  } catch (err) {
+    if (err instanceof ModerationBlockedError) {
+      return NextResponse.json({ error: CONTENT_FLAGGED_ERROR }, { status: 400 });
+    }
+    throw err;
+  }
+
   const listingAddress = normalizeListingAddress(body.address);
   const formattedAddress = formatListingAddress(listingAddress);
 
@@ -255,8 +289,6 @@ export async function POST(request: Request) {
   } catch (err) {
     console.warn("[api/generate] location enrichment failed", err);
   }
-
-  const openai = new OpenAI({ apiKey, timeout: 90_000, maxRetries: 1 });
 
   const photoVisionNote =
     images.length > 0
@@ -292,7 +324,7 @@ ${furnishingRules}
 
 ${locationRules}
 
-${PROFESSIONAL_TONE_SYSTEM_INSTRUCTION}
+${GENERATION_SAFETY_INSTRUCTIONS}
 
 ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}
 
@@ -320,8 +352,8 @@ Schema:
           furnishingStatus,
           isStagedOrModel,
           hasFittedKitchen: fittedKitchen,
-        })} ${furnishingRules} ${locationRules} ${PROFESSIONAL_TONE_SYSTEM_INSTRUCTION} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
-      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${furnishingRules} ${locationRules} ${PROFESSIONAL_TONE_SYSTEM_INSTRUCTION} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
+        })} ${furnishingRules} ${locationRules} ${GENERATION_SAFETY_INSTRUCTIONS} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
+      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${furnishingRules} ${locationRules} ${GENERATION_SAFETY_INSTRUCTIONS} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
 
   try {
     const completion = await openai.chat.completions.create({
