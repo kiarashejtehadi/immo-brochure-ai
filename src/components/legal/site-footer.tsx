@@ -29,7 +29,7 @@ export function SiteFooter() {
           <Link href="/checkout" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             {t("pricing")}
           </Link>
-          <Link href="/" className="hover:text-zinc-900 dark:hover:text-zinc-100">
+          <Link href="/create" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             {t("studio")}
           </Link>
         </nav>

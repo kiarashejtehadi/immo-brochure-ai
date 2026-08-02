@@ -1,8 +1,8 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import type { MarketingCopy } from "@/lib/i18n-marketing";
-import { scrollToListingForm } from "@/lib/i18n-marketing";
 import { btnPrimary } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
@@ -80,13 +80,9 @@ export function HeroSection({ copy }: { copy: MarketingCopy }) {
         </div>
 
         <div className="animate-fade-in-up animate-fade-in-up-delay-4 mt-8">
-          <button
-            type="button"
-            onClick={scrollToListingForm}
-            className={cn(btnPrimary, "animate-pulse-glow w-full max-w-md px-8 sm:w-auto")}
-          >
+          <Link href="/create" className={cn(btnPrimary, "animate-pulse-glow inline-flex w-full max-w-md px-8 sm:w-auto")}>
             {copy.heroCta}
-          </button>
+          </Link>
         </div>
       </div>
     </section>

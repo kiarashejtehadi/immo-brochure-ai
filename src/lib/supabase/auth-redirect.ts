@@ -32,9 +32,9 @@ export function localeFromPath(path: string, fallback: AppLocale = "de"): AppLoc
   return fallback;
 }
 
-/** Studio home for locale (where users generate exposés). */
+/** Studio workspace for locale (form editor + live preview). */
 export function studioPathForLocale(locale: AppLocale): string {
-  return `/${locale}`;
+  return `/${locale}/create`;
 }
 
 export function checkoutPathForLocale(locale: AppLocale): string {
@@ -47,7 +47,7 @@ export function pathToSaveBeforeMagicLink(pathname: string): string {
   if (path.includes("/checkout")) return path;
   const locale = localeFromPath(path);
   const normalized = path.replace(/\/$/, "") || `/${locale}`;
-  if (normalized === `/${locale}`) {
+  if (normalized === `/${locale}` || normalized === `/${locale}/create`) {
     return checkoutPathForLocale(locale);
   }
   return path.startsWith("/") ? path : `/${locale}`;

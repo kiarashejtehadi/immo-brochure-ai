@@ -23,6 +23,7 @@ export const routing = defineRouting({
   localePrefix: "always",
   pathnames: {
     "/": "/",
+    "/create": "/create",
     "/imprint": {
       en: "/imprint",
       de: "/impressum",

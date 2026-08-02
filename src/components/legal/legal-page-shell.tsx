@@ -18,7 +18,7 @@ export async function LegalPageShell({
       </p>
       {children}
       <p className="mt-10 border-t border-zinc-200 pt-6 text-sm dark:border-zinc-800">
-        <Link href="/" className="font-medium text-zinc-900 underline dark:text-zinc-100">
+        <Link href="/create" className="font-medium text-zinc-900 underline dark:text-zinc-100">
           ← {t("backToStudio")}
         </Link>
       </p>

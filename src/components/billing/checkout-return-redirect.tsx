@@ -10,7 +10,7 @@ function CheckoutReturnRedirectInner() {
 
   useEffect(() => {
     if (searchParams.get("checkout") !== "success") return;
-    router.replace({ pathname: "/", query: { checkout: "success" } });
+    router.replace({ pathname: "/create", query: { checkout: "success" } });
   }, [searchParams, router]);
 
   return null;

@@ -8,28 +8,21 @@ import type { MarketingCopy } from "@/lib/i18n-marketing";
 import { getBillingCopy } from "@/lib/i18n-billing";
 import type { UiLocale } from "@/lib/i18n";
 
-/** Marketing blocks for visitors only — signed-in users land directly on the workspace. */
 export function WorkspaceMarketing({
   copy,
-  isSignedIn,
-  visible,
   locale,
   billingEnabled,
   onSeeSample,
 }: {
   copy: MarketingCopy;
-  isSignedIn: boolean;
-  visible: boolean;
   locale: UiLocale;
   billingEnabled: boolean;
   onSeeSample?: () => void;
 }) {
-  if (!visible || isSignedIn) return null;
-
   const billingCopy = getBillingCopy(locale);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 pt-8">
+    <div className="mx-auto max-w-6xl px-6 pt-8 pb-12">
       <HeroSection copy={copy} />
       <HowItWorks copy={copy} onSeeSample={onSeeSample} />
       <ComparisonSection copy={copy} />

@@ -147,3 +147,6 @@ export function VoiceFillButton({
     </>
   );
 }
+
+/** Global alias for the voice dictation control. */
+export const FillWithVoiceButton = VoiceFillButton;

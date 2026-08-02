@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CookieConsentBanner } from "@/components/legal/cookie-consent-banner";
 import { SiteFooter } from "@/components/legal/site-footer";
+import { VoiceFillShell } from "@/components/listing/voice-fill-shell";
 import { routing, type AppLocale } from "@/i18n/routing";
 
 export const metadata: Metadata = {
@@ -38,9 +39,11 @@ export default async function LocaleLayout({
     <html lang={locale} dir={rtl ? "rtl" : "ltr"} className={fontClassNames}>
       <body className="flex min-h-screen flex-col bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-50">
         <NextIntlClientProvider messages={messages}>
-          <div className="flex flex-1 flex-col">{children}</div>
-          <SiteFooter />
-          <CookieConsentBanner />
+          <VoiceFillShell>
+            <div className="flex flex-1 flex-col">{children}</div>
+            <SiteFooter />
+            <CookieConsentBanner />
+          </VoiceFillShell>
         </NextIntlClientProvider>
       </body>
     </html>

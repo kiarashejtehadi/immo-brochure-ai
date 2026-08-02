@@ -16,7 +16,7 @@ export function CheckoutPageContent({ locale }: { locale: string }) {
       <CheckoutReturnRedirect />
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-200 pb-6 dark:border-zinc-800">
         <div>
-          <Link href="/" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400">
+          <Link href="/create" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400">
             {copy.backToStudio}
           </Link>
         </div>

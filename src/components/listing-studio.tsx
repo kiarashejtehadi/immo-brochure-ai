@@ -6,16 +6,13 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { AccountBar } from "@/components/billing/account-bar";
 import { BillingNeedPlanBanner } from "@/components/billing/billing-need-plan-banner";
 import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-status";
-import { hasPurchasedBillingAccess, hasProReelAccess } from "@/lib/billing/client-access";
+import { hasProReelAccess } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
-import { VoiceFillFloatingAssistant } from "@/components/listing/voice-fill-floating-assistant";
-import { WorkspaceMarketing } from "@/components/workspace-marketing";
-import { MarketingNavbar } from "@/components/marketing-navbar";
+import { useRegisterVoiceFill } from "@/components/listing/voice-fill-context";
 import { FreeTrialFormBanner } from "@/components/free-trial-form-banner";
 import { getMarketingCopy } from "@/lib/i18n-marketing";
 import { fetchDemoPhotos, getDemoListingContent } from "@/lib/demo-listing";
-import { isBillingEnabled } from "@/lib/billing/config";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
 import {
   buildBrochurePdfProps,
@@ -230,7 +227,6 @@ function ListingStudioContent() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLElement>(null);
-  const formSectionRef = useRef<HTMLElement>(null);
 
   const routeLocale = useLocale() as UiLocale;
   const uiLocale = routeLocale;
@@ -366,10 +362,7 @@ function ListingStudioContent() {
     router.replace(pathname);
   }, [router, pathname, refreshBilling]);
 
-  const showMarketing =
-    !purchaseSuccess && !hasPurchasedBillingAccess(billingStatus);
   const isSignedIn = Boolean(billingStatus?.email) || browserSignedIn;
-  const isWorkspace = isSignedIn || !showMarketing;
 
   // Demo preview lives in React state only — clear it when visitors switch UI language.
   useEffect(() => {
@@ -445,6 +438,33 @@ function ListingStudioContent() {
     [transactionType],
   );
 
+  const voiceFillConfig = useMemo(
+    () => ({
+      locale: routeLocale,
+      copy: {
+        voiceFillButton: copy.voiceFillButton,
+        voiceFillButtonTrial: copy.voiceFillButtonTrial,
+        voiceFillListening: copy.voiceFillListening,
+        voiceFillProcessing: copy.voiceFillProcessing,
+        voiceFillUnsupported: copy.voiceFillUnsupported,
+      },
+      transactionType,
+      onParsed: handleVoiceParsed,
+    }),
+    [
+      routeLocale,
+      copy.voiceFillButton,
+      copy.voiceFillButtonTrial,
+      copy.voiceFillListening,
+      copy.voiceFillProcessing,
+      copy.voiceFillUnsupported,
+      transactionType,
+      handleVoiceParsed,
+    ],
+  );
+
+  useRegisterVoiceFill(voiceFillConfig);
+
   const socialHashtags = useMemo(
     () =>
       buildRealEstateHashtags({
@@ -519,6 +539,14 @@ function ListingStudioContent() {
 
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [exposeLocale]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("demo") !== "1") return;
+    void loadDemoSample();
+    router.replace(pathname);
+  }, [loadDemoSample, pathname, router]);
 
   const addPhotos = useCallback((files: FileList | File[]) => {
     const incoming = Array.from(files).filter((f) =>
@@ -729,17 +757,8 @@ function ListingStudioContent() {
     }
   }
 
-  const showLandingNav = showMarketing && !isSignedIn;
-
   return (
     <div className="min-h-screen overflow-visible bg-gradient-to-b from-blue-50/30 via-zinc-50 to-zinc-50 text-zinc-900 dark:from-indigo-950/20 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-50">
-      {showLandingNav ? (
-        <MarketingNavbar
-          copy={marketingCopy}
-          locale={routeLocale}
-          onSignIn={() => setAuthOpen(true)}
-        />
-      ) : (
       <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
           <div>
@@ -779,7 +798,6 @@ function ListingStudioContent() {
           </div>
         </div>
       </header>
-      )}
 
       <BillingNeedPlanBanner />
 
@@ -794,27 +812,9 @@ function ListingStudioContent() {
         </div>
       ) : null}
 
-      <WorkspaceMarketing
-        copy={marketingCopy}
-        isSignedIn={isSignedIn}
-        visible={showMarketing}
-        locale={routeLocale}
-        billingEnabled={isBillingEnabled()}
-        onSeeSample={() => void loadDemoSample()}
-      />
-
-      <main
-        className={cn(
-          "mx-auto max-w-6xl overflow-visible px-6 pb-8",
-          isWorkspace ? "pt-4 sm:pt-6" : "py-6 sm:py-8",
-        )}
-      >
+      <main className="mx-auto max-w-6xl overflow-visible px-6 pb-8 pt-4 sm:pt-6">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <section
-            ref={formSectionRef}
-            id="listing-form"
-            className="order-1 min-w-0 flex-1 scroll-mt-28"
-          >
+          <section id="listing-form" className="order-1 min-w-0 flex-1 scroll-mt-28">
           {!isSignedIn ? (
             <FreeTrialFormBanner
               copy={marketingCopy}
@@ -1130,13 +1130,6 @@ function ListingStudioContent() {
           </aside>
         </div>
       </main>
-      <VoiceFillFloatingAssistant
-        formSectionRef={formSectionRef}
-        copy={copy}
-        locale={routeLocale}
-        currentListingType={transactionType}
-        onParsed={handleVoiceParsed}
-      />
       <AuthEmailModal open={authOpen} onClose={() => setAuthOpen(false)} onSent={() => setAuthOpen(false)} />
     </div>
   );
