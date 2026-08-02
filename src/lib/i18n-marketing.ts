@@ -17,6 +17,8 @@ export type MarketingCopy = {
   heroBadgeLanguages: string;
   heroBadgeVision: string;
   heroBadgeVideoReels: string;
+  heroBadgeVoiceFill: string;
+  heroBadgeGeocodedLocation: string;
   howItWorksTitle: string;
   howItWorksSubtitle: string;
   step1Title: string;
@@ -57,6 +59,8 @@ const en: MarketingCopy = {
     "Multi-language Support (30+ Languages: EN, DE, FR, ES, IT & more)",
   heroBadgeVision: "AI Vision Analysis (Extracts visual details directly from photos)",
   heroBadgeVideoReels: "15s HD Social Media Video Reels (Instagram / TikTok ready)",
+  heroBadgeVoiceFill: "🎙️ Hands-free Voice Filling",
+  heroBadgeGeocodedLocation: "📍 Geocoded Neighborhood Copy",
   howItWorksTitle: "How it works",
   howItWorksSubtitle: "From raw listing data to a client-ready exposé in three simple steps.",
   step1Title: "1. Fill Listing Basics",

@@ -18,6 +18,21 @@ export type PlanCardDefinition = {
   highlight?: boolean;
 };
 
+export function getFreeTrialCardDefinition(locale: UiLocale): PlanCardDefinition {
+  const copy = getBillingCopy(locale);
+  return {
+    key: "credits_pack",
+    title: copy.freeTrialCardTitle,
+    priceLabel: copy.freeTrialPriceLabel,
+    features: [
+      { text: copy.freeTrialFeaturePdfCredits, included: true },
+      { text: copy.featureAudioDictationTrial, included: true },
+      { text: copy.featureGeocodedLocation, included: true },
+    ],
+    cta: copy.freeTrialCta,
+  };
+}
+
 export function getPlanCardDefinitions(locale: UiLocale): PlanCardDefinition[] {
   const copy = getBillingCopy(locale);
   const packSize = creditsPerPack();
@@ -35,6 +50,7 @@ export function getPlanCardDefinitions(locale: UiLocale): PlanCardDefinition[] {
         },
         { text: copy.featureWatermarkFree, included: true },
         { text: copy.featureAiCopy, included: true },
+        { text: copy.featureGeocodedLocation, included: true },
         { text: copy.featureCustomBrandingExcluded, included: false },
         { text: copy.featureVideoReelsDemo, included: true },
       ],
@@ -48,6 +64,8 @@ export function getPlanCardDefinitions(locale: UiLocale): PlanCardDefinition[] {
       highlight: true,
       features: [
         { text: copy.featureUnlimitedGenerations, included: true },
+        { text: copy.featureUnlimitedVoice, included: true },
+        { text: copy.featureAutomatedLocationPoi, included: true },
         { text: copy.featureFullBranding, included: true },
         { text: copy.featureWatermarkFree, included: true },
         { text: copy.featureAiVision, included: true },
@@ -63,6 +81,8 @@ export function getPlanCardDefinitions(locale: UiLocale): PlanCardDefinition[] {
       badge: copy.badgeBestValue,
       features: [
         { text: copy.featureUnlimitedGenerations, included: true },
+        { text: copy.featureUnlimitedVoice, included: true },
+        { text: copy.featureAutomatedLocationPoi, included: true },
         { text: copy.featureFullBranding, included: true },
         { text: copy.featureWatermarkFree, included: true },
         { text: copy.featureAiVision, included: true },

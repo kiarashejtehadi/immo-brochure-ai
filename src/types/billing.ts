@@ -7,6 +7,8 @@ export type SubscriptionStatus =
 
 export type BillingPlanKey = "credits_pack" | "monthly" | "yearly";
 
+export type UserTier = "trial" | "pro_monthly" | "pro_yearly";
+
 export type DbUser = {
   id: string;
   email: string;
@@ -52,6 +54,12 @@ export type BillingStatusResponse = {
   planId: string | null;
   subscriptionStatus: SubscriptionStatus | null;
   currentPeriodEnd: string | null;
+  /** Resolved usage tier for voice dictation and feature gating. */
+  tier: UserTier | null;
+  /** Voice parses consumed (trial tier only). */
+  audioCreditsUsed: number;
+  /** Max voice parses for trial tier; null = unlimited (Pro). */
+  audioCreditsLimit: number | null;
   /** Which required env vars are present (no secret values). Shown when billing is off. */
   configChecks?: Record<string, boolean>;
 };

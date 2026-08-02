@@ -8,7 +8,11 @@ import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { PricingLegalNotice } from "@/components/billing/pricing-legal-notice";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { openLemonSqueezyCheckout } from "@/lib/billing/lemon-checkout-client";
-import { getPlanCardDefinitions, type PlanFeature } from "@/lib/billing/plan-display";
+import {
+  getFreeTrialCardDefinition,
+  getPlanCardDefinitions,
+  type PlanFeature,
+} from "@/lib/billing/plan-display";
 import {
   hasBrowserAuthSession,
   refreshBrowserAuthSession,
@@ -74,6 +78,7 @@ export function PricingSection({
   const plans = getPlanCardDefinitions(uiLocale).filter(
     (plan) => !subscriptionOnly || plan.key !== "credits_pack",
   );
+  const freeTrialPlan = !subscriptionOnly ? getFreeTrialCardDefinition(uiLocale) : null;
 
   async function startCheckout(plan: BillingPlanKey) {
     if (!billingEnabled) {
@@ -133,7 +138,34 @@ export function PricingSection({
         </p>
       ) : null}
 
-      <div className={cn("grid gap-4", subscriptionOnly ? "md:grid-cols-2" : "md:grid-cols-3")}>
+      <div
+        className={cn(
+          "grid gap-4",
+          subscriptionOnly ? "md:grid-cols-2" : "md:grid-cols-2 xl:grid-cols-4",
+        )}
+      >
+        {freeTrialPlan ? (
+          <article className="relative flex flex-col rounded-2xl border border-zinc-200 bg-zinc-50 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/50">
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              {freeTrialPlan.title}
+            </h3>
+            <p className="mt-2 text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              {freeTrialPlan.priceLabel}
+            </p>
+            <ul className="mt-4 flex-1 space-y-2.5">
+              {freeTrialPlan.features.map((feature) => (
+                <PlanFeatureRow key={feature.text} feature={feature} />
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setAuthOpen(true)}
+              className="mt-5 w-full rounded-xl border border-indigo-600 bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            >
+              {freeTrialPlan.cta}
+            </button>
+          </article>
+        ) : null}
         {plans.map((plan) => (
           <article
             key={plan.key}

@@ -14,6 +14,7 @@ import type {
   OutputLanguage,
   UiCopy,
 } from "@/lib/i18n";
+import type { UiLocale } from "@/lib/i18n";
 import { LOCALE_LABELS } from "@/lib/i18n";
 import { EXPOSE_LANGUAGE_OPTIONS } from "@/lib/target-languages";
 import {
@@ -169,6 +170,7 @@ function NumericField({
 
 export type ListingFormProps = {
   copy: UiCopy & FormCopy & WorkflowUiCopy;
+  uiLocale: UiLocale;
   transactionType: TransactionType;
   onTransactionType: (type: TransactionType) => void;
   property: PropertyDetails;
@@ -222,6 +224,7 @@ export type ListingFormProps = {
 export function ListingForm(props: ListingFormProps) {
   const {
     copy,
+    uiLocale,
     transactionType,
     onTransactionType,
     property,
@@ -334,6 +337,7 @@ export function ListingForm(props: ListingFormProps) {
         <div className="pointer-events-auto">
           <VoiceFillButton
             copy={copy}
+            locale={uiLocale}
             currentListingType={transactionType}
             onParsed={onVoiceParsed}
           />

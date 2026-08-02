@@ -104,6 +104,8 @@ export function HeroSection({
             <TrustBadge label={copy.heroBadgeLanguages} />
             <TrustBadge label={copy.heroBadgeVision} />
             <TrustBadge label={copy.heroBadgeVideoReels} />
+            <TrustBadge label={copy.heroBadgeVoiceFill} />
+            <TrustBadge label={copy.heroBadgeGeocodedLocation} />
           </div>
         </div>
       </div>

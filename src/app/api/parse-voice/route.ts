@@ -1,5 +1,9 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import {
+  assertVoiceParseAccess,
+  recordSuccessfulVoiceParse,
+} from "@/lib/billing/user-tier";
 import { sanitizeVoiceParseResult } from "@/lib/listing-spec-validation";
 import {
   CONTENT_FLAGGED_ERROR,
@@ -42,6 +46,14 @@ export async function POST(request: Request) {
   }
 
   const currentListingType = parseCurrentListingType(formData.get("currentListingType"));
+
+  const voiceAccess = await assertVoiceParseAccess();
+  if (!voiceAccess.ok) {
+    return NextResponse.json(
+      { error: voiceAccess.error, code: voiceAccess.code },
+      { status: voiceAccess.status },
+    );
+  }
 
   const openai = new OpenAI({ apiKey, timeout: 55_000, maxRetries: 1 });
 
@@ -104,6 +116,11 @@ export async function POST(request: Request) {
       sanitizeVoiceParseResult(parseVoiceParseResult(content)),
       currentListingType,
     );
+
+    if (voiceAccess.incrementAudioOnSuccess) {
+      await recordSuccessfulVoiceParse(voiceAccess.userId);
+    }
+
     return NextResponse.json({ transcript, fields });
   } catch (err) {
     console.error("[api/parse-voice]", err);

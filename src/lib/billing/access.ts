@@ -2,11 +2,16 @@ import { isBillingEnabled, planDisplayName } from "@/lib/billing/config";
 import { getBillingEnvChecks } from "@/lib/supabase/env";
 import {
   getActiveSubscription,
+  getAudioCreditsUsed,
   getCreditsUsedCount,
   getTrialCredits,
   getUserCredits,
   upsertUserFromAuth,
 } from "@/lib/billing/repository";
+import {
+  audioCreditsLimitForTier,
+  resolveUserTier,
+} from "@/lib/billing/tier";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { BillingAccess, BillingStatusResponse } from "@/types/billing";
 
@@ -87,6 +92,9 @@ function emptyBillingStatus(
     planId: null,
     subscriptionStatus: null,
     currentPeriodEnd: null,
+    tier: null,
+    audioCreditsUsed: 0,
+    audioCreditsLimit: null,
     ...partial,
   };
 }
@@ -98,6 +106,8 @@ export async function getBillingStatusForClient(): Promise<BillingStatusResponse
     return emptyBillingStatus({
       billingEnabled: false,
       email: authUser?.email ?? null,
+      tier: "pro_monthly",
+      audioCreditsLimit: null,
       configChecks: getBillingEnvChecks(),
     });
   }
@@ -113,6 +123,8 @@ export async function getBillingStatusForClient(): Promise<BillingStatusResponse
   const creditsUsed = await getCreditsUsedCount(authUser.id);
   const creditsTotal = creditsUsed + remainingCredits;
   const hasActiveSubscription = Boolean(subscription);
+  const tier = resolveUserTier(subscription);
+  const audioCreditsUsed = await getAudioCreditsUsed(authUser.id);
 
   return {
     billingEnabled: true,
@@ -126,6 +138,9 @@ export async function getBillingStatusForClient(): Promise<BillingStatusResponse
     planId: subscription?.plan_id ?? (remainingCredits > 0 ? "credits_pack" : null),
     subscriptionStatus: subscription?.status ?? null,
     currentPeriodEnd: subscription?.current_period_end ?? null,
+    tier,
+    audioCreditsUsed,
+    audioCreditsLimit: audioCreditsLimitForTier(tier),
   };
 }
 

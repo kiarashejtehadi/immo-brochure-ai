@@ -155,6 +155,31 @@ export async function getTrialCredits(userId: string): Promise<number> {
   return (data as { trial_credits?: number } | null)?.trial_credits ?? 0;
 }
 
+export async function getAudioCreditsUsed(userId: string): Promise<number> {
+  const supabase = createSupabaseServiceClient();
+  const { data } = await supabase
+    .from("user_credits")
+    .select("audio_credits_used")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return (data as { audio_credits_used?: number } | null)?.audio_credits_used ?? 0;
+}
+
+export async function incrementAudioCreditsUsed(userId: string): Promise<number> {
+  const supabase = createSupabaseServiceClient();
+  const current = await getAudioCreditsUsed(userId);
+  const next = current + 1;
+  const { error } = await supabase
+    .from("user_credits")
+    .update({
+      audio_credits_used: next,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return next;
+}
+
 /** Count exposé generations that consumed a credit-pack credit. */
 export async function getCreditsUsedCount(userId: string): Promise<number> {
   const supabase = createSupabaseServiceClient();

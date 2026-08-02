@@ -56,6 +56,16 @@ export type BillingCopy = {
   featureFullBranding: string;
   featurePrioritySpeed: string;
   featureAnnualDiscount: string;
+  featureAudioDictationTrial: string;
+  featureGeocodedLocation: string;
+  featureUnlimitedVoice: string;
+  featureAutomatedLocationPoi: string;
+  freeTrialCardTitle: string;
+  freeTrialPriceLabel: string;
+  freeTrialFeaturePdfCredits: string;
+  freeTrialCta: string;
+  voiceUpgradeTitle: string;
+  voiceUpgradeBody: string;
   ctaBuyCredits: string;
   ctaSubscribeMonthly: string;
   ctaSubscribeYearly: string;
@@ -163,6 +173,17 @@ const en: BillingCopy = {
   featureFullBranding: "Full Custom Agency Logo & Brand Colors",
   featurePrioritySpeed: "Priority AI Generation Speed",
   featureAnnualDiscount: "Discounted Annual Rate (€10/mo equivalent)",
+  featureAudioDictationTrial: "2 Audio Dictation Credits",
+  featureGeocodedLocation: "Geocoded Location Insights",
+  featureUnlimitedVoice: "Unlimited Voice Dictation & AI Parsing",
+  featureAutomatedLocationPoi: "Automated Location & POI Descriptions",
+  freeTrialCardTitle: "Free Trial",
+  freeTrialPriceLabel: "€0",
+  freeTrialFeaturePdfCredits: "2 Free PDF Exposé Credits",
+  freeTrialCta: "Sign Up Free",
+  voiceUpgradeTitle: "Upgrade for unlimited voice dictation",
+  voiceUpgradeBody:
+    "You've used your 2 free voice credits! Upgrade to Pro for unlimited voice dictation.",
   ctaBuyCredits: "Buy credits",
   ctaSubscribeMonthly: "Subscribe monthly",
   ctaSubscribeYearly: "Subscribe yearly",

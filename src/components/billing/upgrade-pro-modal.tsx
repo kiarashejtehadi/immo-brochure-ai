@@ -12,11 +12,15 @@ export function UpgradeProModal({
   onClose,
   locale,
   subscriptionOnly,
+  title,
+  body,
 }: {
   open: boolean;
   onClose: () => void;
   locale: string;
   subscriptionOnly?: boolean;
+  title?: string;
+  body?: string;
 }) {
   const uiLocale = locale as UiLocale;
   const copy = getBillingCopy(uiLocale);
@@ -35,10 +39,11 @@ export function UpgradeProModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id="upgrade-pro-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              {copy.upgradeTitle}
+              {title ?? copy.upgradeTitle}
             </h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              {subscriptionOnly ? copy.upgradeSubtitleSubscriptionOnly : copy.upgradeSubtitleGeneral}
+              {body ??
+                (subscriptionOnly ? copy.upgradeSubtitleSubscriptionOnly : copy.upgradeSubtitleGeneral)}
             </p>
           </div>
           <button

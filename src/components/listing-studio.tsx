@@ -817,6 +817,7 @@ function ListingStudioContent() {
           ) : null}
           <ListingForm
             copy={copy}
+            uiLocale={uiLocale}
             transactionType={transactionType}
             onTransactionType={setTransactionType}
             property={property}
