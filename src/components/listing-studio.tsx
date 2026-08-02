@@ -432,6 +432,7 @@ function ListingStudioContent() {
   const handleVoiceParsed = useCallback(
     (fields: VoiceParseResult) => {
       applyVoiceParseResult(fields, {
+        onTransactionType: setTransactionType,
         onAddress: (patch) => setAddress((current) => ({ ...current, ...patch })),
         onSize: setSize,
         onRooms: setRooms,

@@ -1,10 +1,9 @@
-import { sanitizeNumericInput } from "@/lib/numeric-input";
 import {
-  validatePositiveAmount,
-  validateRooms,
-  validateSize,
+  validatePositiveAmountValue,
+  validateRoomsValue,
+  validateSizeValue,
 } from "@/lib/listing-spec-validation";
-import type { ListingAddress, PropertyDetails, RentFormData } from "@/types/listing";
+import type { ListingAddress, PropertyDetails, RentFormData, TransactionType } from "@/types/listing";
 import type { VoiceParseResult } from "@/types/voice-parse";
 
 function pickString(value: string | null | undefined): string | undefined {
@@ -13,9 +12,15 @@ function pickString(value: string | null | undefined): string | undefined {
   return trimmed || undefined;
 }
 
+function numberToFormValue(value: number | null | undefined): string | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return Number.isInteger(value) ? String(value) : String(value);
+}
+
 export function applyVoiceParseResult(
   parsed: VoiceParseResult,
   handlers: {
+    onTransactionType?: (type: TransactionType) => void;
     onAddress: (patch: Partial<ListingAddress>) => void;
     onSize: (value: string) => void;
     onRooms: (value: string) => void;
@@ -24,6 +29,11 @@ export function applyVoiceParseResult(
   },
 ): number {
   let applied = 0;
+
+  if (parsed.listingType === "rent" || parsed.listingType === "sale") {
+    handlers.onTransactionType?.(parsed.listingType);
+    applied += 1;
+  }
 
   const streetAddress = pickString(parsed.streetAddress);
   const postalCode = pickString(parsed.postalCode);
@@ -37,15 +47,15 @@ export function applyVoiceParseResult(
     applied += Object.keys(addressPatch).length;
   }
 
-  const size = pickString(parsed.size);
-  if (size && validateSize(sanitizeNumericInput(size)) !== null) {
-    handlers.onSize(sanitizeNumericInput(size));
+  const size = numberToFormValue(parsed.size);
+  if (size && parsed.size !== null && validateSizeValue(parsed.size) !== null) {
+    handlers.onSize(size);
     applied += 1;
   }
 
-  const rooms = pickString(parsed.rooms);
-  if (rooms && validateRooms(sanitizeNumericInput(rooms)) !== null) {
-    handlers.onRooms(sanitizeNumericInput(rooms));
+  const rooms = numberToFormValue(parsed.rooms);
+  if (rooms && parsed.rooms !== null && validateRoomsValue(parsed.rooms) !== null) {
+    handlers.onRooms(rooms);
     applied += 1;
   }
 
@@ -55,18 +65,19 @@ export function applyVoiceParseResult(
     applied += 1;
   }
 
-  const netRent = pickString(parsed.netRent);
-  if (netRent && validatePositiveAmount(sanitizeNumericInput(netRent)) !== null) {
-    handlers.onRent({ netColdRent: sanitizeNumericInput(netRent) });
+  const netRent = numberToFormValue(parsed.netRent);
+  if (netRent && parsed.netRent !== null && validatePositiveAmountValue(parsed.netRent) !== null) {
+    handlers.onRent({ netColdRent: netRent });
     applied += 1;
   }
 
-  const utilityCharges = pickString(parsed.utilityCharges);
+  const utilityCharges = numberToFormValue(parsed.utilityCharges);
   if (
     utilityCharges &&
-    validatePositiveAmount(sanitizeNumericInput(utilityCharges)) !== null
+    parsed.utilityCharges !== null &&
+    validatePositiveAmountValue(parsed.utilityCharges) !== null
   ) {
-    handlers.onRent({ utilityCharges: sanitizeNumericInput(utilityCharges) });
+    handlers.onRent({ utilityCharges });
     applied += 1;
   }
 

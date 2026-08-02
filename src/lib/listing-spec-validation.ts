@@ -35,24 +35,37 @@ function formatNumericValue(value: number): string {
   return Number.isInteger(value) ? String(value) : String(value);
 }
 
+export function validateSizeValue(value: number): number | null {
+  if (!Number.isFinite(value) || value < SIZE_MIN_SQM || value > SIZE_MAX_SQM) return null;
+  return value;
+}
+
+export function validateRoomsValue(value: number): number | null {
+  if (!Number.isFinite(value) || value < ROOMS_MIN || value > ROOMS_MAX) return null;
+  return value;
+}
+
+export function validatePositiveAmountValue(value: number): number | null {
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return value;
+}
+
 export function validateSize(raw: string): number | null {
   const value = parseNumericValue(raw);
   if (value === null) return null;
-  if (value < SIZE_MIN_SQM || value > SIZE_MAX_SQM) return null;
-  return value;
+  return validateSizeValue(value);
 }
 
 export function validateRooms(raw: string): number | null {
   const value = parseNumericValue(raw);
   if (value === null) return null;
-  if (value < ROOMS_MIN || value > ROOMS_MAX) return null;
-  return value;
+  return validateRoomsValue(value);
 }
 
 export function validatePositiveAmount(raw: string): number | null {
   const value = parseNumericValue(raw);
-  if (value === null || value <= 0) return null;
-  return value;
+  if (value === null) return null;
+  return validatePositiveAmountValue(value);
 }
 
 export function validateListingSpecs(
@@ -100,30 +113,27 @@ export function validateListingSpecs(
 }
 
 export function sanitizeVoiceParseResult(fields: VoiceParseResult): VoiceParseResult {
-  const size = fields.size?.trim() ?? "";
-  const rooms = fields.rooms?.trim() ?? "";
-  const netRent = fields.netRent?.trim() ?? "";
-
-  const validatedSize = size ? validateSize(size) : null;
-  const validatedRooms = rooms ? validateRooms(rooms) : null;
-  const validatedNetRent = netRent ? validatePositiveAmount(netRent) : null;
-  const utilityCharges = fields.utilityCharges?.trim() ?? "";
-  const validatedUtilityCharges = utilityCharges
-    ? validatePositiveAmount(utilityCharges)
-    : null;
+  const validatedSize =
+    fields.size !== null ? validateSizeValue(fields.size) : null;
+  const validatedRooms =
+    fields.rooms !== null ? validateRoomsValue(fields.rooms) : null;
+  const validatedNetRent =
+    fields.netRent !== null ? validatePositiveAmountValue(fields.netRent) : null;
+  const validatedUtilityCharges =
+    fields.utilityCharges !== null
+      ? validatePositiveAmountValue(fields.utilityCharges)
+      : null;
 
   return {
+    listingType: fields.listingType,
     streetAddress: fields.streetAddress,
     postalCode: fields.postalCode,
     city: fields.city,
-    size: validatedSize !== null ? formatNumericValue(validatedSize) : null,
-    rooms: validatedRooms !== null ? formatNumericValue(validatedRooms) : null,
+    size: validatedSize,
+    rooms: validatedRooms,
     floorLevel: fields.floorLevel,
-    netRent: validatedNetRent !== null ? formatNumericValue(validatedNetRent) : null,
-    utilityCharges:
-      validatedUtilityCharges !== null
-        ? formatNumericValue(validatedUtilityCharges)
-        : null,
+    netRent: validatedNetRent,
+    utilityCharges: validatedUtilityCharges,
   };
 }
 
