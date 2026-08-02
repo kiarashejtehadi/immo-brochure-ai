@@ -332,7 +332,11 @@ export function ListingForm(props: ListingFormProps) {
     <div className="space-y-5 pb-28">
       <div className="pointer-events-none fixed bottom-24 right-4 z-20 sm:right-6">
         <div className="pointer-events-auto">
-          <VoiceFillButton copy={copy} onParsed={onVoiceParsed} />
+          <VoiceFillButton
+            copy={copy}
+            currentListingType={transactionType}
+            onParsed={onVoiceParsed}
+          />
         </div>
       </div>
 

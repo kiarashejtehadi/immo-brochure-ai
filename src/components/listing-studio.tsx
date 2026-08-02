@@ -430,8 +430,8 @@ function ListingStudioContent() {
   );
 
   const handleVoiceParsed = useCallback(
-    (fields: VoiceParseResult) => {
-      applyVoiceParseResult(fields, {
+    (parsedData: VoiceParseResult) => {
+      applyVoiceParseResult(parsedData, transactionType, {
         onTransactionType: setTransactionType,
         onAddress: (patch) => setAddress((current) => ({ ...current, ...patch })),
         onSize: setSize,
@@ -440,7 +440,7 @@ function ListingStudioContent() {
         onRent: (patch) => setRent((current) => ({ ...current, ...patch })),
       });
     },
-    [],
+    [transactionType],
   );
 
   const socialHashtags = useMemo(

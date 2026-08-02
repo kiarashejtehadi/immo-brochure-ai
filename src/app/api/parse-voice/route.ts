@@ -8,9 +8,11 @@ import {
 } from "@/lib/openai-moderation";
 import { VOICE_PARSE_SANITIZATION_INSTRUCTION } from "@/lib/professional-tone-guardrail";
 import {
-  VOICE_PARSE_EXTRACTION_PROMPT,
   VOICE_PARSE_JSON_SCHEMA,
   VOICE_PARSE_SYSTEM_PROMPT,
+  buildVoiceParseUserPrompt,
+  finalizeVoiceParseResult,
+  parseCurrentListingType,
   parseVoiceParseResult,
 } from "@/lib/voice/voice-parse-schema";
 
@@ -38,6 +40,8 @@ export async function POST(request: Request) {
   if (!(audio instanceof Blob) || audio.size === 0) {
     return NextResponse.json({ error: "Missing audio recording." }, { status: 400 });
   }
+
+  const currentListingType = parseCurrentListingType(formData.get("currentListingType"));
 
   const openai = new OpenAI({ apiKey, timeout: 55_000, maxRetries: 1 });
 
@@ -86,10 +90,7 @@ export async function POST(request: Request) {
         { role: "system", content: PARSE_SYSTEM_PROMPT },
         {
           role: "user",
-          content: `${VOICE_PARSE_EXTRACTION_PROMPT}
-
-Transcript:
-${transcript}`,
+          content: buildVoiceParseUserPrompt(transcript, currentListingType),
         },
       ],
     });
@@ -99,7 +100,10 @@ ${transcript}`,
       throw new Error("Empty structured parse response");
     }
 
-    const fields = sanitizeVoiceParseResult(parseVoiceParseResult(content));
+    const fields = finalizeVoiceParseResult(
+      sanitizeVoiceParseResult(parseVoiceParseResult(content)),
+      currentListingType,
+    );
     return NextResponse.json({ transcript, fields });
   } catch (err) {
     console.error("[api/parse-voice]", err);

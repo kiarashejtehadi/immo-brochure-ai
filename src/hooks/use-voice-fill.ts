@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { readJsonResponse } from "@/lib/http/read-json-response";
+import type { TransactionType } from "@/types/listing";
 import type { VoiceParseResult } from "@/types/voice-parse";
 
 type VoiceFillState = "idle" | "recording" | "processing";
@@ -23,7 +24,7 @@ function pickRecorderMimeType(): string | undefined {
   return candidates.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
-export function useVoiceFill() {
+export function useVoiceFill(currentListingType: TransactionType) {
   const [state, setState] = useState<VoiceFillState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState(false);
@@ -31,6 +32,11 @@ export function useVoiceFill() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const currentListingTypeRef = useRef(currentListingType);
+
+  useEffect(() => {
+    currentListingTypeRef.current = currentListingType;
+  }, [currentListingType]);
 
   const cleanupStream = useCallback(() => {
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -74,6 +80,7 @@ export function useVoiceFill() {
     try {
       const formData = new FormData();
       formData.append("audio", blob, "recording.webm");
+      formData.append("currentListingType", currentListingTypeRef.current);
 
       const res = await fetch("/api/parse-voice", {
         method: "POST",

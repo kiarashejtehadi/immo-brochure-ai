@@ -3,6 +3,7 @@
 import { Mic, Square } from "lucide-react";
 import { useVoiceFill } from "@/hooks/use-voice-fill";
 import type { WorkflowUiCopy } from "@/lib/i18n-workflow";
+import type { TransactionType } from "@/types/listing";
 import type { VoiceParseResult } from "@/types/voice-parse";
 import { cn } from "@/lib/utils";
 
@@ -14,12 +15,19 @@ type VoiceFillButtonProps = {
     | "voiceFillProcessing"
     | "voiceFillUnsupported"
   >;
+  currentListingType: TransactionType;
   onParsed: (fields: VoiceParseResult) => void;
   className?: string;
 };
 
-export function VoiceFillButton({ copy, onParsed, className }: VoiceFillButtonProps) {
-  const { error, supported, toggle, isRecording, isProcessing } = useVoiceFill();
+export function VoiceFillButton({
+  copy,
+  currentListingType,
+  onParsed,
+  className,
+}: VoiceFillButtonProps) {
+  const { error, supported, toggle, isRecording, isProcessing } =
+    useVoiceFill(currentListingType);
 
   const label = isProcessing
     ? copy.voiceFillProcessing

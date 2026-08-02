@@ -1,3 +1,4 @@
+import type { TransactionType } from "@/types/listing";
 import type { VoiceListingType, VoiceParseResult } from "@/types/voice-parse";
 
 export function parseNullableNumber(value: unknown): number | null {
@@ -63,8 +64,14 @@ export const VOICE_PARSE_JSON_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+export const LISTING_TYPE_INSTRUCTIONS = `INSTRUCTIONS:
+Determine whether the spoken input is describing a rental property or a property for sale.
+- Return listingType: "rent" if the user mentions rent, leasing, utility costs, warm rent, or tenants.
+- Return listingType: "sale" if the user mentions selling, purchase price, buying, or house sale.
+- Default to the current active tab if ambiguous.`;
+
 export const VOICE_PARSE_EXTRACTION_PROMPT = `Extract structured real estate listing details from the transcript and map them to the following keys:
-- listingType: "rent" | "sale" | null — infer from phrases like "for sale", "selling", "buy" (sale) vs "for rent", "lease", "tenant" (rent); null if unclear
+- listingType: "rent" | "sale" | null
 - streetAddress: string | null
 - postalCode: string | null
 - city: string | null
@@ -79,4 +86,42 @@ Map values to the schema keys only when clearly stated or strongly implied.
 Use null for any field not mentioned.
 Return numeric fields (size, rooms, netRent, utilityCharges) as JSON numbers without units or currency symbols.
 For floorLevel, preserve natural phrasing (e.g. "3rd floor", "EG", "ground floor") using professional real estate terminology.
-Infer listingType from intent: sale phrases include "for sale", "selling", "buy", "purchase price"; rent phrases include "for rent", "lease", "tenant", "monthly rent".`;
+
+${LISTING_TYPE_INSTRUCTIONS}`;
+
+export function parseCurrentListingType(value: unknown): TransactionType | null {
+  return value === "rent" || value === "sale" ? value : null;
+}
+
+export function resolveVoiceListingType(
+  parsed: VoiceListingType | null,
+  currentListingType: TransactionType | null,
+): VoiceListingType | null {
+  if (parsed === "rent" || parsed === "sale") return parsed;
+  return currentListingType;
+}
+
+export function finalizeVoiceParseResult(
+  fields: VoiceParseResult,
+  currentListingType: TransactionType | null,
+): VoiceParseResult {
+  return {
+    ...fields,
+    listingType: resolveVoiceListingType(fields.listingType, currentListingType),
+  };
+}
+
+export function buildVoiceParseUserPrompt(
+  transcript: string,
+  currentListingType: TransactionType | null,
+): string {
+  const activeTab = currentListingType ?? "unknown";
+  return `${VOICE_PARSE_EXTRACTION_PROMPT}
+
+Current active tab: ${activeTab}
+
+${LISTING_TYPE_INSTRUCTIONS}
+
+Transcript:
+${transcript}`;
+}

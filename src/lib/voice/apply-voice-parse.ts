@@ -19,6 +19,7 @@ function numberToFormValue(value: number | null | undefined): string | undefined
 
 export function applyVoiceParseResult(
   parsed: VoiceParseResult,
+  currentTransactionType: TransactionType,
   handlers: {
     onTransactionType?: (type: TransactionType) => void;
     onAddress: (patch: Partial<ListingAddress>) => void;
@@ -30,10 +31,12 @@ export function applyVoiceParseResult(
 ): number {
   let applied = 0;
 
-  if (parsed.listingType === "rent" || parsed.listingType === "sale") {
+  if (parsed.listingType && parsed.listingType !== currentTransactionType) {
     handlers.onTransactionType?.(parsed.listingType);
     applied += 1;
   }
+
+  const activeTransactionType = parsed.listingType ?? currentTransactionType;
 
   const streetAddress = pickString(parsed.streetAddress);
   const postalCode = pickString(parsed.postalCode);
@@ -65,20 +68,22 @@ export function applyVoiceParseResult(
     applied += 1;
   }
 
-  const netRent = numberToFormValue(parsed.netRent);
-  if (netRent && parsed.netRent !== null && validatePositiveAmountValue(parsed.netRent) !== null) {
-    handlers.onRent({ netColdRent: netRent });
-    applied += 1;
-  }
+  if (activeTransactionType === "rent") {
+    const netRent = numberToFormValue(parsed.netRent);
+    if (netRent && parsed.netRent !== null && validatePositiveAmountValue(parsed.netRent) !== null) {
+      handlers.onRent({ netColdRent: netRent });
+      applied += 1;
+    }
 
-  const utilityCharges = numberToFormValue(parsed.utilityCharges);
-  if (
-    utilityCharges &&
-    parsed.utilityCharges !== null &&
-    validatePositiveAmountValue(parsed.utilityCharges) !== null
-  ) {
-    handlers.onRent({ utilityCharges });
-    applied += 1;
+    const utilityCharges = numberToFormValue(parsed.utilityCharges);
+    if (
+      utilityCharges &&
+      parsed.utilityCharges !== null &&
+      validatePositiveAmountValue(parsed.utilityCharges) !== null
+    ) {
+      handlers.onRent({ utilityCharges });
+      applied += 1;
+    }
   }
 
   return applied;
