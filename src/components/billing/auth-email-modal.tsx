@@ -12,10 +12,13 @@ export function AuthEmailModal({
   open,
   onClose,
   onSent,
+  redirectPath,
 }: {
   open: boolean;
   onClose: () => void;
   onSent?: (email: string) => void;
+  /** Override post-auth redirect (e.g. /de/checkout?plan=monthly). */
+  redirectPath?: string;
 }) {
   const locale = useLocale() as UiLocale;
   const copy = getBillingCopy(locale);
@@ -33,7 +36,9 @@ export function AuthEmailModal({
     setMessage(null);
     try {
       const supabase = createSupabaseBrowserClient();
-      const nextPath = pathToSaveBeforeMagicLink(window.location.pathname || "/de");
+      const nextPath =
+        redirectPath ??
+        pathToSaveBeforeMagicLink(window.location.pathname || "/de");
       savePostAuthRedirect(nextPath);
       const redirectTo = authCallbackUrl(window.location.origin);
       const { error: signInError } = await supabase.auth.signInWithOtp({
