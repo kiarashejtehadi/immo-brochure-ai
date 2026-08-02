@@ -1,4 +1,5 @@
 import { ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION } from "@/lib/compliance-guardrail";
+import { PROFESSIONAL_TONE_SYSTEM_INSTRUCTION } from "@/lib/professional-tone-guardrail";
 import {
   buildFurnishingSystemInstruction,
   buildVisionAnalysisNote,
@@ -291,6 +292,8 @@ ${furnishingRules}
 
 ${locationRules}
 
+${PROFESSIONAL_TONE_SYSTEM_INSTRUCTION}
+
 ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}
 
 Schema:
@@ -317,8 +320,8 @@ Schema:
           furnishingStatus,
           isStagedOrModel,
           hasFittedKitchen: fittedKitchen,
-        })} ${furnishingRules} ${locationRules} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
-      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${furnishingRules} ${locationRules} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
+        })} ${furnishingRules} ${locationRules} ${PROFESSIONAL_TONE_SYSTEM_INSTRUCTION} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
+      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${furnishingRules} ${locationRules} ${PROFESSIONAL_TONE_SYSTEM_INSTRUCTION} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
 
   try {
     const completion = await openai.chat.completions.create({

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { VOICE_PARSE_SANITIZATION_INSTRUCTION } from "@/lib/professional-tone-guardrail";
 import type { VoiceParseResult } from "@/types/voice-parse";
 
 export const runtime = "nodejs";
@@ -9,7 +10,9 @@ const PARSE_SYSTEM_PROMPT = `You extract structured real estate listing details 
 Map values to the schema keys only when clearly stated or strongly implied.
 Use null for any field not mentioned.
 For numeric fields (size, rooms, netRent, utilityCharges), return digits only as strings without units or currency symbols.
-For floorLevel, preserve natural phrasing (e.g. "3rd floor", "EG", "ground floor").`;
+For floorLevel, preserve natural phrasing (e.g. "3rd floor", "EG", "ground floor") using professional real estate terminology.
+
+${VOICE_PARSE_SANITIZATION_INSTRUCTION}`;
 
 const VOICE_PARSE_SCHEMA = {
   type: "object",
