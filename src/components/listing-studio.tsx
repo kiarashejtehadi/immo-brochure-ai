@@ -9,6 +9,7 @@ import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-sta
 import { hasPurchasedBillingAccess, hasProReelAccess } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
+import { VoiceFillFloatingAssistant } from "@/components/listing/voice-fill-floating-assistant";
 import { WorkspaceMarketing } from "@/components/workspace-marketing";
 import { MarketingNavbar } from "@/components/marketing-navbar";
 import { FreeTrialFormBanner } from "@/components/free-trial-form-banner";
@@ -229,6 +230,7 @@ function ListingStudioContent() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLElement>(null);
+  const formSectionRef = useRef<HTMLElement>(null);
 
   const routeLocale = useLocale() as UiLocale;
   const uiLocale = routeLocale;
@@ -808,7 +810,11 @@ function ListingStudioContent() {
         )}
       >
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <section id="listing-form" className="order-1 min-w-0 flex-1 scroll-mt-28">
+          <section
+            ref={formSectionRef}
+            id="listing-form"
+            className="order-1 min-w-0 flex-1 scroll-mt-28"
+          >
           {!isSignedIn ? (
             <FreeTrialFormBanner
               copy={marketingCopy}
@@ -817,7 +823,6 @@ function ListingStudioContent() {
           ) : null}
           <ListingForm
             copy={copy}
-            uiLocale={uiLocale}
             transactionType={transactionType}
             onTransactionType={setTransactionType}
             property={property}
@@ -865,7 +870,6 @@ function ListingStudioContent() {
             result={result}
             onGenerate={handleGenerate}
             onDownloadPdf={handleDownloadPdf}
-            onVoiceParsed={handleVoiceParsed}
           />
           </section>
 
@@ -1126,6 +1130,13 @@ function ListingStudioContent() {
           </aside>
         </div>
       </main>
+      <VoiceFillFloatingAssistant
+        formSectionRef={formSectionRef}
+        copy={copy}
+        locale={routeLocale}
+        currentListingType={transactionType}
+        onParsed={handleVoiceParsed}
+      />
       <AuthEmailModal open={authOpen} onClose={() => setAuthOpen(false)} onSent={() => setAuthOpen(false)} />
     </div>
   );

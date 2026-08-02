@@ -30,8 +30,8 @@ export function WorkspaceMarketing({
 
   return (
     <div className="mx-auto max-w-6xl px-6 pt-8">
-      <HeroSection copy={copy} onSeeSample={onSeeSample} />
-      <HowItWorks copy={copy} />
+      <HeroSection copy={copy} />
+      <HowItWorks copy={copy} onSeeSample={onSeeSample} />
       <ComparisonSection copy={copy} />
       <section
         id="pricing"

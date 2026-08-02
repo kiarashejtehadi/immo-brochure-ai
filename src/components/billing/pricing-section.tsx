@@ -214,7 +214,6 @@ export function PricingSection({
             >
               {loadingPlan === plan.key ? copy.openingCheckout : plan.cta}
             </button>
-            <PricingLegalNotice variant="inline" className="mt-3" />
           </article>
         ))}
       </div>

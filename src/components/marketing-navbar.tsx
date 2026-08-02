@@ -4,10 +4,8 @@ import { useState } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import type { MarketingCopy } from "@/lib/i18n-marketing";
-import { scrollToListingForm, scrollToSection } from "@/lib/i18n-marketing";
+import { scrollToSection } from "@/lib/i18n-marketing";
 import { LOCALE_LABELS, UI_LOCALES, type UiLocale } from "@/lib/i18n";
-import { btnPrimary } from "@/lib/ui-classes";
-import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { id: "features", labelKey: "navFeatures" as const },
@@ -87,14 +85,6 @@ export function MarketingNavbar({
               className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900"
             >
               {copy.navSignIn}
-            </button>
-
-            <button
-              type="button"
-              onClick={scrollToListingForm}
-              className={cn(btnPrimary, "px-4 py-2 text-sm shadow-sm")}
-            >
-              {copy.navTryFree}
             </button>
           </div>
         </div>

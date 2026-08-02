@@ -39,7 +39,13 @@ const STEPS: {
   },
 ];
 
-export function HowItWorks({ copy }: { copy: MarketingCopy }) {
+export function HowItWorks({
+  copy,
+  onSeeSample,
+}: {
+  copy: MarketingCopy;
+  onSeeSample?: () => void;
+}) {
   return (
     <section
       id="how-it-works"
@@ -92,6 +98,17 @@ export function HowItWorks({ copy }: { copy: MarketingCopy }) {
           </li>
         ))}
       </ol>
+      {onSeeSample ? (
+        <p className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={onSeeSample}
+            className="text-sm font-medium text-indigo-700 underline-offset-2 hover:underline dark:text-indigo-300"
+          >
+            {copy.heroCtaSample}
+          </button>
+        </p>
+      ) : null}
     </section>
   );
 }

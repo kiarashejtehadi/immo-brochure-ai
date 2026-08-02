@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
-import { FormCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
-import { VoiceFillButton } from "@/components/listing/voice-fill-button";
+import { FormAccordionCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
 import type { BillingStatusResponse } from "@/types/billing";
 import type { FormCopy } from "@/lib/i18n-form";
 import type { WorkflowUiCopy } from "@/lib/i18n-workflow";
@@ -14,7 +13,6 @@ import type {
   OutputLanguage,
   UiCopy,
 } from "@/lib/i18n";
-import type { UiLocale } from "@/lib/i18n";
 import { LOCALE_LABELS } from "@/lib/i18n";
 import { EXPOSE_LANGUAGE_OPTIONS } from "@/lib/target-languages";
 import {
@@ -44,7 +42,6 @@ import type {
   TransactionType,
   GenerateResult,
 } from "@/types/listing";
-import type { VoiceParseResult } from "@/types/voice-parse";
 
 const MAX_PHOTOS = 5;
 
@@ -170,7 +167,6 @@ function NumericField({
 
 export type ListingFormProps = {
   copy: UiCopy & FormCopy & WorkflowUiCopy;
-  uiLocale: UiLocale;
   transactionType: TransactionType;
   onTransactionType: (type: TransactionType) => void;
   property: PropertyDetails;
@@ -218,13 +214,11 @@ export type ListingFormProps = {
   result: GenerateResult | null;
   onGenerate: () => void;
   onDownloadPdf: () => void;
-  onVoiceParsed: (fields: VoiceParseResult) => void;
 };
 
 export function ListingForm(props: ListingFormProps) {
   const {
     copy,
-    uiLocale,
     transactionType,
     onTransactionType,
     property,
@@ -272,7 +266,6 @@ export function ListingForm(props: ListingFormProps) {
     result,
     onGenerate,
     onDownloadPdf,
-    onVoiceParsed,
   } = props;
 
   const epcDetailsVisible = energy.certificateType !== "na";
@@ -331,20 +324,16 @@ export function ListingForm(props: ListingFormProps) {
     [copy],
   );
 
-  return (
-    <div className="space-y-5 pb-28">
-      <div className="pointer-events-none fixed bottom-24 right-4 z-20 sm:right-6">
-        <div className="pointer-events-auto">
-          <VoiceFillButton
-            copy={copy}
-            locale={uiLocale}
-            currentListingType={transactionType}
-            onParsed={onVoiceParsed}
-          />
-        </div>
-      </div>
+  const [openStep, setOpenStep] = useState(1);
 
-      <FormCard title={`1. ${copy.sectionListingOverview}`}>
+  return (
+    <div className="space-y-3 pb-8">
+      <FormAccordionCard
+        step={1}
+        title={copy.sectionListingOverview}
+        isOpen={openStep === 1}
+        onToggle={() => setOpenStep(1)}
+      >
         <div className="flex gap-1 rounded-lg bg-indigo-50/80 p-1 dark:bg-indigo-950/40">
           <button
             type="button"
@@ -448,9 +437,14 @@ export function ListingForm(props: ListingFormProps) {
             </select>
           </div>
         </FormGrid>
-      </FormCard>
+      </FormAccordionCard>
 
-      <FormCard title={`2. ${copy.sectionSpecsPricing}`}>
+      <FormAccordionCard
+        step={2}
+        title={copy.sectionSpecsPricing}
+        isOpen={openStep === 2}
+        onToggle={() => setOpenStep(2)}
+      >
         <FormGrid cols={3}>
           <NumericField
             id="size"
@@ -602,9 +596,14 @@ export function ListingForm(props: ListingFormProps) {
             </div>
           ) : null}
         </FormGrid>
-      </FormCard>
+      </FormAccordionCard>
 
-      <FormCard title={`3. ${copy.sectionBuildingEnergy}`}>
+      <FormAccordionCard
+        step={3}
+        title={copy.sectionBuildingEnergy}
+        isOpen={openStep === 3}
+        onToggle={() => setOpenStep(3)}
+      >
         <FormGrid>
           <div>
             <label htmlFor="parking" className={labelClassName()}>
@@ -763,9 +762,14 @@ export function ListingForm(props: ListingFormProps) {
             </div>
           </FormGrid>
         </div>
-      </FormCard>
+      </FormAccordionCard>
 
-      <FormCard title={`4. ${copy.sectionFeatures}`}>
+      <FormAccordionCard
+        step={4}
+        title={copy.sectionFeatures}
+        isOpen={openStep === 4}
+        onToggle={() => setOpenStep(4)}
+      >
         <div className="mb-4 max-w-sm">
           <label htmlFor="furnishingStatus" className={labelClassName()}>
             {copy.furnishingStatus}
@@ -809,9 +813,15 @@ export function ListingForm(props: ListingFormProps) {
             );
           })}
         </div>
-      </FormCard>
+      </FormAccordionCard>
 
-      <FormCard title={`5. ${copy.sectionMedia}`} description={copy.propertyDetailsHint}>
+      <FormAccordionCard
+        step={5}
+        title={copy.sectionMedia}
+        description={copy.propertyDetailsHint}
+        isOpen={openStep === 5}
+        onToggle={() => setOpenStep(5)}
+      >
         <label className="mb-4 flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-3 dark:border-zinc-700 dark:bg-zinc-950/40">
           <input
             type="checkbox"
@@ -942,9 +952,14 @@ export function ListingForm(props: ListingFormProps) {
             </div>
           ) : null}
         </div>
-      </FormCard>
+      </FormAccordionCard>
 
-      <FormCard title={`6. ${copy.sectionAgentOutput}`}>
+      <FormAccordionCard
+        step={6}
+        title={copy.sectionAgentOutput}
+        isOpen={openStep === 6}
+        onToggle={() => setOpenStep(6)}
+      >
         <FormGrid>
           <div>
             <label htmlFor="agentName" className={labelClassName()}>
@@ -1048,7 +1063,7 @@ export function ListingForm(props: ListingFormProps) {
             className={cn(inputClassName(), "resize-y")}
           />
         </div>
-      </FormCard>
+      </FormAccordionCard>
 
       <div className="sticky bottom-0 z-10 -mx-1 space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/95">
         {generateError ? (
