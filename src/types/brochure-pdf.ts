@@ -1,5 +1,6 @@
 import type { CurrencyCode } from "@/lib/currency";
 import type { TransactionType } from "@/types/listing";
+import type { BrandFontFamily, PDFBrandingProps } from "@/types/branding";
 
 export type BrochurePdfProps = {
   transactionType: TransactionType;
@@ -28,8 +29,15 @@ export type BrochurePdfProps = {
   stagingDisclaimer?: string;
   photoDataUrls: string[];
   floorPlanDataUrl?: string;
+  /** @deprecated Prefer primaryColor */
   brandColor?: string;
+  primaryColor?: string;
+  accentColor?: string;
   logoDataUrl?: string;
+  avatarDataUrl?: string;
+  fontFamily?: BrandFontFamily | string;
   showWatermark?: boolean;
   website?: string;
 };
+
+export type { PDFBrandingProps };

@@ -1,6 +1,11 @@
 import type { UserBrandingProfile } from "@/types/branding";
 import type { GenerateRequestPayload } from "@/types/listing";
-import { DEFAULT_BRAND_COLOR } from "@/types/branding";
+import {
+  DEFAULT_ACCENT_COLOR,
+  DEFAULT_PRIMARY_COLOR,
+  type PDFBrandingProps,
+} from "@/types/branding";
+import { isBrandFontFamily } from "@/lib/branding/font-family";
 
 export function mergeAgentWithBranding(
   agent: GenerateRequestPayload["agent"],
@@ -21,29 +26,53 @@ export function resolvePdfAgentContact(
   agent: GenerateRequestPayload["agent"],
   branding: UserBrandingProfile | null,
 ): GenerateRequestPayload["agent"] {
+  const legalDisclaimer =
+    branding?.customLegalImprint?.trim() ||
+    agent.legalDisclaimer.trim() ||
+    "";
+
   return {
     ...agent,
     name: agent.name.trim() || branding?.brokerName?.trim() || "",
     agency: agent.agency.trim() || branding?.agencyName?.trim() || "",
     phone: agent.phone.trim() || branding?.contactPhone?.trim() || "",
     email: agent.email.trim() || branding?.contactEmail?.trim() || "",
+    legalDisclaimer,
   };
 }
+
+export type ResolvedPdfBranding = PDFBrandingProps & {
+  logoUrl?: string;
+  avatarUrl?: string;
+  website?: string;
+  /** @deprecated Prefer primaryColor */
+  brandColor: string;
+};
 
 export function pdfBrandingFromProfile(
   branding: UserBrandingProfile | null,
   isPro: boolean,
-): {
-  brandColor: string;
-  logoUrl?: string;
-  website?: string;
-} {
+): ResolvedPdfBranding {
   if (!isPro || !branding) {
-    return { brandColor: DEFAULT_BRAND_COLOR };
+    return {
+      primaryColor: DEFAULT_PRIMARY_COLOR,
+      accentColor: DEFAULT_ACCENT_COLOR,
+      brandColor: DEFAULT_PRIMARY_COLOR,
+    };
   }
+
+  const primaryColor = branding.brandColor?.trim() || DEFAULT_PRIMARY_COLOR;
+  const accentColor = branding.accentColor?.trim() || DEFAULT_ACCENT_COLOR;
+
   return {
-    brandColor: branding.brandColor?.trim() || DEFAULT_BRAND_COLOR,
+    primaryColor,
+    accentColor,
+    brandColor: primaryColor,
+    agencyLogoUrl: branding.logoUrl ?? undefined,
+    agentAvatarUrl: branding.agentAvatarUrl ?? undefined,
     logoUrl: branding.logoUrl ?? undefined,
+    avatarUrl: branding.agentAvatarUrl ?? undefined,
+    fontFamily: isBrandFontFamily(branding.fontFamily) ? branding.fontFamily : "modern",
     website: branding.website?.trim() || undefined,
   };
 }
@@ -64,3 +93,5 @@ export async function logoUrlToDataUrl(url: string): Promise<string | undefined>
     return undefined;
   }
 }
+
+export const avatarUrlToDataUrl = logoUrlToDataUrl;

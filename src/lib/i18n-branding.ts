@@ -364,3 +364,82 @@ export function getBrandingFieldLabels(locale: UiLocale) {
     website: copy.website,
   } as const;
 }
+
+export type BrandKitCopy = {
+  title: string;
+  subtitle: string;
+  agencyLogo: string;
+  agencyLogoAlt: string;
+  noLogo: string;
+  uploadLogo: string;
+  uploadLogoPro: string;
+  logoHint: string;
+  agentAvatar: string;
+  agentAvatarAlt: string;
+  noAvatar: string;
+  uploadAvatar: string;
+  uploadAvatarPro: string;
+  avatarHint: string;
+  primaryColor: string;
+  accentColor: string;
+  fontFamily: string;
+  fontModern: string;
+  fontClassic: string;
+  fontMinimal: string;
+  customLegalImprint: string;
+  customLegalImprintPlaceholder: string;
+  customLegalImprintHint: string;
+  saveBrandKit: string;
+  saving: string;
+  logoUploaded: string;
+  avatarUploaded: string;
+  uploadFailed: string;
+  uploading: string;
+};
+
+const brandKitEn: BrandKitCopy = {
+  title: "Agency Brand Kit",
+  subtitle: "Logo, colors, typography, and legal imprint applied to your PDF brochures.",
+  agencyLogo: "Agency logo",
+  agencyLogoAlt: "Agency logo",
+  noLogo: "No logo",
+  uploadLogo: "Upload logo",
+  uploadLogoPro: "Upload logo (Pro)",
+  logoHint: "PNG or SVG, max 2 MB.",
+  agentAvatar: "Agent avatar",
+  agentAvatarAlt: "Agent photo",
+  noAvatar: "No photo",
+  uploadAvatar: "Upload photo",
+  uploadAvatarPro: "Upload photo (Pro)",
+  avatarHint: "JPEG or PNG for the contact section.",
+  primaryColor: "Primary color",
+  accentColor: "Accent color",
+  fontFamily: "Font style",
+  fontModern: "Modern",
+  fontClassic: "Classic",
+  fontMinimal: "Minimal",
+  customLegalImprint: "Custom legal imprint",
+  customLegalImprintPlaceholder: "Agency disclaimer shown on page 3 of every PDF…",
+  customLegalImprintHint: "Overrides the per-listing legal disclaimer when set.",
+  saveBrandKit: "Save brand kit",
+  saving: "Saving…",
+  logoUploaded: "Logo uploaded.",
+  avatarUploaded: "Photo uploaded.",
+  uploadFailed: "Upload failed.",
+  uploading: "Uploading…",
+};
+
+const brandKitDe: Partial<BrandKitCopy> = {
+  title: "Agentur Brand Kit",
+  subtitle: "Logo, Farben, Typografie und Impressum für Ihre PDF-Broschüren.",
+  primaryColor: "Primärfarbe",
+  accentColor: "Akzentfarbe",
+  fontFamily: "Schriftstil",
+  customLegalImprint: "Individuelles Impressum",
+  saveBrandKit: "Brand Kit speichern",
+};
+
+export function getBrandKitCopy(locale: UiLocale): BrandKitCopy {
+  const partial = locale === "de" ? brandKitDe : {};
+  return { ...brandKitEn, ...partial };
+}

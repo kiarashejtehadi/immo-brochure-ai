@@ -49,7 +49,7 @@ import {
   getDefaultCurrencyForLocale,
   type CurrencyCode,
 } from "@/lib/currency";
-import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl, resolvePdfAgentContact } from "@/lib/branding/pdf-branding";
+import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl, avatarUrlToDataUrl, resolvePdfAgentContact } from "@/lib/branding/pdf-branding";
 import { reelBrandingFromProfile } from "@/lib/property-reel";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
@@ -716,8 +716,12 @@ function ListingStudioContent() {
       const agentForPdf = resolvePdfAgentContact(agentForLocale, brandingProfile);
       const brand = pdfBrandingFromProfile(brandingProfile, isPro);
       let logoDataUrl: string | undefined;
+      let avatarDataUrl: string | undefined;
       if (brand.logoUrl) {
         logoDataUrl = await logoUrlToDataUrl(brand.logoUrl);
+      }
+      if (brand.avatarUrl) {
+        avatarDataUrl = await avatarUrlToDataUrl(brand.avatarUrl);
       }
       const pdfProps = buildBrochurePdfProps({
         transactionType,
@@ -735,8 +739,12 @@ function ListingStudioContent() {
         result,
         photoCount: photos.length,
         branding: {
+          primaryColor: brand.primaryColor,
+          accentColor: brand.accentColor,
           brandColor: brand.brandColor,
           logoDataUrl,
+          avatarDataUrl,
+          fontFamily: brand.fontFamily,
           website: brand.website,
           showWatermark: resolveShowPdfWatermark(result, pdfWatermark, billingStatus),
         },

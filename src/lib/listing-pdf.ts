@@ -63,7 +63,11 @@ export function buildBrochurePdfProps(input: {
   photoCount?: number;
   branding?: {
     brandColor?: string;
+    primaryColor?: string;
+    accentColor?: string;
     logoDataUrl?: string;
+    avatarDataUrl?: string;
+    fontFamily?: string;
     website?: string;
     showWatermark?: boolean;
   };
@@ -155,8 +159,12 @@ export function buildBrochurePdfProps(input: {
         stagingDisclaimerPartially: input.form.stagingDisclaimerPartially,
       },
     ),
-    brandColor: input.branding?.brandColor,
+    brandColor: input.branding?.primaryColor ?? input.branding?.brandColor,
+    primaryColor: input.branding?.primaryColor ?? input.branding?.brandColor,
+    accentColor: input.branding?.accentColor,
     logoDataUrl: input.branding?.logoDataUrl,
+    avatarDataUrl: input.branding?.avatarDataUrl,
+    fontFamily: input.branding?.fontFamily,
     website: input.branding?.website,
     showWatermark: input.branding?.showWatermark,
   };

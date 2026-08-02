@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAuthUser } from "@/lib/billing/access";
 import { getUserBranding, updateUserBranding } from "@/lib/branding/repository";
+import { isBrandFontFamily } from "@/lib/branding/font-family";
 import type { UserBrandingUpdate } from "@/types/branding";
 
 export const runtime = "nodejs";
+
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+
+function validateHexColor(value: string | null | undefined, field: string): string | null {
+  if (value == null) return null;
+  if (!HEX_COLOR.test(value)) {
+    return `${field} must be a hex code like #1E3A8A.`;
+  }
+  return null;
+}
 
 export async function GET() {
   const user = await getSupabaseAuthUser();
@@ -27,8 +38,18 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
-  if (body.brandColor && !/^#[0-9A-Fa-f]{6}$/.test(body.brandColor)) {
-    return NextResponse.json({ error: "brandColor must be a hex code like #1E293B." }, { status: 400 });
+  const colorError =
+    validateHexColor(body.brandColor, "brandColor") ??
+    validateHexColor(body.accentColor, "accentColor");
+  if (colorError) {
+    return NextResponse.json({ error: colorError }, { status: 400 });
+  }
+
+  if (body.fontFamily != null && !isBrandFontFamily(body.fontFamily)) {
+    return NextResponse.json(
+      { error: "fontFamily must be modern, classic, or minimal." },
+      { status: 400 },
+    );
   }
 
   try {

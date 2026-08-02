@@ -1,13 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { hasPurchasedBillingAccess, isCreditPackPlan } from "@/lib/billing/client-access";
+import { BrandKitSettings } from "@/components/branding/brand-kit-settings";
 import { BrandingProGate } from "@/components/branding/branding-pro-gate";
 import { ProBadge, UpgradeProModal } from "@/components/billing/upgrade-pro-modal";
 import { SettingsNav } from "@/components/settings/settings-nav";
-import { DEFAULT_BRAND_COLOR, type UserBrandingProfile } from "@/types/branding";
+import {
+  DEFAULT_ACCENT_COLOR,
+  DEFAULT_PRIMARY_COLOR,
+  type UserBrandingProfile,
+} from "@/types/branding";
 import { readJsonResponse } from "@/lib/http/read-json-response";
 import type { UiLocale } from "@/lib/i18n";
 import { getBillingCopy } from "@/lib/i18n-billing";
@@ -16,7 +21,20 @@ import {
   getBrandingCopy,
   getBrandingFieldLabels,
 } from "@/lib/i18n-branding";
-import { cn } from "@/lib/utils";
+
+const emptyBranding = (): UserBrandingProfile => ({
+  logoUrl: null,
+  brandColor: DEFAULT_PRIMARY_COLOR,
+  accentColor: DEFAULT_ACCENT_COLOR,
+  agentAvatarUrl: null,
+  fontFamily: "modern",
+  customLegalImprint: null,
+  agencyName: null,
+  brokerName: null,
+  contactPhone: null,
+  contactEmail: null,
+  website: null,
+});
 
 export function BrandingSettingsForm({ locale }: { locale: string }) {
   const uiLocale = locale as UiLocale;
@@ -24,27 +42,16 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
   const copy = getBrandingCopy(uiLocale);
   const fieldLabels = getBrandingFieldLabels(uiLocale);
   const { status, refresh } = useBillingStatus();
-  const [branding, setBranding] = useState<UserBrandingProfile>({
-    logoUrl: null,
-    brandColor: DEFAULT_BRAND_COLOR,
-    agencyName: null,
-    brokerName: null,
-    contactPhone: null,
-    contactEmail: null,
-    website: null,
-  });
+  const [branding, setBranding] = useState<UserBrandingProfile>(emptyBranding());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const isPro = status?.isPro === true;
   const cleanPdfExports = hasPurchasedBillingAccess(status);
   const creditPackOnly = isCreditPackPlan(status);
-  const proBrandingLocked = !isPro;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,7 +67,9 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         setBranding((prev) => ({
           ...prev,
           ...data.branding,
-          brandColor: data.branding?.brandColor ?? DEFAULT_BRAND_COLOR,
+          brandColor: data.branding?.brandColor ?? DEFAULT_PRIMARY_COLOR,
+          accentColor: data.branding?.accentColor ?? DEFAULT_ACCENT_COLOR,
+          fontFamily: data.branding?.fontFamily ?? "modern",
         }));
       }
     } catch (err) {
@@ -74,7 +83,7 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
     void load();
   }, [load]);
 
-  async function saveFields() {
+  async function saveContactFields() {
     setSaving(true);
     setMessage(null);
     setError(null);
@@ -89,7 +98,6 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
           contactPhone: branding.contactPhone,
           contactEmail: branding.contactEmail,
           website: branding.website,
-          ...(isPro ? { brandColor: branding.brandColor } : {}),
         }),
       });
       const data = await readJsonResponse<{ branding?: UserBrandingProfile; error?: string }>(res);
@@ -104,30 +112,35 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
     }
   }
 
-  async function onLogoSelected(file: File | null) {
-    if (!file) return;
-    if (!isPro) {
-      setUpgradeOpen(true);
-      return;
-    }
-    setUploading(true);
+  async function saveBrandKit() {
+    setSaving(true);
+    setMessage(null);
     setError(null);
     try {
-      const form = new FormData();
-      form.set("file", file);
-      const res = await fetch("/api/branding/logo", {
-        method: "POST",
+      const res = await fetch("/api/branding/profile", {
+        method: "PATCH",
         credentials: "same-origin",
-        body: form,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(isPro
+            ? {
+                brandColor: branding.brandColor,
+                accentColor: branding.accentColor,
+                fontFamily: branding.fontFamily,
+              }
+            : {}),
+          customLegalImprint: branding.customLegalImprint,
+        }),
       });
-      const data = await readJsonResponse<{ logoUrl?: string; error?: string }>(res);
-      if (!res.ok) throw new Error(data.error ?? copy.uploadFailed);
-      setBranding((b) => ({ ...b, logoUrl: data.logoUrl ?? b.logoUrl }));
-      setMessage(copy.logoUploaded);
+      const data = await readJsonResponse<{ branding?: UserBrandingProfile; error?: string }>(res);
+      if (!res.ok) throw new Error(data.error ?? copy.saveFailed);
+      if (data.branding) setBranding((b) => ({ ...b, ...data.branding }));
+      setMessage(copy.saved);
+      void refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : copy.uploadFailed);
+      setError(err instanceof Error ? err.message : copy.saveFailed);
     } finally {
-      setUploading(false);
+      setSaving(false);
     }
   }
 
@@ -170,74 +183,18 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         ) : null}
         {message ? <p className="text-sm text-emerald-700 dark:text-emerald-300">{message}</p> : null}
 
-        <div
-          className={cn(
-            "space-y-8",
-            creditPackOnly && "pointer-events-none rounded-2xl opacity-50 grayscale-[0.15]",
-          )}
-        >
-          <section className="space-y-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">{copy.agencyLogo}</h3>
-              <ProBadge />
-            </div>
-            <div className="flex flex-wrap items-center gap-4">
-              {branding.logoUrl && isPro ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={branding.logoUrl}
-                  alt={copy.agencyLogoAlt}
-                  className="h-14 max-w-[160px] object-contain"
-                />
-              ) : (
-                <div className="flex h-14 w-32 items-center justify-center rounded border border-dashed border-zinc-300 text-xs text-zinc-400">
-                  {copy.noLogo}
-                </div>
-              )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => void onLogoSelected(e.target.files?.[0] ?? null)}
-              />
-              <button
-                type="button"
-                disabled={uploading || creditPackOnly}
-                onClick={() => (isPro ? fileRef.current?.click() : setUpgradeOpen(true))}
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-600"
-              >
-                {uploading ? copy.uploading : isPro ? copy.uploadLogo : copy.uploadLogoPro}
-              </button>
-            </div>
-          </section>
-
-          <section className="space-y-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">{copy.brandColor}</h3>
-              <ProBadge />
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={branding.brandColor ?? DEFAULT_BRAND_COLOR}
-                disabled={proBrandingLocked || creditPackOnly}
-                onChange={(e) => setBranding((b) => ({ ...b, brandColor: e.target.value }))}
-                onClick={() => {
-                  if (!isPro) setUpgradeOpen(true);
-                }}
-                className="h-10 w-14 cursor-pointer rounded border border-zinc-200 disabled:cursor-not-allowed"
-              />
-              <input
-                type="text"
-                value={branding.brandColor ?? ""}
-                disabled={proBrandingLocked || creditPackOnly}
-                onChange={(e) => setBranding((b) => ({ ...b, brandColor: e.target.value }))}
-                className="w-28 rounded-lg border border-zinc-200 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-              />
-            </div>
-          </section>
-        </div>
+        <BrandKitSettings
+          locale={uiLocale}
+          branding={branding}
+          onBrandingChange={(patch) => setBranding((b) => ({ ...b, ...patch }))}
+          isPro={isPro}
+          creditPackOnly={creditPackOnly}
+          onUpgrade={() => setUpgradeOpen(true)}
+          onError={setError}
+          onMessage={setMessage}
+          onSaveKit={saveBrandKit}
+          saving={saving}
+        />
 
         <section className="grid gap-4 sm:grid-cols-2">
           {(
@@ -282,8 +239,8 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         <button
           type="button"
           disabled={saving}
-          onClick={() => void saveFields()}
-          className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+          onClick={() => void saveContactFields()}
+          className="cursor-pointer rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
         >
           {saving ? copy.saving : copy.saveContactBranding}
         </button>
