@@ -56,6 +56,8 @@ import { reelBrandingFromProfile } from "@/lib/property-reel";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
 import { getFurnishingDisclaimerText } from "@/lib/furnishing-guardrail";
+import { applyVoiceParseResult } from "@/lib/voice/apply-voice-parse";
+import type { VoiceParseResult } from "@/types/voice-parse";
 import { StagingDisclaimerFooter } from "@/components/listing/staging-disclaimer";
 import type { UserBrandingProfile } from "@/types/branding";
 import { PropertyReelPreview } from "@/components/reel/property-reel-preview";
@@ -425,6 +427,19 @@ function ListingStudioContent() {
       exposeFormCopy.stagingDisclaimerUnfurnished,
       exposeFormCopy.stagingDisclaimerPartially,
     ],
+  );
+
+  const handleVoiceParsed = useCallback(
+    (fields: VoiceParseResult) => {
+      applyVoiceParseResult(fields, {
+        onAddress: (patch) => setAddress((current) => ({ ...current, ...patch })),
+        onSize: setSize,
+        onRooms: setRooms,
+        onProperty: (patch) => setProperty((current) => ({ ...current, ...patch })),
+        onRent: (patch) => setRent((current) => ({ ...current, ...patch })),
+      });
+    },
+    [],
   );
 
   const socialHashtags = useMemo(
@@ -801,7 +816,6 @@ function ListingStudioContent() {
           ) : null}
           <ListingForm
             copy={copy}
-            uiLocale={uiLocale}
             transactionType={transactionType}
             onTransactionType={setTransactionType}
             property={property}
@@ -849,6 +863,7 @@ function ListingStudioContent() {
             result={result}
             onGenerate={handleGenerate}
             onDownloadPdf={handleDownloadPdf}
+            onVoiceParsed={handleVoiceParsed}
           />
           </section>
 

@@ -2,9 +2,10 @@ import type { UiLocale } from "@/lib/i18n";
 
 export type WorkflowUiCopy = {
   complianceBadge: string;
-  voiceListening: string;
-  voiceUnsupported: string;
-  voiceDictation: string;
+  voiceFillButton: string;
+  voiceFillListening: string;
+  voiceFillProcessing: string;
+  voiceFillUnsupported: string;
   copyMlsShort: string;
   copyInstagramHashtags: string;
   copyPlainText: string;
@@ -13,9 +14,10 @@ export type WorkflowUiCopy = {
 
 const en: WorkflowUiCopy = {
   complianceBadge: "✓ Anti-Discrimination & Fair Housing Compliant",
-  voiceListening: "Listening…",
-  voiceUnsupported: "Voice input is not supported in this browser. Try Chrome or Edge.",
-  voiceDictation: "Dictate with microphone",
+  voiceFillButton: "🎙️ Fill with Voice",
+  voiceFillListening: "Recording… tap to stop",
+  voiceFillProcessing: "Processing voice…",
+  voiceFillUnsupported: "Voice recording is not supported in this browser.",
   copyMlsShort: "Copy Short MLS Version",
   copyInstagramHashtags: "Copy Instagram & Hashtags",
   copyPlainText: "Copy Plain Text",
@@ -24,10 +26,10 @@ const en: WorkflowUiCopy = {
 
 const de: WorkflowUiCopy = {
   complianceBadge: "✓ Antidiskriminierung & Fair-Housing-konform",
-  voiceListening: "Hört zu…",
-  voiceUnsupported:
-    "Spracheingabe wird in diesem Browser nicht unterstützt. Chrome oder Edge verwenden.",
-  voiceDictation: "Per Mikrofon diktieren",
+  voiceFillButton: "🎙️ Mit Sprache ausfüllen",
+  voiceFillListening: "Aufnahme… zum Stoppen tippen",
+  voiceFillProcessing: "Sprache wird verarbeitet…",
+  voiceFillUnsupported: "Sprachaufnahme wird in diesem Browser nicht unterstützt.",
   copyMlsShort: "Kurzversion MLS kopieren",
   copyInstagramHashtags: "Instagram & Hashtags kopieren",
   copyPlainText: "Klartext kopieren",
@@ -36,10 +38,10 @@ const de: WorkflowUiCopy = {
 
 const fr: WorkflowUiCopy = {
   complianceBadge: "✓ Conforme anti-discrimination & Fair Housing",
-  voiceListening: "Écoute…",
-  voiceUnsupported:
-    "La saisie vocale n'est pas prise en charge dans ce navigateur. Essayez Chrome ou Edge.",
-  voiceDictation: "Dicter au microphone",
+  voiceFillButton: "🎙️ Remplir à la voix",
+  voiceFillListening: "Enregistrement… appuyez pour arrêter",
+  voiceFillProcessing: "Traitement de la voix…",
+  voiceFillUnsupported: "L'enregistrement vocal n'est pas pris en charge dans ce navigateur.",
   copyMlsShort: "Copier version MLS courte",
   copyInstagramHashtags: "Copier Instagram & hashtags",
   copyPlainText: "Copier texte brut",
@@ -48,10 +50,10 @@ const fr: WorkflowUiCopy = {
 
 const es: WorkflowUiCopy = {
   complianceBadge: "✓ Conforme anti-discriminación y Fair Housing",
-  voiceListening: "Escuchando…",
-  voiceUnsupported:
-    "La entrada de voz no es compatible con este navegador. Pruebe Chrome o Edge.",
-  voiceDictation: "Dictar con micrófono",
+  voiceFillButton: "🎙️ Rellenar con voz",
+  voiceFillListening: "Grabando… toque para detener",
+  voiceFillProcessing: "Procesando voz…",
+  voiceFillUnsupported: "La grabación de voz no es compatible con este navegador.",
   copyMlsShort: "Copiar versión MLS corta",
   copyInstagramHashtags: "Copiar Instagram y hashtags",
   copyPlainText: "Copiar texto plano",
@@ -60,10 +62,10 @@ const es: WorkflowUiCopy = {
 
 const it: WorkflowUiCopy = {
   complianceBadge: "✓ Conforme anti-discriminazione e Fair Housing",
-  voiceListening: "In ascolto…",
-  voiceUnsupported:
-    "Input vocale non supportato in questo browser. Prova Chrome o Edge.",
-  voiceDictation: "Dettare con microfono",
+  voiceFillButton: "🎙️ Compila con voce",
+  voiceFillListening: "Registrazione… tocca per fermare",
+  voiceFillProcessing: "Elaborazione voce…",
+  voiceFillUnsupported: "La registrazione vocale non è supportata in questo browser.",
   copyMlsShort: "Copia versione MLS breve",
   copyInstagramHashtags: "Copia Instagram e hashtag",
   copyPlainText: "Copia testo semplice",
@@ -72,10 +74,10 @@ const it: WorkflowUiCopy = {
 
 const nl: WorkflowUiCopy = {
   complianceBadge: "✓ Anti-discriminatie & Fair Housing conform",
-  voiceListening: "Luisteren…",
-  voiceUnsupported:
-    "Spraakinvoer wordt niet ondersteund in deze browser. Probeer Chrome of Edge.",
-  voiceDictation: "Dicteren met microfoon",
+  voiceFillButton: "🎙️ Invullen met spraak",
+  voiceFillListening: "Opnemen… tik om te stoppen",
+  voiceFillProcessing: "Spraak verwerken…",
+  voiceFillUnsupported: "Spraakopname wordt niet ondersteund in deze browser.",
   copyMlsShort: "Korte MLS-versie kopiëren",
   copyInstagramHashtags: "Instagram & hashtags kopiëren",
   copyPlainText: "Platte tekst kopiëren",
@@ -84,10 +86,10 @@ const nl: WorkflowUiCopy = {
 
 const pl: WorkflowUiCopy = {
   complianceBadge: "✓ Zgodne z antydyskryminacją i Fair Housing",
-  voiceListening: "Nasłuchiwanie…",
-  voiceUnsupported:
-    "Wprowadzanie głosowe nie jest obsługiwane w tej przeglądarce. Użyj Chrome lub Edge.",
-  voiceDictation: "Dyktuj mikrofonem",
+  voiceFillButton: "🎙️ Wypełnij głosem",
+  voiceFillListening: "Nagrywanie… dotknij, aby zatrzymać",
+  voiceFillProcessing: "Przetwarzanie mowy…",
+  voiceFillUnsupported: "Nagrywanie głosu nie jest obsługiwane w tej przeglądarce.",
   copyMlsShort: "Kopiuj krótką wersję MLS",
   copyInstagramHashtags: "Kopiuj Instagram i hashtagi",
   copyPlainText: "Kopiuj zwykły tekst",
@@ -96,10 +98,10 @@ const pl: WorkflowUiCopy = {
 
 const fa: WorkflowUiCopy = {
   complianceBadge: "✓ مطابق با ضد تبعیض و Fair Housing",
-  voiceListening: "در حال گوش دادن…",
-  voiceUnsupported:
-    "ورودی صوتی در این مرورگر پشتیبانی نمی‌شود. Chrome یا Edge را امتحان کنید.",
-  voiceDictation: "دیکته با میکروفون",
+  voiceFillButton: "🎙️ پر کردن با صدا",
+  voiceFillListening: "در حال ضبط… برای توقف ضربه بزنید",
+  voiceFillProcessing: "در حال پردازش صدا…",
+  voiceFillUnsupported: "ضبط صدا در این مرورگر پشتیبانی نمی‌شود.",
   copyMlsShort: "کپی نسخه کوتاه MLS",
   copyInstagramHashtags: "کپی اینستاگرام و هشتگ‌ها",
   copyPlainText: "کپی متن ساده",
@@ -108,10 +110,10 @@ const fa: WorkflowUiCopy = {
 
 const ar: WorkflowUiCopy = {
   complianceBadge: "✓ متوافق مع مكافحة التمييز وFair Housing",
-  voiceListening: "جارٍ الاستماع…",
-  voiceUnsupported:
-    "الإدخال الصوتي غير مدعوم في هذا المتصفح. جرّب Chrome أو Edge.",
-  voiceDictation: "إملاء بالميكروفون",
+  voiceFillButton: "🎙️ تعبئة بالصوت",
+  voiceFillListening: "جارٍ التسجيل… اضغط للإيقاف",
+  voiceFillProcessing: "جارٍ معالجة الصوت…",
+  voiceFillUnsupported: "تسجيل الصوت غير مدعوم في هذا المتصفح.",
   copyMlsShort: "نسخ نسخة MLS قصيرة",
   copyInstagramHashtags: "نسخ Instagram والهاشتags",
   copyPlainText: "نسخ نص عادي",
