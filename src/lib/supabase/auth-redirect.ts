@@ -1,4 +1,5 @@
 import { appLocales, type AppLocale } from "@/i18n/routing";
+import { consumePendingCheckoutPlan } from "@/lib/billing/pending-checkout";
 import type { BillingStatusResponse } from "@/types/billing";
 
 /** Where to send the user after /auth/callback (pathname only, e.g. /de). */
@@ -41,14 +42,16 @@ export function checkoutPathForLocale(locale: AppLocale): string {
   return `/${locale}/checkout`;
 }
 
-/** Path to restore after magic link — studio home → checkout when billing applies. */
+/** Path to restore after magic link — default studio for landing & workspace. */
 export function pathToSaveBeforeMagicLink(pathname: string): string {
   const path = pathname.split("?")[0] || "/de";
-  if (path.includes("/checkout")) return path;
+  if (path.includes("/checkout")) {
+    return pathname.startsWith("/") ? pathname : path;
+  }
   const locale = localeFromPath(path);
   const normalized = path.replace(/\/$/, "") || `/${locale}`;
   if (normalized === `/${locale}` || normalized === `/${locale}/create`) {
-    return checkoutPathForLocale(locale);
+    return studioPathForLocale(locale);
   }
   return path.startsWith("/") ? path : `/${locale}`;
 }
@@ -77,13 +80,18 @@ async function fetchBillingStatus(retries = 5): Promise<BillingStatusResponse | 
   return null;
 }
 
+function hasStudioAccess(status: BillingStatusResponse): boolean {
+  if (!status.billingEnabled) return true;
+  return status.hasActiveSubscription || (status.remainingCredits ?? 0) > 0;
+}
+
 export type ResolvePathAfterSignInOptions = {
-  /** After magic link: default to checkout instead of studio when status is unavailable. */
+  /** When billing status is unavailable, prefer checkout over studio. */
   defaultToCheckout?: boolean;
 };
 
 /**
- * After sign-in: honor saved checkout path, or /{locale}/checkout if billing is on and user has no plan/credits.
+ * After sign-in: send subscribed/credited users to studio; only unpaid users go to checkout.
  */
 export async function resolvePathAfterSignIn(
   storedPath: string,
@@ -92,27 +100,34 @@ export async function resolvePathAfterSignIn(
   const locale = localeFromPath(storedPath);
   const studio = studioPathForLocale(locale);
   const checkout = checkoutPathForLocale(locale);
-
-  const saved = storedPath.split("?")[0] ?? storedPath;
-  if (saved.includes("/checkout")) {
-    return saved.startsWith("/") ? saved : checkout;
-  }
+  const savedPath = storedPath.startsWith("/") ? storedPath : studio;
+  const savedPathname = savedPath.split("?")[0] ?? savedPath;
+  const isCheckoutIntent = savedPathname.includes("/checkout");
 
   const status = await fetchBillingStatus();
-  const fallback = options?.defaultToCheckout ? checkout : studio;
+
+  if (status && hasStudioAccess(status)) {
+    if (status.hasActiveSubscription || !isCheckoutIntent) {
+      consumePendingCheckoutPlan();
+      return studio;
+    }
+  }
 
   if (!status) {
-    return fallback;
+    return options?.defaultToCheckout && isCheckoutIntent ? savedPath : studio;
   }
 
   if (!status.billingEnabled) {
-    return saved.startsWith("/") && saved !== studio ? saved : studio;
+    return savedPathname !== studio && !isCheckoutIntent ? savedPathname : studio;
   }
 
-  const hasAccess =
-    status.hasActiveSubscription || (status.remainingCredits ?? 0) > 0;
-  if (hasAccess) {
+  if (hasStudioAccess(status)) {
+    consumePendingCheckoutPlan();
     return studio;
+  }
+
+  if (isCheckoutIntent) {
+    return savedPath;
   }
 
   return checkout;

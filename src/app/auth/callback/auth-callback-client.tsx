@@ -56,7 +56,7 @@ export function AuthCallbackClient() {
 
     async function goAfterAuth(storedOrNext: string) {
       await refreshBrowserAuthSession();
-      const dest = await resolvePathAfterSignIn(storedOrNext, { defaultToCheckout: true });
+      const dest = await resolvePathAfterSignIn(storedOrNext, { defaultToCheckout: false });
       if (!cancelled) {
         router.refresh();
         router.replace(dest);

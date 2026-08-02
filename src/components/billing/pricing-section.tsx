@@ -160,7 +160,7 @@ export function PricingSection({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!isSignedIn || !billingEnabled || autoCheckoutStarted.current) return;
+    if (!isSignedIn || !billingEnabled || statusLoading || autoCheckoutStarted.current) return;
 
     const params = new URLSearchParams(window.location.search);
     const planParam = params.get("plan");
@@ -169,8 +169,23 @@ export function PricingSection({
     autoCheckoutStarted.current = true;
     acceptLegalConsent();
     router.replace(pathname);
+
+    if (status?.hasActiveSubscription && planParam !== "credits_pack") {
+      router.push("/create");
+      return;
+    }
+
     void startCheckout(planParam);
-  }, [acceptLegalConsent, billingEnabled, isSignedIn, pathname, router, startCheckout]);
+  }, [
+    acceptLegalConsent,
+    billingEnabled,
+    isSignedIn,
+    pathname,
+    router,
+    startCheckout,
+    status?.hasActiveSubscription,
+    statusLoading,
+  ]);
 
   const paidButtonClass = (highlight?: boolean) =>
     cn(
