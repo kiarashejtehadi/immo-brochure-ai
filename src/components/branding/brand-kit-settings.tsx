@@ -14,6 +14,21 @@ import {
 import { readJsonResponse } from "@/lib/http/read-json-response";
 import { cn } from "@/lib/utils";
 
+function mergeUploadedBranding(
+  patch: Partial<UserBrandingProfile>,
+  response?: Partial<UserBrandingProfile>,
+): Partial<UserBrandingProfile> {
+  const merged: Partial<UserBrandingProfile> = { ...patch };
+  if (!response) return merged;
+
+  for (const [key, value] of Object.entries(response) as [keyof UserBrandingProfile, unknown][]) {
+    if (value != null && value !== "") {
+      merged[key] = value as never;
+    }
+  }
+  return merged;
+}
+
 type BrandKitSettingsProps = {
   locale: UiLocale;
   branding: UserBrandingProfile;
@@ -21,8 +36,8 @@ type BrandKitSettingsProps = {
   isPro: boolean;
   creditPackOnly: boolean;
   onUpgrade: () => void;
-  onError: (message: string) => void;
-  onMessage: (message: string) => void;
+  onError: (message: string | null) => void;
+  onMessage: (message: string | null) => void;
   onSaveKit: () => Promise<void>;
   saving: boolean;
 };
@@ -49,14 +64,17 @@ export function BrandKitSettings({
   async function uploadAsset(
     endpoint: "/api/branding/logo" | "/api/branding/avatar",
     file: File,
-    onSuccess: (url: string) => void,
+    inputRef: React.RefObject<HTMLInputElement | null>,
+    field: "logoUrl" | "agentAvatarUrl",
   ) {
     if (!isPro) {
       onUpgrade();
       return;
     }
-    const setUploading = endpoint === "/api/branding/logo" ? setUploadingLogo : setUploadingAvatar;
+    const setUploading = field === "logoUrl" ? setUploadingLogo : setUploadingAvatar;
     setUploading(true);
+    onError("");
+    onMessage(null);
     try {
       const form = new FormData();
       form.set("file", file);
@@ -70,16 +88,22 @@ export function BrandKitSettings({
         agentAvatarUrl?: string;
         branding?: UserBrandingProfile;
         error?: string;
-      }>(res);
+      }>(res, "Upload");
       if (!res.ok) throw new Error(data.error ?? copy.uploadFailed);
-      if (data.branding) onBrandingChange(data.branding);
-      const url = data.logoUrl ?? data.agentAvatarUrl;
-      if (url) onSuccess(url);
-      onMessage(endpoint === "/api/branding/logo" ? copy.logoUploaded : copy.avatarUploaded);
+
+      const uploadedUrl = data[field];
+      onBrandingChange(
+        mergeUploadedBranding(
+          uploadedUrl ? { [field]: uploadedUrl } : {},
+          data.branding,
+        ),
+      );
+      onMessage(field === "logoUrl" ? copy.logoUploaded : copy.avatarUploaded);
     } catch (err) {
       onError(err instanceof Error ? err.message : copy.uploadFailed);
     } finally {
       setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
@@ -104,7 +128,7 @@ export function BrandKitSettings({
         <div className="space-y-3">
           <h4 className="text-sm font-semibold">{copy.agencyLogo}</h4>
           <div className="flex flex-wrap items-center gap-4">
-            {branding.logoUrl && isPro ? (
+            {branding.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={branding.logoUrl}
@@ -124,9 +148,7 @@ export function BrandKitSettings({
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  void uploadAsset("/api/branding/logo", file, (url) =>
-                    onBrandingChange({ logoUrl: url }),
-                  );
+                  void uploadAsset("/api/branding/logo", file, logoRef, "logoUrl");
                 }
               }}
             />
@@ -145,7 +167,7 @@ export function BrandKitSettings({
         <div className="space-y-3">
           <h4 className="text-sm font-semibold">{copy.agentAvatar}</h4>
           <div className="flex flex-wrap items-center gap-4">
-            {branding.agentAvatarUrl && isPro ? (
+            {branding.agentAvatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={branding.agentAvatarUrl}
@@ -165,9 +187,7 @@ export function BrandKitSettings({
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  void uploadAsset("/api/branding/avatar", file, (url) =>
-                    onBrandingChange({ agentAvatarUrl: url }),
-                  );
+                  void uploadAsset("/api/branding/avatar", file, avatarRef, "agentAvatarUrl");
                 }
               }}
             />

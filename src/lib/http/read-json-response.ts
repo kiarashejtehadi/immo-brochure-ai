@@ -1,6 +1,7 @@
 /** Parse JSON from a fetch Response without throwing raw JSON.parse errors. */
 export async function readJsonResponse<T extends Record<string, unknown>>(
   res: Response,
+  context = "Request",
 ): Promise<T> {
   const raw = await res.text();
   const statusHint = res.status ? ` (HTTP ${res.status})` : "";
@@ -9,7 +10,7 @@ export async function readJsonResponse<T extends Record<string, unknown>>(
     throw new Error(
       res.ok
         ? `Server returned an empty response${statusHint}.`
-        : `Checkout request failed${statusHint}. Redeploy the latest build, then try again.`,
+        : `${context} failed${statusHint}. Please try again.`,
     );
   }
 
@@ -19,8 +20,8 @@ export async function readJsonResponse<T extends Record<string, unknown>>(
     const preview = raw.replace(/\s+/g, " ").slice(0, 160);
     throw new Error(
       preview.startsWith("<!")
-        ? `Checkout request failed${statusHint} (server returned HTML, not JSON).`
-        : `Checkout request failed${statusHint}: ${preview}`,
+        ? `${context} failed${statusHint} (server returned HTML, not JSON).`
+        : `${context} failed${statusHint}: ${preview}`,
     );
   }
 }
