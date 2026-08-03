@@ -26,8 +26,8 @@ import {
 } from "@/lib/location/format-address";
 import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
 import { preparePdfImageProps, type PdfReadyImages } from "@/lib/pdf-image-data-url";
-import { downloadExposePdf } from "@/lib/download-expose-pdf";
 import { resolvePdfDownloadError } from "@/lib/pdf-download-error";
+import { withTimeout } from "@/lib/promise-timeout";
 import {
   getUiCopy,
   LOCALE_LABELS,
@@ -441,8 +441,7 @@ function ListingStudioContent() {
   const pdfReadyImagesRef = useRef<PdfReadyImages | null>(null);
   const pdfImagesFingerprintRef = useRef("");
 
-  const PDF_PREP_WATCHDOG_MS = 50_000;
-  const pdfStalledMessage = copy.errors.pdfStalled;
+  const PDF_PREP_WATCHDOG_MS = 60_000;
 
   const buildPdfImagesFingerprint = useCallback((): string => {
     const photoKey = photos
@@ -461,14 +460,15 @@ function ListingStudioContent() {
 
   useEffect(() => {
     if (!isDownloadingPdf) return;
+    const stalledMessage = copy.errors.pdfStalled;
     const watchdog = window.setTimeout(() => {
       setIsDownloadingPdf(false);
-      setPdfError(pdfStalledMessage);
+      setPdfError(stalledMessage);
       pdfReadyImagesRef.current = null;
       pdfImagesFingerprintRef.current = "";
     }, PDF_PREP_WATCHDOG_MS);
     return () => window.clearTimeout(watchdog);
-  }, [isDownloadingPdf, pdfStalledMessage]);
+  }, [isDownloadingPdf, copy.errors.pdfStalled]);
 
   const heatingLabel = useCallback(
     (source: HeatingSource) => {
@@ -841,14 +841,17 @@ function ListingStudioContent() {
 
       let readyImages = pdfReadyImagesRef.current;
       if (!readyImages || pdfImagesFingerprintRef.current !== fingerprint) {
-        console.log("PDF: Preparing images...");
-        readyImages = await preparePdfImageProps({
-          photoFiles: photos.map((p) => p.file),
-          floorPlanFile,
-          logoDataUrl,
-          avatarDataUrl,
-          mapDataUrl,
-        });
+        readyImages = await withTimeout(
+          preparePdfImageProps({
+            photoFiles: photos.map((p) => p.file),
+            floorPlanFile,
+            logoDataUrl,
+            avatarDataUrl,
+            mapDataUrl,
+          }),
+          30_000,
+          "PDF image preparation timed out",
+        );
         pdfReadyImagesRef.current = readyImages;
         pdfImagesFingerprintRef.current = fingerprint;
       } else {
@@ -858,7 +861,6 @@ function ListingStudioContent() {
           avatarDataUrl,
           mapDataUrl,
         };
-        console.log("PDF: Using cached photo data URLs");
       }
 
       const pdfProps = buildBrochurePdfProps({
@@ -887,14 +889,23 @@ function ListingStudioContent() {
           showWatermark: resolveShowPdfWatermark(result, pdfWatermark, billingStatus),
         },
       });
-      await downloadExposePdf({
-        ...pdfProps,
-        photoDataUrls: readyImages.photoDataUrls,
-        floorPlanDataUrl: readyImages.floorPlanDataUrl,
-        mapDataUrl: readyImages.mapDataUrl,
-        logoDataUrl: readyImages.logoDataUrl,
-        avatarDataUrl: readyImages.avatarDataUrl,
-      });
+
+      const { downloadExposePdf } = await importWithChunkRetry(() =>
+        import("@/lib/download-expose-pdf"),
+      );
+
+      await withTimeout(
+        downloadExposePdf({
+          ...pdfProps,
+          photoDataUrls: readyImages.photoDataUrls,
+          floorPlanDataUrl: readyImages.floorPlanDataUrl,
+          mapDataUrl: readyImages.mapDataUrl,
+          logoDataUrl: readyImages.logoDataUrl,
+          avatarDataUrl: readyImages.avatarDataUrl,
+        }),
+        50_000,
+        "PDF render timed out",
+      );
     } catch (err) {
       const message = resolvePdfDownloadError(err, copy);
       setPdfError(message);

@@ -195,9 +195,9 @@ export type ListingFormProps = {
   onDragOver: (over: boolean) => void;
   onAddPhotos: (files: FileList | File[]) => void;
   onRemovePhoto: (id: string) => void;
-  photoInputRef: React.RefObject<HTMLInputElement | null>;
+  photoInputRef: React.RefObject<HTMLInputElement>;
   floorPlanPreview: string | null;
-  floorPlanInputRef: React.RefObject<HTMLInputElement | null>;
+  floorPlanInputRef: React.RefObject<HTMLInputElement>;
   onFloorPlanChange: (file: File | null) => void;
   agent: AgentFormData;
   onAgent: (patch: Partial<AgentFormData>) => void;
