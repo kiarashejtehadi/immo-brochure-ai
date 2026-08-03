@@ -11,7 +11,7 @@ import { formatPriceAmount, type CurrencyCode } from "@/lib/currency";
 import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
 import { resolvePdfFontFamily } from "@/lib/pdf-fonts";
 import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
-import { filterPdfTableRows, isLikelyRawPdfMetadata } from "@/lib/pdf-table-rows";
+import { filterPdfTableRows, filterPdfListingDetailRows, isLikelyRawPdfMetadata } from "@/lib/pdf-table-rows";
 import {
   formatPdfDisplayAddress,
   splitPdfParagraphs,
@@ -161,13 +161,6 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       justifyContent: "flex-start",
       paddingRight: RHYTHM_LG,
     },
-    priceCallout: {
-      fontSize: 20,
-      fontWeight: 700,
-      lineHeight: 1.2,
-      color: branding.accentColor,
-      marginBottom: RHYTHM_SM,
-    },
     heroPlaceholder: {
       width: "100%",
       height: 240,
@@ -202,7 +195,6 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       borderRightColor: "#e2e8f0",
       paddingVertical: 10,
       paddingHorizontal: 10,
-      minWidth: 0,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -218,7 +210,6 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       color: "#71717a",
       marginBottom: 4,
       textAlign: "center",
-      letterSpacing: 0.3,
     },
     metricValue: {
       fontSize: 12,
@@ -227,9 +218,9 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       lineHeight: 1.2,
     },
     title: {
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: 700,
-      lineHeight: 1.2,
+      lineHeight: 1.25,
       marginBottom: RHYTHM_SM,
     },
     subtitle: {
@@ -452,7 +443,6 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     },
     contactDetails: {
       flex: 1,
-      minWidth: 0,
       paddingLeft: RHYTHM_SM,
     },
     contactName: {
@@ -473,11 +463,9 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     },
     page4Column: {
       width: "48%",
-      minWidth: 0,
     },
     page4ColumnRight: {
       width: "48%",
-      minWidth: 0,
       paddingLeft: RHYTHM_MD,
     },
     legalSection: {
@@ -497,10 +485,21 @@ function fmt(amount: string, currency: CurrencyCode, fallback: string) {
   return formatPriceAmount(amount, currency, fallback);
 }
 
-function formatPriceCallout(props: BrochurePdfProps, priceDisplay: string): string {
-  if (!props.priceAmount.trim()) return priceDisplay;
-  if (props.transactionType === "rent") return `${priceDisplay} / month`;
-  return priceDisplay;
+function formatCoverRent(props: BrochurePdfProps): string {
+  if (!props.priceAmount.trim()) return props.priceOnRequestLabel || "Price on request";
+  return fmt(props.priceAmount, props.currency, props.priceOnRequestLabel);
+}
+
+function formatCoverSize(size: string): string {
+  return size.trim() ? `${size.trim()} m²` : "-";
+}
+
+function formatCoverRooms(rooms: string): string {
+  return rooms.trim() ? `${rooms.trim()} Rooms` : "-";
+}
+
+function pdfWordNoHyphens(word: string): string[] {
+  return [word];
 }
 
 function PdfPageChrome({
@@ -616,38 +615,36 @@ function PdfMetricCell({
 
 function PdfMetricsRow({
   styles: s,
-  priceLabel,
-  priceDisplay,
+  rentDisplay,
   sizeDisplay,
   roomsDisplay,
   accentColor,
 }: {
   styles: ReturnType<typeof createStyles>;
-  priceLabel: string;
-  priceDisplay: string;
-  sizeDisplay: string | null;
-  roomsDisplay: string | null;
+  rentDisplay: string;
+  sizeDisplay: string;
+  roomsDisplay: string;
   accentColor: string;
 }) {
   return (
     <View style={s.metricsRow} wrap={false}>
       <PdfMetricCell
         styles={s}
-        label={priceLabel}
-        value={priceDisplay}
+        label="Rent"
+        value={rentDisplay}
         accentColor={accentColor}
         highlight
       />
       <PdfMetricCell
         styles={s}
         label="Size"
-        value={sizeDisplay ?? "—"}
+        value={sizeDisplay}
         accentColor={accentColor}
       />
       <PdfMetricCell
         styles={s}
         label="Rooms"
-        value={roomsDisplay ?? "—"}
+        value={roomsDisplay}
         accentColor={accentColor}
         isLast
       />
@@ -798,12 +795,21 @@ function PdfFloorPlanImage({
   src,
 }: {
   styles: ReturnType<typeof createStyles>;
-  src: string;
+  src: string | undefined;
 }) {
+  const safeSrc = sanitizePdfImageSrc(src);
+  if (!safeSrc) {
+    return (
+      <View style={s.floorPlanPlaceholder} wrap={false}>
+        <Text style={s.floorPlanPlaceholderText}>Floor plan available upon request</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={s.floorPlanWrap} wrap={false}>
       {/* eslint-disable-next-line jsx-a11y/alt-text */}
-      <Image src={src} style={s.floorPlan} />
+      <Image src={safeSrc} style={s.floorPlan} />
     </View>
   );
 }
@@ -870,17 +876,14 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
     .map((src) => sanitizePdfImageSrc(src))
     .filter((src): src is string => Boolean(src));
   const showWatermark = props.showWatermark === true;
-  const priceDisplay = props.priceAmount.trim()
-    ? fmt(props.priceAmount, props.currency, props.priceOnRequestLabel)
-    : props.priceOnRequestLabel;
-  const priceCallout = formatPriceCallout(props, priceDisplay);
-  const sizeDisplay = props.size.trim() ? `${props.size} m²` : null;
-  const roomsDisplay = props.rooms.trim() || null;
+  const rentDisplay = formatCoverRent(props);
+  const sizeDisplay = formatCoverSize(props.size);
+  const roomsDisplay = formatCoverRooms(props.rooms);
   const displayAddress = formatPdfDisplayAddress(props.address);
   const storyParagraphs = splitPdfParagraphs(props.fullDescription);
   const locationParagraphs = splitPdfParagraphs(props.locationDescription);
   const floorPlanSrc = sanitizePdfImageSrc(props.floorPlanDataUrl);
-  const page4Specs = filterPdfTableRows(props.specsTable).slice(0, PAGE4_SPECS_MAX_ROWS);
+  const page4Specs = filterPdfListingDetailRows(props.specsTable).slice(0, PAGE4_SPECS_MAX_ROWS);
   const coverBullets = props.summary.filter(
     (line) => line.trim() && !isLikelyRawPdfMetadata(line),
   );
@@ -894,13 +897,14 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         pageLabel="ImmoCaption AI · Page 1 — Cover"
         showWatermark={showWatermark}
         watermarkPage={1}
-        textWatermarks={[{ top: 400 }, { top: 560 }]}
+        textWatermarks={[{ top: 520 }, { top: 660 }]}
       >
         <View wrap={false} style={s.pageMainGrow}>
           <View wrap={false} style={s.heroRow}>
             <View style={s.heroContentCol}>
-              <Text style={s.title}>{props.title}</Text>
-              <Text style={s.priceCallout}>{priceCallout}</Text>
+              <Text style={s.title} hyphenationCallback={pdfWordNoHyphens}>
+                {props.title}
+              </Text>
               {displayAddress ? <Text style={s.subtitle}>{displayAddress}</Text> : null}
             </View>
             {hero ? (
@@ -914,8 +918,7 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
           <View wrap={false} style={s.metricsWrap}>
             <PdfMetricsRow
               styles={s}
-              priceLabel={props.priceLabel}
-              priceDisplay={priceDisplay}
+              rentDisplay={rentDisplay}
               sizeDisplay={sizeDisplay}
               roomsDisplay={roomsDisplay}
               accentColor={branding.accentColor}
@@ -1021,15 +1024,7 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         <View wrap={false} style={s.page4Main}>
           <View wrap={false} style={s.page4TopSection}>
             <Text style={s.h2}>Floor plan</Text>
-            {floorPlanSrc ? (
-              <PdfFloorPlanImage styles={s} src={floorPlanSrc} />
-            ) : (
-              <View style={s.floorPlanPlaceholder} wrap={false}>
-                <Text style={s.floorPlanPlaceholderText}>
-                  Floor Plan Available Upon Request
-                </Text>
-              </View>
-            )}
+            <PdfFloorPlanImage styles={s} src={floorPlanSrc} />
           </View>
 
           <View wrap={false} style={s.page4BottomSection}>

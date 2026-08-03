@@ -72,6 +72,15 @@ import type { VoiceParseResult } from "@/types/voice-parse";
 import { StagingDisclaimerFooter } from "@/components/listing/staging-disclaimer";
 import type { UserBrandingProfile } from "@/types/branding";
 import { importWithChunkRetry } from "@/lib/import-with-chunk-retry";
+import {
+  clearListingStudioDraft,
+  draftOwnerKey,
+  fileToStoredPhotoDraft,
+  readListingStudioDraft,
+  storedPhotoToPreview,
+  writeListingStudioDraft,
+  type ListingStudioDraft,
+} from "@/lib/listing-studio-draft";
 import { cn } from "@/lib/utils";
 import type {
   TransactionType,
@@ -374,19 +383,27 @@ function ListingStudioContent() {
   const [billingHint, setBillingHint] = useState<"auth" | "checkout" | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
-  const { status: billingStatus, refresh: refreshBilling } = useBillingStatus();
+  const { status: billingStatus, loading: billingLoading, refresh: refreshBilling } = useBillingStatus();
   const [brandingProfile, setBrandingProfile] = useState<UserBrandingProfile | null>(null);
   const brandingAutoFillDone = useRef(false);
   const checkoutHandledRef = useRef(false);
   const demoHandledRef = useRef(false);
   const [browserSignedIn, setBrowserSignedIn] = useState(false);
+  const [authEmail, setAuthEmail] = useState<string | null | undefined>(undefined);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const draftLifecycleRef = useRef<{ ownerKey?: string; hydrated: boolean }>({
+    hydrated: false,
+  });
 
   useEffect(() => {
     brandingAutoFillDone.current = false;
   }, [billingStatus?.email]);
 
   useEffect(() => {
-    void getBrowserAuthEmail().then((email) => setBrowserSignedIn(Boolean(email)));
+    void getBrowserAuthEmail().then((email) => {
+      setAuthEmail(email);
+      setBrowserSignedIn(Boolean(email));
+    });
   }, [billingStatus?.email]);
 
   useEffect(() => {
@@ -438,6 +455,197 @@ function ListingStudioContent() {
     if (!brandingProfile) return;
     setAgent((current) => mergeAgentWithBrandingDefaults(current, brandingProfile, { force: true }));
   }
+
+  const resetFormToDefaults = useCallback(() => {
+    setPhotos((prev) => {
+      for (const photo of prev) URL.revokeObjectURL(photo.url);
+      return [];
+    });
+    setFloorPlanPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setFloorPlanFile(null);
+    setTransactionType("rent");
+    setAddress({
+      ...DEFAULT_LISTING_ADDRESS,
+      country: getDefaultCountryForLocale(routeLocale),
+    });
+    setSize("");
+    setRooms("");
+    setProperty({ ...DEFAULT_PROPERTY });
+    setFeatures([]);
+    setTone("Professional");
+    setRent({ ...EMPTY_RENT });
+    setSale({ ...EMPTY_SALE });
+    setEnergy({ ...DEFAULT_ENERGY });
+    setAgent({
+      ...DEFAULT_AGENT,
+      legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
+    });
+    setTargetLanguage(outputLanguageFromLocale(routeLocale));
+    if (uiLocale === "en") setCurrency("EUR");
+    setResult(null);
+    setHasGenerated(false);
+    setIsDemoSample(false);
+    setGenerateError(null);
+    setPreviewTab("story");
+    pdfReadyImagesRef.current = null;
+    pdfImagesFingerprintRef.current = "";
+  }, [routeLocale, uiLocale]);
+
+  const applyListingDraft = useCallback((draft: ListingStudioDraft) => {
+    setTargetLanguage(draft.targetLanguage);
+    setCurrency(draft.currency);
+    setTransactionType(draft.transactionType);
+    setAddress(draft.address);
+    setSize(draft.size);
+    setRooms(draft.rooms);
+    setProperty(draft.property);
+    setFeatures(draft.features);
+    setTone(draft.tone);
+    setRent(draft.rent);
+    setSale(draft.sale);
+    setEnergy(draft.energy);
+    setAgent(draft.agent);
+    setPhotos((prev) => {
+      for (const photo of prev) URL.revokeObjectURL(photo.url);
+      return draft.photos.map(storedPhotoToPreview);
+    });
+    const restoredFloorPlan = draft.floorPlan
+      ? storedPhotoToPreview(draft.floorPlan)
+      : null;
+    setFloorPlanPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return restoredFloorPlan?.url ?? null;
+    });
+    setFloorPlanFile(restoredFloorPlan?.file ?? null);
+    setResult(draft.result);
+    setHasGenerated(draft.hasGenerated);
+    setIsDemoSample(false);
+    setGenerateError(null);
+    setPreviewTab(draft.previewTab);
+    pdfReadyImagesRef.current = null;
+    pdfImagesFingerprintRef.current = "";
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("demo") === "1") {
+      if (!draftLifecycleRef.current.hydrated) {
+        draftLifecycleRef.current.hydrated = true;
+        setDraftHydrated(true);
+      }
+      return;
+    }
+
+    if (billingLoading || authEmail === undefined) return;
+
+    const ownerKey = draftOwnerKey(billingStatus?.email ?? authEmail);
+
+    if (!draftLifecycleRef.current.hydrated) {
+      draftLifecycleRef.current.hydrated = true;
+      draftLifecycleRef.current.ownerKey = ownerKey;
+      const draft = readListingStudioDraft();
+      if (draft && draft.ownerKey === ownerKey) {
+        applyListingDraft(draft);
+      }
+      setDraftHydrated(true);
+      return;
+    }
+
+    if (draftLifecycleRef.current.ownerKey !== ownerKey) {
+      draftLifecycleRef.current.ownerKey = ownerKey;
+      clearListingStudioDraft();
+      resetFormToDefaults();
+    }
+  }, [
+    applyListingDraft,
+    authEmail,
+    billingLoading,
+    billingStatus?.email,
+    resetFormToDefaults,
+  ]);
+
+  useEffect(() => {
+    if (!draftHydrated || isDemoSample) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const ownerKey = draftOwnerKey(billingStatus?.email ?? authEmail ?? null);
+          const photosStored = await Promise.all(
+            photos.map((photo) => fileToStoredPhotoDraft(photo.id, photo.file)),
+          );
+          const floorPlanStored = floorPlanFile
+            ? await fileToStoredPhotoDraft(
+                `floor-plan-${floorPlanFile.name}-${floorPlanFile.lastModified}`,
+                floorPlanFile,
+              )
+            : null;
+
+          if (cancelled) return;
+
+          writeListingStudioDraft({
+            version: 1,
+            ownerKey,
+            savedAt: Date.now(),
+            targetLanguage,
+            currency: activeCurrency,
+            transactionType,
+            address,
+            size,
+            rooms,
+            property,
+            features,
+            tone,
+            rent,
+            sale,
+            energy,
+            agent,
+            photos: photosStored,
+            floorPlan: floorPlanStored,
+            result,
+            hasGenerated,
+            previewTab,
+          });
+        } catch {
+          // Draft save must never break the studio UI
+        }
+      })();
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    draftHydrated,
+    isDemoSample,
+    billingStatus?.email,
+    authEmail,
+    targetLanguage,
+    activeCurrency,
+    transactionType,
+    address,
+    size,
+    rooms,
+    property,
+    features,
+    tone,
+    rent,
+    sale,
+    energy,
+    agent,
+    photos,
+    floorPlanFile,
+    result,
+    hasGenerated,
+    previewTab,
+  ]);
 
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -606,6 +814,7 @@ function ListingStudioContent() {
   );
 
   const loadDemoSample = useCallback(async () => {
+    clearListingStudioDraft();
     const demo = getDemoListingContent(exposeLocale);
     setTransactionType("rent");
     setAddress(demo.address);
