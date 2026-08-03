@@ -11,7 +11,7 @@ import { formatPriceAmount, type CurrencyCode } from "@/lib/currency";
 import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
 import { resolvePdfFontFamily } from "@/lib/pdf-fonts";
 import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
-import { filterPdfTableRows } from "@/lib/pdf-table-rows";
+import { filterPdfTableRows, isLikelyRawPdfMetadata } from "@/lib/pdf-table-rows";
 import {
   formatPdfDisplayAddress,
   splitPdfParagraphs,
@@ -141,8 +141,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     },
     heroImageWrap: {
       width: "100%",
-      flex: 1,
-      minHeight: 220,
+      height: 240,
       borderRadius: 6,
       overflow: "hidden",
       backgroundColor: "#f4f4f5",
@@ -153,24 +152,32 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       alignItems: "stretch",
     },
     heroImageCol: {
-      width: "52%",
-      minHeight: 220,
+      width: "48%",
+      height: 240,
       flexDirection: "column",
     },
     heroContentCol: {
-      flex: 1,
+      width: "48%",
       justifyContent: "flex-start",
-      minWidth: 0,
-      paddingLeft: RHYTHM_LG,
+      paddingRight: RHYTHM_LG,
+    },
+    priceCallout: {
+      fontSize: 20,
+      fontWeight: 700,
+      lineHeight: 1.2,
+      color: branding.accentColor,
+      marginBottom: RHYTHM_SM,
     },
     heroPlaceholder: {
       width: "100%",
-      flex: 1,
-      minHeight: 220,
+      height: 240,
       borderRadius: 6,
       backgroundColor: "#f4f4f5",
       alignItems: "center",
       justifyContent: "center",
+    },
+    coverBullets: {
+      marginTop: RHYTHM_MD,
     },
     summaryBlock: {
       marginTop: RHYTHM_SM,
@@ -243,16 +250,16 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     body: { fontSize: 10, lineHeight: 1.55, textAlign: "justify" },
     grid: { flexDirection: "row", flexWrap: "wrap", marginBottom: RHYTHM_LG },
     storySection: {
-      marginTop: RHYTHM_LG,
+      marginTop: RHYTHM_SM,
     },
     galleryCell: {
       width: "48%",
-      height: 120,
+      height: 220,
       borderRadius: 4,
       overflow: "hidden",
       backgroundColor: "#f4f4f5",
-      marginRight: 8,
-      marginBottom: 8,
+      marginRight: 10,
+      marginBottom: 10,
     },
     galleryImg: {
       width: "100%",
@@ -373,10 +380,9 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       height: MAP_HEIGHT_PT,
       borderRadius: 8,
       overflow: "hidden",
-      marginBottom: RHYTHM_LG,
+      marginBottom: RHYTHM_MD,
       borderWidth: 1,
       borderColor: "#d4d4d8",
-      position: "relative",
       backgroundColor: "#f4f4f5",
     },
     mapImage: {
@@ -384,39 +390,14 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       height: "100%",
       objectFit: "cover" as const,
     },
-    mapPinOverlay: {
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      marginLeft: -10,
-      marginTop: -20,
-      alignItems: "center",
-    },
-    mapPinDot: {
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: "#dc2626",
-      borderWidth: 3,
-      borderColor: "#ffffff",
-    },
     mapFallback: {
       width: "100%",
       height: MAP_HEIGHT_PT,
       borderRadius: 8,
-      overflow: "hidden",
-      marginBottom: RHYTHM_LG,
+      marginBottom: RHYTHM_MD,
       borderWidth: 1,
       borderColor: "#cbd5e1",
       backgroundColor: "#e0f2fe",
-      position: "relative",
-    },
-    mapFallbackOverlay: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 20,
@@ -426,7 +407,22 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       color: "#1e3a8a",
       textAlign: "center",
       lineHeight: 1.4,
-      marginTop: RHYTHM_SM,
+    },
+    floorPlanPlaceholder: {
+      width: "100%",
+      height: FLOOR_PLAN_HEIGHT_PT,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: "#e2e8f0",
+      backgroundColor: "#fafafa",
+      paddingHorizontal: RHYTHM_LG,
+    },
+    floorPlanPlaceholderText: {
+      fontSize: 9,
+      color: "#64748b",
+      textAlign: "center",
     },
     sectionBlock: {
       marginBottom: RHYTHM_MD,
@@ -499,6 +495,12 @@ const createStyles = (branding: ResolvedPdfBranding) =>
 
 function fmt(amount: string, currency: CurrencyCode, fallback: string) {
   return formatPriceAmount(amount, currency, fallback);
+}
+
+function formatPriceCallout(props: BrochurePdfProps, priceDisplay: string): string {
+  if (!props.priceAmount.trim()) return priceDisplay;
+  if (props.transactionType === "rent") return `${priceDisplay} / month`;
+  return priceDisplay;
 }
 
 function PdfPageChrome({
@@ -823,24 +825,17 @@ function PdfLocationMap({
       <View style={s.mapWrap} wrap={false}>
         {/* eslint-disable-next-line jsx-a11y/alt-text */}
         <Image src={safeMap} style={s.mapImage} />
-        <View style={s.mapPinOverlay}>
-          <View style={s.mapPinDot} />
-        </View>
       </View>
     );
   }
 
   return (
     <View style={s.mapFallback} wrap={false}>
-      <View style={{ flex: 1, backgroundColor: "#bfdbfe" }} />
-      <View style={s.mapFallbackOverlay}>
-        <View style={s.mapPinDot} />
-        {displayAddress ? (
-          <Text style={s.mapFallbackAddress}>{displayAddress}</Text>
-        ) : (
-          <Text style={s.mapFallbackAddress}>Location preview unavailable</Text>
-        )}
-      </View>
+      {displayAddress ? (
+        <Text style={s.mapFallbackAddress}>{displayAddress}</Text>
+      ) : (
+        <Text style={s.mapFallbackAddress}>Location preview unavailable</Text>
+      )}
     </View>
   );
 }
@@ -878,6 +873,7 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
   const priceDisplay = props.priceAmount.trim()
     ? fmt(props.priceAmount, props.currency, props.priceOnRequestLabel)
     : props.priceOnRequestLabel;
+  const priceCallout = formatPriceCallout(props, priceDisplay);
   const sizeDisplay = props.size.trim() ? `${props.size} m²` : null;
   const roomsDisplay = props.rooms.trim() || null;
   const displayAddress = formatPdfDisplayAddress(props.address);
@@ -885,6 +881,9 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
   const locationParagraphs = splitPdfParagraphs(props.locationDescription);
   const floorPlanSrc = sanitizePdfImageSrc(props.floorPlanDataUrl);
   const page4Specs = filterPdfTableRows(props.specsTable).slice(0, PAGE4_SPECS_MAX_ROWS);
+  const coverBullets = props.summary.filter(
+    (line) => line.trim() && !isLikelyRawPdfMetadata(line),
+  );
 
   return (
     <Document title={`Exposé – ${props.title}`}>
@@ -899,6 +898,11 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
       >
         <View wrap={false} style={s.pageMainGrow}>
           <View wrap={false} style={s.heroRow}>
+            <View style={s.heroContentCol}>
+              <Text style={s.title}>{props.title}</Text>
+              <Text style={s.priceCallout}>{priceCallout}</Text>
+              {displayAddress ? <Text style={s.subtitle}>{displayAddress}</Text> : null}
+            </View>
             {hero ? (
               <PdfHeroImage styles={s} src={hero} showWatermark={showWatermark} />
             ) : (
@@ -906,19 +910,6 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
                 <Text style={{ color: "#a1a1aa", fontSize: 9 }}>Cover photo</Text>
               </View>
             )}
-            <View style={s.heroContentCol}>
-              <Text style={s.title}>{props.title}</Text>
-              {displayAddress ? <Text style={s.subtitle}>{displayAddress}</Text> : null}
-              {props.summary.length > 0 ? (
-                <View style={s.summaryBlock}>
-                  {props.summary.map((line, i) => (
-                    <Text key={i} style={s.bullet}>
-                      • {line}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-            </View>
           </View>
           <View wrap={false} style={s.metricsWrap}>
             <PdfMetricsRow
@@ -930,6 +921,15 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
               accentColor={branding.accentColor}
             />
           </View>
+          {coverBullets.length > 0 ? (
+            <View style={s.coverBullets} wrap={false}>
+              {coverBullets.map((line, i) => (
+                <Text key={i} style={s.bullet}>
+                  • {line}
+                </Text>
+              ))}
+            </View>
+          ) : null}
         </View>
       </PdfPageLayout>
 
@@ -1019,16 +1019,28 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         textWatermarks={[{ top: 320 }, { top: 580 }]}
       >
         <View wrap={false} style={s.page4Main}>
-          {floorPlanSrc ? (
-            <View wrap={false} style={s.page4TopSection}>
-              <Text style={s.h2}>Floor plan</Text>
+          <View wrap={false} style={s.page4TopSection}>
+            <Text style={s.h2}>Floor plan</Text>
+            {floorPlanSrc ? (
               <PdfFloorPlanImage styles={s} src={floorPlanSrc} />
-            </View>
-          ) : null}
+            ) : (
+              <View style={s.floorPlanPlaceholder} wrap={false}>
+                <Text style={s.floorPlanPlaceholderText}>
+                  Floor Plan Available Upon Request
+                </Text>
+              </View>
+            )}
+          </View>
 
           <View wrap={false} style={s.page4BottomSection}>
             <View wrap={false} style={s.page4BottomRow}>
-              <View style={page4Specs.length > 0 ? s.page4Column : { width: "100%" }}>
+              <View style={s.page4Column}>
+                <Text style={[s.h2, { marginTop: 0 }]}>Listing details</Text>
+                {page4Specs.length > 0 ? (
+                  <PdfTable styles={s} rows={page4Specs} variant="details" />
+                ) : null}
+              </View>
+              <View style={s.page4ColumnRight}>
                 <Text style={[s.h2, { marginTop: 0 }]}>Your contact</Text>
                 <PdfContactCard
                   styles={s}
@@ -1038,12 +1050,6 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
                   website={props.website}
                 />
               </View>
-              {page4Specs.length > 0 ? (
-                <View style={s.page4ColumnRight}>
-                  <Text style={[s.h2, { marginTop: 0 }]}>Listing details</Text>
-                  <PdfTable styles={s} rows={page4Specs} variant="details" />
-                </View>
-              ) : null}
             </View>
           </View>
 
