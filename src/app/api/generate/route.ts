@@ -250,8 +250,27 @@ export async function POST(request: Request) {
 
   const openai = new OpenAI({ apiKey, timeout: 90_000, maxRetries: 1 });
 
+  const listingAddress = normalizeListingAddress(body.address);
+  const formattedAddress = formatListingAddress(listingAddress);
+
+  const outputLanguage = normalizeOutputLanguage(body.targetLanguage);
+  const instagramTags = getCaptionHashtags(outputLanguage);
+
+  let locationRules = buildLocationPromptInstructions(listingAddress, null);
   try {
-    await moderateTexts(openai, [collectGenerateModerationText(body)]);
+    const [, enrichment] = await Promise.all([
+      moderateTexts(openai, [collectGenerateModerationText(body)]).catch((err) => {
+        if (err instanceof ModerationBlockedError) throw err;
+        console.warn("[api/generate] moderation skipped", err);
+      }),
+      fetchLocationEnrichment(listingAddress).catch((err) => {
+        console.warn("[api/generate] location enrichment failed", err);
+        return null;
+      }),
+    ]);
+    if (enrichment) {
+      locationRules = buildLocationPromptInstructions(listingAddress, enrichment);
+    }
   } catch (err) {
     if (err instanceof ModerationBlockedError) {
       return NextResponse.json({ error: CONTENT_FLAGGED_ERROR }, { status: 400 });
@@ -259,11 +278,6 @@ export async function POST(request: Request) {
     throw err;
   }
 
-  const listingAddress = normalizeListingAddress(body.address);
-  const formattedAddress = formatListingAddress(listingAddress);
-
-  const outputLanguage = normalizeOutputLanguage(body.targetLanguage);
-  const instagramTags = getCaptionHashtags(outputLanguage);
   const propertyPayload = buildPropertyPayload(
     body,
     outputLanguage,
@@ -281,14 +295,6 @@ export async function POST(request: Request) {
     hasFittedKitchen: fittedKitchen,
     hasImages: images.length > 0,
   });
-
-  let locationRules = buildLocationPromptInstructions(listingAddress, null);
-  try {
-    const enrichment = await fetchLocationEnrichment(listingAddress);
-    locationRules = buildLocationPromptInstructions(listingAddress, enrichment);
-  } catch (err) {
-    console.warn("[api/generate] location enrichment failed", err);
-  }
 
   const photoVisionNote =
     images.length > 0
@@ -341,7 +347,7 @@ Schema:
       type: "image_url",
       image_url: {
         url: `data:${image.mimeType};base64,${image.base64}`,
-        detail: "high",
+        detail: "low",
       },
     });
   }

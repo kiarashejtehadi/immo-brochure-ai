@@ -1,12 +1,9 @@
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
-import { PdfServerError } from "@/lib/pdf-download-error";
 import { withTimeout } from "@/lib/promise-timeout";
+import { yieldToMainThread } from "@/lib/yield-to-main-thread";
 
-/** Max time to wait for the server PDF route before falling back to client render. */
-export const PDF_FETCH_TIMEOUT_MS = 8_000;
-
-/** Max time for in-browser react-pdf fallback rendering. */
-export const PDF_CLIENT_RENDER_TIMEOUT_MS = 30_000;
+/** Max time for in-browser react-pdf rendering. */
+export const PDF_CLIENT_RENDER_TIMEOUT_MS = 45_000;
 
 function triggerPdfDownload(blob: Blob, address: string) {
   const slug =
@@ -24,32 +21,12 @@ function triggerPdfDownload(blob: Blob, address: string) {
   window.URL.revokeObjectURL(url);
 }
 
-async function downloadViaServer(props: BrochurePdfProps): Promise<void> {
-  const response = await withTimeout(
-    fetch("/api/generate-pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(props),
-      credentials: "same-origin",
-    }),
-    PDF_FETCH_TIMEOUT_MS,
-    "PDF request timed out",
-  );
-
-  if (!response.ok) {
-    throw new PdfServerError();
-  }
-
-  const contentType = response.headers.get("Content-Type") ?? "";
-  if (!contentType.includes("application/pdf")) {
-    throw new PdfServerError();
-  }
-
-  const blob = await response.blob();
-  triggerPdfDownload(blob, props.address);
-}
-
-async function downloadViaClient(props: BrochurePdfProps): Promise<void> {
+/**
+ * Render the exposé PDF in the browser and trigger download.
+ * Server-side react-pdf is disabled — it hangs/OOMs under React 19 and
+ * serializing multi-MB image payloads blocks the main thread.
+ */
+export async function downloadExposePdf(props: BrochurePdfProps) {
   const [{ pdf }, { ExposePdfDocument }, { ensurePdfFontsReady }] = await Promise.all([
     import("@react-pdf/renderer"),
     import("@/components/expose-pdf-document"),
@@ -57,23 +34,12 @@ async function downloadViaClient(props: BrochurePdfProps): Promise<void> {
   ]);
 
   ensurePdfFontsReady(props.fontFamily);
+  await yieldToMainThread();
+
   const blob = await withTimeout(
     pdf(<ExposePdfDocument {...props} />).toBlob(),
     PDF_CLIENT_RENDER_TIMEOUT_MS,
     "PDF render timed out",
   );
   triggerPdfDownload(blob, props.address);
-}
-
-/**
- * Request a PDF and trigger download. Tries the server route first, then falls
- * back to in-browser react-pdf when the server renderer fails.
- */
-export async function downloadExposePdf(props: BrochurePdfProps) {
-  try {
-    await downloadViaServer(props);
-  } catch (serverError) {
-    console.warn("[pdf] Server render failed, using client fallback", serverError);
-    await downloadViaClient(props);
-  }
 }

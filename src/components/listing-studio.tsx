@@ -251,10 +251,6 @@ function SocialCopyPresetButtons({
 }
 
 function ListingStudioContent() {
-  const renderCount = useRef(0);
-  renderCount.current += 1;
-  console.log("Form Page Render Count:", renderCount.current);
-
   const photoInputRef = useRef<HTMLInputElement>(null);
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLElement>(null);
@@ -445,7 +441,7 @@ function ListingStudioContent() {
   const pdfReadyImagesRef = useRef<PdfReadyImages | null>(null);
   const pdfImagesFingerprintRef = useRef("");
 
-  const PDF_PREP_WATCHDOG_MS = 12_000;
+  const PDF_PREP_WATCHDOG_MS = 50_000;
   const pdfStalledMessage = copy.errors.pdfStalled;
 
   const buildPdfImagesFingerprint = useCallback((): string => {
