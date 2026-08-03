@@ -1,46 +1,45 @@
-import { pdf } from "@react-pdf/renderer";
-import { ExposePdfDocument } from "@/components/expose-pdf-document";
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
-import { ensurePdfFontsReady } from "@/lib/pdf-fonts";
+import { PdfServerError } from "@/lib/pdf-download-error";
 import { withTimeout } from "@/lib/promise-timeout";
 
-/** Max time for @react-pdf/renderer to produce the PDF blob in the browser. */
-export const PDF_RENDER_TIMEOUT_MS = 10_000;
+/** Max time to wait for the server PDF route (network + render). */
+export const PDF_FETCH_TIMEOUT_MS = 60_000;
 
 /**
- * Compile and download a PDF. Image data URLs must already be prepared
- * (via preparePdfImageProps in the download click handler — never during render).
+ * Request a server-rendered PDF and trigger a browser download.
+ * Image data URLs must already be prepared on the client before calling.
  */
 export async function downloadExposePdf(props: BrochurePdfProps) {
-  try {
-    console.log("PDF: Compiling React-PDF document tree...");
-    ensurePdfFontsReady(props.fontFamily);
+  const response = await withTimeout(
+    fetch("/api/generate-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(props),
+      credentials: "same-origin",
+    }),
+    PDF_FETCH_TIMEOUT_MS,
+    "PDF request timed out",
+  );
 
-    const doc = <ExposePdfDocument {...props} />;
-
-    console.log("PDF: Executing pdf(Doc).toBlob()...");
-    const blob = await withTimeout(
-      pdf(doc).toBlob(),
-      PDF_RENDER_TIMEOUT_MS,
-      "PDF render timed out",
-    );
-
-    console.log("PDF: Download ready");
-    const url = URL.createObjectURL(blob);
-    const slug =
-      props.address
-        .trim()
-        .slice(0, 40)
-        .replace(/[^\wäöüÄÖÜß\-]+/gi, "-")
-        .replace(/-+/g, "-") || "expose";
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `expose-${slug}.pdf`;
-    link.click();
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error("PDF: Generation failed", err);
-    throw err;
+  if (!response.ok) {
+    throw new PdfServerError();
   }
+
+  const contentType = response.headers.get("Content-Type") ?? "";
+  if (!contentType.includes("application/pdf")) {
+    throw new PdfServerError();
+  }
+
+  const blob = await response.blob();
+
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const filenameMatch = /filename="([^"]+)"/i.exec(disposition);
+  const downloadName = filenameMatch?.[1] ?? "Expose.pdf";
+
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = downloadName;
+  link.click();
+  window.URL.revokeObjectURL(url);
 }

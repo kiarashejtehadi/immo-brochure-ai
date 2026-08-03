@@ -882,7 +882,9 @@ function ListingStudioContent() {
         avatarDataUrl: readyImages.avatarDataUrl,
       });
     } catch (err) {
-      setPdfError(resolvePdfDownloadError(err, copy));
+      const message = resolvePdfDownloadError(err, copy);
+      setPdfError(message);
+      showToast(message);
     } finally {
       setIsDownloadingPdf(false);
     }
