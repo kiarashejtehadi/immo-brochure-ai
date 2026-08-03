@@ -25,6 +25,7 @@ import {
 } from "@/lib/location/format-address";
 import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
 import { preparePdfImageProps, type PdfReadyImages } from "@/lib/pdf-image-data-url";
+import { downloadExposePdf } from "@/lib/download-expose-pdf";
 import { resolvePdfDownloadError } from "@/lib/pdf-download-error";
 import {
   getUiCopy,
@@ -872,7 +873,6 @@ function ListingStudioContent() {
           showWatermark: resolveShowPdfWatermark(result, pdfWatermark, billingStatus),
         },
       });
-      const { downloadExposePdf } = await import("@/lib/download-expose-pdf");
       await downloadExposePdf({
         ...pdfProps,
         photoDataUrls: readyImages.photoDataUrls,
