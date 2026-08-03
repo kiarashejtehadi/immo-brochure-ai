@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { AccountBar } from "@/components/billing/account-bar";
@@ -67,7 +68,7 @@ import { applyVoiceParseResult } from "@/lib/voice/apply-voice-parse";
 import type { VoiceParseResult } from "@/types/voice-parse";
 import { StagingDisclaimerFooter } from "@/components/listing/staging-disclaimer";
 import type { UserBrandingProfile } from "@/types/branding";
-import { PropertyReelPreview } from "@/components/reel/property-reel-preview";
+import { importWithChunkRetry } from "@/lib/import-with-chunk-retry";
 import { cn } from "@/lib/utils";
 import type {
   TransactionType,
@@ -84,6 +85,23 @@ import type {
 const MAX_PHOTOS = 5;
 
 type PreviewTab = "story" | "location" | "social" | "reel";
+
+const PropertyReelPreview = dynamic(
+  () =>
+    importWithChunkRetry(() =>
+      import("@/components/reel/property-reel-preview").then(
+        (mod) => mod.PropertyReelPreview,
+      ),
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 px-6 text-center dark:border-zinc-700">
+        <p className="text-sm text-zinc-500">Loading reel preview…</p>
+      </div>
+    ),
+  },
+);
 
 type PhotoPreview = {
   id: string;

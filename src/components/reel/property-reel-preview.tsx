@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState, type ComponentType } from "react";
 import dynamic from "next/dynamic";
 import { canRenderMediaOnWeb, renderMediaOnWeb } from "@remotion/web-renderer";
 import { PropertyReel } from "@/remotion/PropertyReel";
+import { importWithChunkRetry } from "@/lib/import-with-chunk-retry";
 import {
   PROPERTY_REEL_COMPOSITION_ID,
   PROPERTY_REEL_DURATION_FRAMES,
@@ -25,7 +26,10 @@ import { readJsonResponse } from "@/lib/http/read-json-response";
 import { cn } from "@/lib/utils";
 
 const RemotionPlayer = dynamic(
-  () => import("@remotion/player").then((mod) => mod.Player),
+  () =>
+    importWithChunkRetry(() =>
+      import("@remotion/player").then((mod) => mod.Player),
+    ),
   {
     ssr: false,
     loading: () => (
