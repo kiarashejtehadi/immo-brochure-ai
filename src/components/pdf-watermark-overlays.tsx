@@ -1,5 +1,6 @@
 import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { Style } from "@react-pdf/types";
+import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
 import {
   PDF_WATERMARK_BRAND,
   PDF_WATERMARK_STAMP,
@@ -139,10 +140,13 @@ export function WatermarkedImage({
   showWatermark: boolean;
   diagonalSize?: number;
 }) {
+  const safeSrc = sanitizePdfImageSrc(src);
+  if (!safeSrc) return null;
+
   return (
     <View style={frameStyle ? [wm.imageFrame, frameStyle] : wm.imageFrame}>
       {/* eslint-disable-next-line jsx-a11y/alt-text */}
-      <Image src={src} style={imageStyle} />
+      <Image src={safeSrc} style={imageStyle} />
       {showWatermark ? (
         <>
           <View

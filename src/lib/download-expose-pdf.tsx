@@ -1,24 +1,12 @@
 import { pdf } from "@react-pdf/renderer";
 import { ExposePdfDocument } from "@/components/expose-pdf-document";
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
-import { compressImageForPdf } from "@/lib/prepare-images";
+import { ensurePdfFontsReady } from "@/lib/pdf-fonts";
+import { preparePdfImageProps } from "@/lib/pdf-image-data-url";
 import { withTimeout } from "@/lib/promise-timeout";
 
 /** Max time for @react-pdf/renderer to produce the PDF blob in the browser. */
 export const PDF_RENDER_TIMEOUT_MS = 10_000;
-
-async function fileToDataUrl(file: File): Promise<string> {
-  const compressed = await compressImageForPdf(file);
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("Could not read image"));
-    };
-    reader.onerror = () => reject(new Error("Could not read image"));
-    reader.readAsDataURL(compressed);
-  });
-}
 
 export async function downloadExposePdf(
   props: BrochurePdfProps & {
@@ -26,36 +14,53 @@ export async function downloadExposePdf(
     floorPlanFile?: File | null;
   },
 ) {
-  const photoDataUrls = await Promise.all(
-    props.photoFiles.map((file) => fileToDataUrl(file)),
-  );
-  const floorPlanDataUrl = props.floorPlanFile
-    ? await fileToDataUrl(props.floorPlanFile)
-    : undefined;
+  try {
+    console.log("PDF: Preparing images...");
+    ensurePdfFontsReady(props.fontFamily);
 
-  const docProps: BrochurePdfProps = {
-    ...props,
-    photoDataUrls,
-    floorPlanDataUrl,
-  };
+    const images = await preparePdfImageProps({
+      photoFiles: props.photoFiles,
+      floorPlanFile: props.floorPlanFile,
+      logoDataUrl: props.logoDataUrl,
+      avatarDataUrl: props.avatarDataUrl,
+      mapDataUrl: props.mapDataUrl,
+    });
 
-  const blob = await withTimeout(
-    pdf(<ExposePdfDocument {...docProps} />).toBlob(),
-    PDF_RENDER_TIMEOUT_MS,
-    "PDF render timed out",
-  );
+    const docProps: BrochurePdfProps = {
+      ...props,
+      photoDataUrls: images.photoDataUrls,
+      floorPlanDataUrl: images.floorPlanDataUrl,
+      logoDataUrl: images.logoDataUrl,
+      avatarDataUrl: images.avatarDataUrl,
+      mapDataUrl: images.mapDataUrl,
+    };
 
-  const url = URL.createObjectURL(blob);
-  const slug =
-    props.address
-      .trim()
-      .slice(0, 40)
-      .replace(/[^\wäöüÄÖÜß\-]+/gi, "-")
-      .replace(/-+/g, "-") || "expose";
+    console.log("PDF: Compiling React-PDF document tree...");
+    const doc = <ExposePdfDocument {...docProps} />;
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `expose-${slug}.pdf`;
-  link.click();
-  URL.revokeObjectURL(url);
+    console.log("PDF: Executing pdf(Doc).toBlob()...");
+    const blob = await withTimeout(
+      pdf(doc).toBlob(),
+      PDF_RENDER_TIMEOUT_MS,
+      "PDF render timed out",
+    );
+
+    console.log("PDF: Download ready");
+    const url = URL.createObjectURL(blob);
+    const slug =
+      props.address
+        .trim()
+        .slice(0, 40)
+        .replace(/[^\wäöüÄÖÜß\-]+/gi, "-")
+        .replace(/-+/g, "-") || "expose";
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `expose-${slug}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("PDF: Generation failed", err);
+    throw err;
+  }
 }

@@ -1,12 +1,12 @@
 import type { UserBrandingProfile } from "@/types/branding";
 import type { GenerateRequestPayload } from "@/types/listing";
-import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import {
   DEFAULT_ACCENT_COLOR,
   DEFAULT_PRIMARY_COLOR,
   type PDFBrandingProps,
 } from "@/types/branding";
 import { isBrandFontFamily } from "@/lib/branding/font-family";
+import { urlToPdfDataUrl } from "@/lib/pdf-image-data-url";
 
 export function mergeAgentWithBranding(
   agent: GenerateRequestPayload["agent"],
@@ -79,20 +79,7 @@ export function pdfBrandingFromProfile(
 }
 
 export async function logoUrlToDataUrl(url: string): Promise<string | undefined> {
-  try {
-    const res = await fetchWithTimeout(url, { timeoutMs: 8_000 });
-    if (!res.ok) return undefined;
-    const blob = await res.blob();
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () =>
-        resolve(typeof reader.result === "string" ? reader.result : undefined);
-      reader.onerror = () => reject(new Error("logo read failed"));
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return undefined;
-  }
+  return urlToPdfDataUrl(url);
 }
 
 export const avatarUrlToDataUrl = logoUrlToDataUrl;

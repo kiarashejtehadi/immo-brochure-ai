@@ -11,7 +11,8 @@ import {
 } from "@react-pdf/renderer";
 import { formatPriceAmount, type CurrencyCode } from "@/lib/currency";
 import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
-import { pdfFontFamily } from "@/lib/branding/font-family";
+import { resolvePdfFontFamily } from "@/lib/pdf-fonts";
+import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
 import { filterPdfTableRows } from "@/lib/pdf-table-rows";
 import {
   DEFAULT_ACCENT_COLOR,
@@ -45,9 +46,9 @@ function resolveBranding(props: BrochurePdfProps): ResolvedPdfBranding {
   return {
     primaryColor: props.primaryColor ?? props.brandColor ?? DEFAULT_PRIMARY_COLOR,
     accentColor: props.accentColor ?? DEFAULT_ACCENT_COLOR,
-    pdfFont: pdfFontFamily(props.fontFamily),
-    logoDataUrl: props.logoDataUrl,
-    avatarDataUrl: props.avatarDataUrl,
+    pdfFont: resolvePdfFontFamily(props.fontFamily),
+    logoDataUrl: sanitizePdfImageSrc(props.logoDataUrl),
+    avatarDataUrl: sanitizePdfImageSrc(props.avatarDataUrl),
   };
 }
 
@@ -561,14 +562,23 @@ function PdfHeroImage({
   showWatermark,
 }: {
   styles: ReturnType<typeof createStyles>;
-  src: string;
+  src: string | undefined;
   showWatermark: boolean;
 }) {
+  const safeSrc = sanitizePdfImageSrc(src);
+  if (!safeSrc) {
+    return (
+      <View style={[s.heroImageCol, s.heroPlaceholder]}>
+        <Text style={{ color: "#a1a1aa", fontSize: 9 }}>Cover photo</Text>
+      </View>
+    );
+  }
+
   if (showWatermark) {
     return (
       <View style={s.heroImageCol}>
         <WatermarkedImage
-          src={src}
+          src={safeSrc}
           frameStyle={s.heroImageWrap}
           imageStyle={s.hero}
           showWatermark={showWatermark}
@@ -582,7 +592,7 @@ function PdfHeroImage({
     <View style={s.heroImageCol}>
       <View style={s.heroImageWrap}>
         {/* eslint-disable-next-line jsx-a11y/alt-text */}
-        <Image src={src} style={s.hero} />
+        <Image src={safeSrc} style={s.hero} />
       </View>
     </View>
   );
@@ -642,11 +652,12 @@ function PdfLocationMap({
   mapDataUrl?: string;
   address: string;
 }) {
-  if (mapDataUrl) {
+  const safeMap = sanitizePdfImageSrc(mapDataUrl);
+  if (safeMap) {
     return (
       <View style={s.mapWrap}>
         {/* eslint-disable-next-line jsx-a11y/alt-text */}
-        <Image src={mapDataUrl} style={s.mapImage} />
+        <Image src={safeMap} style={s.mapImage} />
         <View style={s.mapPinOverlay}>
           <PdfDropPin />
         </View>
@@ -693,8 +704,11 @@ function PdfPageFooter({
 export function ExposePdfDocument(props: BrochurePdfProps) {
   const branding = resolveBranding(props);
   const s = createStyles(branding);
-  const hero = props.photoDataUrls[0];
-  const gallery = props.photoDataUrls.slice(1, 5);
+  const hero = sanitizePdfImageSrc(props.photoDataUrls[0]);
+  const gallery = props.photoDataUrls
+    .slice(1, 5)
+    .map((src) => sanitizePdfImageSrc(src))
+    .filter((src): src is string => Boolean(src));
   const showWatermark = props.showWatermark === true;
   const priceDisplay = props.priceAmount.trim()
     ? fmt(props.priceAmount, props.currency, props.priceOnRequestLabel)
