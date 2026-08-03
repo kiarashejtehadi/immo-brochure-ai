@@ -1,5 +1,6 @@
 import type { UserBrandingProfile } from "@/types/branding";
 import type { GenerateRequestPayload } from "@/types/listing";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import {
   DEFAULT_ACCENT_COLOR,
   DEFAULT_PRIMARY_COLOR,
@@ -79,7 +80,7 @@ export function pdfBrandingFromProfile(
 
 export async function logoUrlToDataUrl(url: string): Promise<string | undefined> {
   try {
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, { timeoutMs: 8_000 });
     if (!res.ok) return undefined;
     const blob = await res.blob();
     return await new Promise((resolve, reject) => {

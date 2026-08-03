@@ -337,20 +337,6 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       backgroundColor: "#e0f2fe",
       position: "relative",
     },
-    mapPatternRow: {
-      flexDirection: "row",
-      flex: 1,
-    },
-    mapPatternCell: {
-      flex: 1,
-      height: 18,
-    },
-    mapPatternCellA: {
-      backgroundColor: "#dbeafe",
-    },
-    mapPatternCellB: {
-      backgroundColor: "#bfdbfe",
-    },
     mapFallbackOverlay: {
       position: "absolute",
       top: 0,
@@ -668,26 +654,9 @@ function PdfLocationMap({
     );
   }
 
-  const patternRows = 14;
-  const patternCols = 18;
-
   return (
     <View style={s.mapFallback}>
-      <View style={{ flex: 1 }}>
-        {Array.from({ length: patternRows }).map((_, row) => (
-          <View key={row} style={s.mapPatternRow}>
-            {Array.from({ length: patternCols }).map((_, col) => (
-              <View
-                key={col}
-                style={[
-                  s.mapPatternCell,
-                  (row + col) % 2 === 0 ? s.mapPatternCellA : s.mapPatternCellB,
-                ]}
-              />
-            ))}
-          </View>
-        ))}
-      </View>
+      <View style={{ flex: 1, backgroundColor: "#bfdbfe" }} />
       <View style={s.mapFallbackOverlay}>
         <PdfDropPin />
         {address.trim() ? (

@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 /** 16:9 map tile dimensions (pt-equivalent pixels for sharp rendering). */
 const MAP_HEIGHT = 260;
@@ -6,6 +7,7 @@ const MAP_WIDTH = Math.round((MAP_HEIGHT * 16) / 9);
 const TILE_SIZE = 256;
 const OSM_TILE_URL = "https://tile.openstreetmap.org";
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
+const TILE_FETCH_TIMEOUT_MS = 6_000;
 
 function lonLatToWorldPixel(
   lon: number,
@@ -28,8 +30,9 @@ async function fetchOsmTile(z: number, x: number, y: number): Promise<Buffer> {
   }
 
   const url = `${OSM_TILE_URL}/${z}/${wrappedX}/${y}.png`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: { "User-Agent": USER_AGENT, Accept: "image/png" },
+    timeoutMs: TILE_FETCH_TIMEOUT_MS,
   });
   if (!res.ok) {
     throw new Error(`Tile fetch failed: ${res.status}`);
@@ -63,18 +66,26 @@ async function composeOsmStaticMap(lat: number, lon: number): Promise<Buffer> {
   const maxTileX = Math.floor((topLeft.x + MAP_WIDTH - 1) / TILE_SIZE);
   const maxTileY = Math.floor((topLeft.y + MAP_HEIGHT - 1) / TILE_SIZE);
 
-  const composites: sharp.OverlayOptions[] = [];
-
+  const tileCoords: { tileX: number; tileY: number }[] = [];
   for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
     for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
-      const tileBuffer = await fetchOsmTile(zoom, tileX, tileY);
-      composites.push({
-        input: tileBuffer,
-        left: Math.round(tileX * TILE_SIZE - topLeft.x),
-        top: Math.round(tileY * TILE_SIZE - topLeft.y),
-      });
+      tileCoords.push({ tileX, tileY });
     }
   }
+
+  const tiles = await Promise.all(
+    tileCoords.map(async ({ tileX, tileY }) => ({
+      tileX,
+      tileY,
+      buffer: await fetchOsmTile(zoom, tileX, tileY),
+    })),
+  );
+
+  const composites: sharp.OverlayOptions[] = tiles.map(({ tileX, tileY, buffer }) => ({
+    input: buffer,
+    left: Math.round(tileX * TILE_SIZE - topLeft.x),
+    top: Math.round(tileY * TILE_SIZE - topLeft.y),
+  }));
 
   return sharp({
     create: {
@@ -98,9 +109,10 @@ export async function fetchStaticMapAsDataUrl(
 
   try {
     if (googleUrl) {
-      const res = await fetch(googleUrl, {
+      const res = await fetchWithTimeout(googleUrl, {
         headers: { "User-Agent": USER_AGENT, Accept: "image/*" },
         next: { revalidate: 86400 },
+        timeoutMs: 8_000,
       });
       if (res.ok) {
         const buffer = Buffer.from(await res.arrayBuffer());

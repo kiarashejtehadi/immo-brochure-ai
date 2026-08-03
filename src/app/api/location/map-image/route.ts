@@ -7,6 +7,7 @@ import {
 import { fetchStaticMapAsDataUrl } from "@/lib/location/static-map";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 type MapImageRequest = {
   lat?: number;

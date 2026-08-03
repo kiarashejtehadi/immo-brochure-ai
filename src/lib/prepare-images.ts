@@ -1,14 +1,20 @@
 const MAX_EDGE = 1280;
+const MAX_EDGE_PDF = 720;
 const JPEG_QUALITY = 0.82;
+const PDF_JPEG_QUALITY = 0.72;
 
-export async function compressImageForUpload(file: File): Promise<File> {
+async function resizeImageFile(
+  file: File,
+  maxEdge: number,
+  quality: number,
+): Promise<File> {
   if (!file.type.startsWith("image/")) {
     return file;
   }
 
   try {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
 
@@ -25,7 +31,7 @@ export async function compressImageForUpload(file: File): Promise<File> {
     bitmap.close();
 
     const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY);
+      canvas.toBlob(resolve, "image/jpeg", quality);
     });
 
     if (!blob) return file;
@@ -35,6 +41,15 @@ export async function compressImageForUpload(file: File): Promise<File> {
   } catch {
     return file;
   }
+}
+
+export async function compressImageForUpload(file: File): Promise<File> {
+  return resizeImageFile(file, MAX_EDGE, JPEG_QUALITY);
+}
+
+/** Smaller images for client-side @react-pdf/renderer (much faster than upload sizes). */
+export async function compressImageForPdf(file: File): Promise<File> {
+  return resizeImageFile(file, MAX_EDGE_PDF, PDF_JPEG_QUALITY);
 }
 
 export function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {

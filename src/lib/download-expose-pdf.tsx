@@ -1,10 +1,10 @@
 import { pdf } from "@react-pdf/renderer";
 import { ExposePdfDocument } from "@/components/expose-pdf-document";
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
-import { compressImageForUpload } from "@/lib/prepare-images";
+import { compressImageForPdf } from "@/lib/prepare-images";
 
 async function fileToDataUrl(file: File): Promise<string> {
-  const compressed = await compressImageForUpload(file);
+  const compressed = await compressImageForPdf(file);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {

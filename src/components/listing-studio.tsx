@@ -739,15 +739,11 @@ function ListingStudioContent() {
       const isPro = billingStatus?.isPro === true;
       const agentForPdf = resolvePdfAgentContact(agentForLocale, brandingProfile);
       const brand = pdfBrandingFromProfile(brandingProfile, isPro);
-      let logoDataUrl: string | undefined;
-      let avatarDataUrl: string | undefined;
-      if (brand.logoUrl) {
-        logoDataUrl = await logoUrlToDataUrl(brand.logoUrl);
-      }
-      if (brand.avatarUrl) {
-        avatarDataUrl = await avatarUrlToDataUrl(brand.avatarUrl);
-      }
-      const mapDataUrl = await fetchMapForPdf(address);
+      const [logoDataUrl, avatarDataUrl, mapDataUrl] = await Promise.all([
+        brand.logoUrl ? logoUrlToDataUrl(brand.logoUrl) : Promise.resolve(undefined),
+        brand.avatarUrl ? avatarUrlToDataUrl(brand.avatarUrl) : Promise.resolve(undefined),
+        fetchMapForPdf(address),
+      ]);
       const pdfProps = buildBrochurePdfProps({
         transactionType,
         form: exposeFormCopy,

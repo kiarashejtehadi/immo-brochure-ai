@@ -1,8 +1,9 @@
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
 
-type NominatimResult = {
-  lat: string;
+type NominatimResult = {  lat: string;
   lon: string;
   display_name: string;
 };
@@ -26,9 +27,10 @@ export async function geocodeAddress(
   url.searchParams.set("limit", "1");
   url.searchParams.set("addressdetails", "0");
 
-  const res = await fetch(url.toString(), {
+  const res = await fetchWithTimeout(url.toString(), {
     headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
     next: { revalidate: 86400 },
+    timeoutMs: 8_000,
   });
 
   if (!res.ok) return null;
