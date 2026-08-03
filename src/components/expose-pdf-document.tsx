@@ -113,19 +113,16 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: RHYTHM_MD,
-      minHeight: 40,
+      paddingVertical: 4,
     },
     headerLogoWrap: {
       flex: 1,
-      minWidth: 0,
       paddingRight: RHYTHM_SM,
     },
-    headerBadgeWrap: {
-      flexShrink: 0,
-    },
+    headerBadgeWrap: {},
     logoImage: {
-      maxHeight: 40,
-      maxWidth: 150,
+      height: 36,
+      width: 140,
       objectFit: "contain" as const,
     },
     badge: {
