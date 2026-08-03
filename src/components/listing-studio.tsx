@@ -26,6 +26,7 @@ import {
 } from "@/lib/location/format-address";
 import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
 import { preparePdfImageProps, type PdfReadyImages } from "@/lib/pdf-image-data-url";
+import { downloadExposePdf } from "@/lib/download-expose-pdf";
 import { resolvePdfDownloadError } from "@/lib/pdf-download-error";
 import { withTimeout } from "@/lib/promise-timeout";
 import {
@@ -893,8 +894,6 @@ function ListingStudioContent() {
 
       // Set loading state only after image prep — keeps canvas work off the spinner re-render path.
       setIsDownloadingPdf(true);
-
-      const { downloadExposePdf } = await import("@/lib/download-expose-pdf");
 
       await withTimeout(
         downloadExposePdf({
