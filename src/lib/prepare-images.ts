@@ -1,7 +1,7 @@
 const MAX_EDGE = 1280;
-const MAX_EDGE_PDF = 720;
+const MAX_EDGE_PDF = 1200;
 const JPEG_QUALITY = 0.82;
-const PDF_JPEG_QUALITY = 0.72;
+const PDF_JPEG_QUALITY = 0.75;
 
 async function resizeImageFile(
   file: File,

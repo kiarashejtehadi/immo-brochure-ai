@@ -1123,7 +1123,7 @@ export function ListingForm(props: ListingFormProps) {
           <button
             type="button"
             onClick={onDownloadPdf}
-            disabled={!result || isDownloadingPdf || isGenerating}
+            disabled={!result || isDownloadingPdf}
             className={cn(
               "rounded-xl border-2 py-3.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
               result

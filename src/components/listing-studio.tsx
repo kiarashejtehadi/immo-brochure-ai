@@ -24,6 +24,7 @@ import {
   getDefaultCountryForLocale,
 } from "@/lib/location/format-address";
 import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
+import { resolvePdfDownloadError } from "@/lib/pdf-download-error";
 import {
   getUiCopy,
   LOCALE_LABELS,
@@ -779,9 +780,7 @@ function ListingStudioContent() {
         floorPlanFile,
       });
     } catch (err) {
-      setPdfError(
-        err instanceof Error ? err.message : copy.errors.pdfFailed,
-      );
+      setPdfError(resolvePdfDownloadError(err, copy));
     } finally {
       setIsDownloadingPdf(false);
     }
@@ -955,7 +954,7 @@ function ListingStudioContent() {
               <button
                 type="button"
                 onClick={handleDownloadPdf}
-                disabled={!result || isDownloadingPdf || isGenerating}
+                disabled={!result || isDownloadingPdf}
                 className={cn(
                   "w-full rounded-lg py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
                   result
@@ -1073,7 +1072,7 @@ function ListingStudioContent() {
                       <button
                         type="button"
                         onClick={handleDownloadPdf}
-                        disabled={isDownloadingPdf || isGenerating}
+                        disabled={isDownloadingPdf}
                         className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
                       >
                         {isDownloadingPdf ? `${copy.pdfShort}â€¦` : copy.pdfShort}

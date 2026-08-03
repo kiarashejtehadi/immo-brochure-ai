@@ -17,6 +17,7 @@ export type GeocodedAddress = {
 /** Geocode a free-text address via OpenStreetMap Nominatim. */
 export async function geocodeAddress(
   query: string,
+  timeoutMs = 8_000,
 ): Promise<GeocodedAddress | null> {
   const trimmed = query.trim();
   if (!trimmed || trimmed.length < 6) return null;
@@ -30,7 +31,7 @@ export async function geocodeAddress(
   const res = await fetchWithTimeout(url.toString(), {
     headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
     next: { revalidate: 86400 },
-    timeoutMs: 8_000,
+    timeoutMs,
   });
 
   if (!res.ok) return null;

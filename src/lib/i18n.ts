@@ -86,6 +86,7 @@ export type UiCopy = {
     timeout: string;
     generic: string;
     pdfFailed: string;
+    pdfTimeout: string;
   };
 };
 
@@ -167,6 +168,8 @@ export const translations: Record<UiLocale, UiCopy> = {
         "Request timed out after 90 seconds. Try again with fewer photos or check your network.",
       generic: "Something went wrong",
       pdfFailed: "PDF could not be created",
+      pdfTimeout:
+        "PDF generation timed out. Try again with fewer photos or check your connection.",
     },
   },
   de: {
@@ -248,6 +251,8 @@ export const translations: Record<UiLocale, UiCopy> = {
         "Zeitüberschreitung nach 90 Sekunden. Weniger Fotos oder Netzwerk prüfen.",
       generic: "Etwas ist schiefgelaufen",
       pdfFailed: "PDF konnte nicht erstellt werden",
+      pdfTimeout:
+        "Zeitüberschreitung bei der PDF-Erstellung. Versuchen Sie es mit weniger Fotos erneut.",
     },
   },
   fr: {
@@ -327,6 +332,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       timeout: "Délai dépassé (90 s). Réessayez avec moins de photos.",
       generic: "Une erreur est survenue",
       pdfFailed: "Impossible de créer le PDF",
+      pdfTimeout:
+        "Délai dépassé lors de la création du PDF. Réessayez avec moins de photos.",
     },
   },
   es: {
@@ -404,6 +411,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       timeout: "Tiempo agotado (90 s). Prueba con menos fotos.",
       generic: "Algo salió mal",
       pdfFailed: "No se pudo crear el PDF",
+      pdfTimeout:
+        "Tiempo agotado al crear el PDF. Inténtelo con menos fotos.",
     },
   },
   it: {
@@ -481,6 +490,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       timeout: "Timeout (90 s). Riprova con meno foto.",
       generic: "Qualcosa è andato storto",
       pdfFailed: "Impossibile creare il PDF",
+      pdfTimeout:
+        "Timeout durante la creazione del PDF. Riprova con meno foto.",
     },
   },
   nl: {
@@ -558,6 +569,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       timeout: "Time-out na 90 s. Probeer met minder foto's.",
       generic: "Er ging iets mis",
       pdfFailed: "PDF kon niet worden gemaakt",
+      pdfTimeout:
+        "Time-out bij het maken van de PDF. Probeer het met minder foto's.",
     },
   },
   fa: {
@@ -635,6 +648,7 @@ export const translations: Record<UiLocale, UiCopy> = {
       timeout: "زمان درخواست (۹۰ ثانیه) تمام شد.",
       generic: "خطایی رخ داد",
       pdfFailed: "ساخت PDF ممکن نشد",
+      pdfTimeout: "زمان ساخت PDF تمام شد. با عکس‌های کمتر دوباره امتحان کنید.",
     },
   },
   ar: {
@@ -712,6 +726,7 @@ export const translations: Record<UiLocale, UiCopy> = {
       timeout: "انتهت المهلة (90 ثانية).",
       generic: "حدث خطأ ما",
       pdfFailed: "تعذّر إنشاء PDF",
+      pdfTimeout: "انتهت مهلة إنشاء PDF. حاول مرة أخرى مع عدد أقل من الصور.",
     },
   },
   pl: {
@@ -789,6 +804,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       timeout: "Przekroczono limit czasu (90 s). Spróbuj z mniejszą liczbą zdjęć.",
       generic: "Coś poszło nie tak",
       pdfFailed: "Nie udało się utworzyć PDF",
+      pdfTimeout:
+        "Przekroczono limit czasu generowania PDF. Spróbuj z mniejszą liczbą zdjęć.",
     },
   },
 };

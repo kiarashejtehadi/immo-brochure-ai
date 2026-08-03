@@ -2,6 +2,10 @@ import { pdf } from "@react-pdf/renderer";
 import { ExposePdfDocument } from "@/components/expose-pdf-document";
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
 import { compressImageForPdf } from "@/lib/prepare-images";
+import { withTimeout } from "@/lib/promise-timeout";
+
+/** Max time for @react-pdf/renderer to produce the PDF blob in the browser. */
+export const PDF_RENDER_TIMEOUT_MS = 10_000;
 
 async function fileToDataUrl(file: File): Promise<string> {
   const compressed = await compressImageForPdf(file);
@@ -35,7 +39,12 @@ export async function downloadExposePdf(
     floorPlanDataUrl,
   };
 
-  const blob = await pdf(<ExposePdfDocument {...docProps} />).toBlob();
+  const blob = await withTimeout(
+    pdf(<ExposePdfDocument {...docProps} />).toBlob(),
+    PDF_RENDER_TIMEOUT_MS,
+    "PDF render timed out",
+  );
+
   const url = URL.createObjectURL(blob);
   const slug =
     props.address

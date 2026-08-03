@@ -7,7 +7,7 @@ const MAP_WIDTH = Math.round((MAP_HEIGHT * 16) / 9);
 const TILE_SIZE = 256;
 const OSM_TILE_URL = "https://tile.openstreetmap.org";
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
-const TILE_FETCH_TIMEOUT_MS = 6_000;
+const TILE_FETCH_TIMEOUT_MS = 1_500;
 
 function lonLatToWorldPixel(
   lon: number,
@@ -112,7 +112,7 @@ export async function fetchStaticMapAsDataUrl(
       const res = await fetchWithTimeout(googleUrl, {
         headers: { "User-Agent": USER_AGENT, Accept: "image/*" },
         next: { revalidate: 86400 },
-        timeoutMs: 8_000,
+        timeoutMs: 1_500,
       });
       if (res.ok) {
         const buffer = Buffer.from(await res.arrayBuffer());

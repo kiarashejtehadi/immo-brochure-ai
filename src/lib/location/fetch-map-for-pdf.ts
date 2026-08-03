@@ -2,7 +2,8 @@ import type { ListingAddress } from "@/types/listing";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { formatListingAddress } from "@/lib/location/format-address";
 
-const MAP_FETCH_TIMEOUT_MS = 12_000;
+/** Strict map fetch budget — PDF must never wait longer than this. */
+export const MAP_FETCH_TIMEOUT_MS = 2_000;
 
 /** Fetch a static map preview as a data URL for PDF rendering (client-side). */
 export async function fetchMapForPdf(
