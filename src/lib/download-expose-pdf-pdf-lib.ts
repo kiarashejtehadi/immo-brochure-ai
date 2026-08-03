@@ -181,6 +181,38 @@ function drawTable(
   return { ...next, y: next.y - 8 };
 }
 
+/** Up to 4 additional photos in a 2-column grid (matches react-pdf layout). */
+function drawGalleryGrid(ctx: PageContext, images: PDFImage[]): PageContext {
+  if (images.length === 0) return ctx;
+
+  const gap = 8;
+  const cols = 2;
+  const cellWidth = (CONTENT_WIDTH - gap) / cols;
+  const cellHeight = 120;
+  const rows = Math.ceil(images.length / cols);
+  const gridHeight = rows * cellHeight + (rows - 1) * gap + 12;
+
+  const next = ensureSpace(ctx, gridHeight, "ImmoCaption AI · Page 2 — Details");
+  const topY = next.y;
+
+  images.forEach((image, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const cellX = MARGIN + col * (cellWidth + gap);
+    const cellTop = topY - row * (cellHeight + gap);
+
+    const scale = Math.max(cellWidth / image.width, cellHeight / image.height);
+    const drawWidth = image.width * scale;
+    const drawHeight = image.height * scale;
+    const x = cellX + (cellWidth - drawWidth) / 2;
+    const y = cellTop - cellHeight + (cellHeight - drawHeight) / 2;
+
+    next.page.drawImage(image, { x, y, width: drawWidth, height: drawHeight });
+  });
+
+  return { ...next, y: topY - gridHeight };
+}
+
 function triggerPdfDownload(bytes: Uint8Array, address: string) {
   const slug =
     address
@@ -209,6 +241,13 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
 
   const hero = sanitizePdfImageSrc(props.photoDataUrls[0]);
   const heroImage = await embedDataUrlImage(doc, hero);
+  const galleryUrls = props.photoDataUrls
+    .slice(1, 5)
+    .map((src) => sanitizePdfImageSrc(src))
+    .filter((src): src is string => Boolean(src));
+  const galleryImages = (
+    await Promise.all(galleryUrls.map((url) => embedDataUrlImage(doc, url)))
+  ).filter((image): image is PDFImage => image !== null);
   const mapImage = await embedDataUrlImage(doc, props.mapDataUrl);
   const floorPlanImage = await embedDataUrlImage(doc, props.floorPlanDataUrl);
   const logoImage = await embedDataUrlImage(doc, props.logoDataUrl);
@@ -297,6 +336,7 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
 
   ctx = addPage(ctx, "ImmoCaption AI · Page 2 — Details");
   ctx = drawHeading(ctx, "Property story");
+  ctx = drawGalleryGrid(ctx, galleryImages);
   ctx = drawLines(
     ctx,
     wrapText(props.fullDescription, regular, 10, CONTENT_WIDTH),
