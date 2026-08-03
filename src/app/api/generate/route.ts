@@ -305,6 +305,9 @@ export async function POST(request: Request) {
         })}\n`
       : "";
 
+  const descriptionWordRange = images.length > 0 ? "350-500" : "250-350";
+  const locationWordRange = images.length > 0 ? "120-180" : "80-120";
+
   const userText = `You are creating a multi-page real estate exposé and social pack.
 
 Property data (JSON):
@@ -315,8 +318,8 @@ Write ALL output exclusively in ${outputLanguage}.
 Return JSON with:
 - title: compelling marketing headline for cover page
 - summary: array of 4-6 short bullet highlights for specs sidebar
-- fullDescription: multi-paragraph narrative exposé (350-500 words), include room/flow descriptions where data allows
-- locationDescription: neighborhood & connectivity paragraph (120-180 words)
+- fullDescription: multi-paragraph narrative exposé (${descriptionWordRange} words), include room/flow descriptions where data allows
+- locationDescription: neighborhood & connectivity paragraph (${locationWordRange} words)
 - socialCaptions object with:
   - instagram: engaging caption with hashtags (${instagramTags.join(" ")})
   - linkedin: professional post (no hashtag spam)
@@ -365,6 +368,7 @@ Schema:
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.65,
+      max_tokens: images.length > 0 ? 2800 : 1800,
       response_format: { type: "json_object" },
       messages: [
         {

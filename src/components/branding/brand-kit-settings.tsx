@@ -61,6 +61,8 @@ export function BrandKitSettings({
   const avatarRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [removingLogo, setRemovingLogo] = useState(false);
+  const [removingAvatar, setRemovingAvatar] = useState(false);
   const proLocked = !isPro;
 
   async function uploadAsset(
@@ -109,6 +111,42 @@ export function BrandKitSettings({
     }
   }
 
+  async function removeAsset(
+    endpoint: "/api/branding/logo" | "/api/branding/avatar",
+    field: "logoUrl" | "agentAvatarUrl",
+  ) {
+    if (!isPro) {
+      onUpgrade();
+      return;
+    }
+    const setRemoving = field === "logoUrl" ? setRemovingLogo : setRemovingAvatar;
+    setRemoving(true);
+    onError(null);
+    onMessage(null);
+    try {
+      const res = await fetch(endpoint, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      const data = await readJsonResponse<{
+        branding?: UserBrandingProfile;
+        error?: string;
+      }>(res, "Remove");
+      if (!res.ok) throw new Error(data.error ?? copy.uploadFailed);
+
+      if (data.branding) {
+        onBrandingChange(data.branding);
+      } else {
+        onBrandingChange({ [field]: null });
+      }
+      onMessage(field === "logoUrl" ? copy.logoRemoved : copy.avatarRemoved);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : copy.uploadFailed);
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   return (
     <section
       className={cn(
@@ -140,11 +178,15 @@ export function BrandKitSettings({
                 hint={copy.logoHint}
                 dropLabel={copy.logoDropLabel}
                 uploadingLabel={copy.uploading}
+                removeLabel={copy.removeLogo}
+                removingLabel={copy.removing}
                 accept="image/png,image/svg+xml,image/jpeg,image/webp"
                 disabled={creditPackOnly || !isPro}
                 uploading={uploadingLogo}
+                removing={removingLogo}
                 onDisabledClick={onUpgrade}
                 onFile={(file) => void uploadAsset("/api/branding/logo", file, logoRef, "logoUrl")}
+                onRemove={() => void removeAsset("/api/branding/logo", "logoUrl")}
               />
             </div>
 
@@ -157,13 +199,17 @@ export function BrandKitSettings({
                 hint={copy.avatarHint}
                 dropLabel={copy.avatarDropLabel}
                 uploadingLabel={copy.uploading}
+                removeLabel={copy.removeAvatar}
+                removingLabel={copy.removing}
                 accept="image/png,image/jpeg,image/webp"
                 disabled={creditPackOnly || !isPro}
                 uploading={uploadingAvatar}
+                removing={removingAvatar}
                 onDisabledClick={onUpgrade}
                 onFile={(file) =>
                   void uploadAsset("/api/branding/avatar", file, avatarRef, "agentAvatarUrl")
                 }
+                onRemove={() => void removeAsset("/api/branding/avatar", "agentAvatarUrl")}
               />
             </div>
           </div>

@@ -395,6 +395,11 @@ export type BrandKitCopy = {
   saving: string;
   logoUploaded: string;
   avatarUploaded: string;
+  logoRemoved: string;
+  avatarRemoved: string;
+  removeLogo: string;
+  removeAvatar: string;
+  removing: string;
   uploadFailed: string;
   uploading: string;
   previewTitle: string;
@@ -445,6 +450,11 @@ const brandKitEn: BrandKitCopy = {
   saving: "Saving…",
   logoUploaded: "Logo uploaded.",
   avatarUploaded: "Photo uploaded.",
+  logoRemoved: "Logo removed.",
+  avatarRemoved: "Photo removed.",
+  removeLogo: "Remove",
+  removeAvatar: "Remove",
+  removing: "Removing…",
   uploadFailed: "Upload failed.",
   uploading: "Uploading…",
   previewTitle: "PDF cover preview",
@@ -495,6 +505,11 @@ const brandKitDe: BrandKitCopy = {
   saving: "Wird gespeichert…",
   logoUploaded: "Logo hochgeladen.",
   avatarUploaded: "Foto hochgeladen.",
+  logoRemoved: "Logo entfernt.",
+  avatarRemoved: "Foto entfernt.",
+  removeLogo: "Entfernen",
+  removeAvatar: "Entfernen",
+  removing: "Wird entfernt…",
   uploadFailed: "Upload fehlgeschlagen.",
   uploading: "Wird hochgeladen…",
   previewTitle: "PDF-Titelvorschau",

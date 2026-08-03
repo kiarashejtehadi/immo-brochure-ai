@@ -54,7 +54,8 @@ import {
   getDefaultCurrencyForLocale,
   type CurrencyCode,
 } from "@/lib/currency";
-import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl, avatarUrlToDataUrl, resolvePdfAgentContact } from "@/lib/branding/pdf-branding";
+import { mergeAgentWithBranding, pdfBrandingFromProfile, resolvePdfAgentContact } from "@/lib/branding/pdf-branding";
+import { brandingUrlToPdfDataUrl } from "@/lib/pdf-image-data-url";
 import {
   agentDefaultsFromBranding,
   hasBrandingAgentDefaults,
@@ -834,8 +835,8 @@ function ListingStudioContent() {
       const fingerprint = buildPdfImagesFingerprint();
 
       const [logoDataUrl, avatarDataUrl, mapDataUrl] = await Promise.all([
-        brand.logoUrl ? logoUrlToDataUrl(brand.logoUrl) : Promise.resolve(undefined),
-        brand.avatarUrl ? avatarUrlToDataUrl(brand.avatarUrl) : Promise.resolve(undefined),
+        brand.logoUrl ? brandingUrlToPdfDataUrl(brand.logoUrl) : Promise.resolve(undefined),
+        brand.avatarUrl ? brandingUrlToPdfDataUrl(brand.avatarUrl) : Promise.resolve(undefined),
         fetchMapForPdf(address),
       ]);
 

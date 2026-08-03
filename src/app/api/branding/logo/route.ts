@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAuthUser } from "@/lib/billing/access";
 import { getActiveSubscription } from "@/lib/billing/repository";
+import { deleteBrandingStorageAsset } from "@/lib/branding/delete-storage-asset";
 import { updateUserBranding } from "@/lib/branding/repository";
 import { BRAND_LOGOS_BUCKET } from "@/lib/branding/constants";
 import { fileExtensionForMime, inferImageMimeType } from "@/lib/branding/upload-mime";
@@ -66,6 +67,31 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[branding/logo]", err);
     const message = err instanceof Error ? err.message : "Upload failed.";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const user = await getSupabaseAuthUser();
+    if (!user) {
+      return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+    }
+
+    const subscription = await getActiveSubscription(user.id);
+    if (!subscription) {
+      return NextResponse.json(
+        { error: "Custom logo is a Pro feature." },
+        { status: 403 },
+      );
+    }
+
+    await deleteBrandingStorageAsset(user.id, "logo");
+    const branding = await updateUserBranding(user.id, { logoUrl: null });
+    return NextResponse.json({ logoUrl: null, branding });
+  } catch (err) {
+    console.error("[branding/logo DELETE]", err);
+    const message = err instanceof Error ? err.message : "Remove failed.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

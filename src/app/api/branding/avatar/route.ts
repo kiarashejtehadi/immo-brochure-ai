@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAuthUser } from "@/lib/billing/access";
 import { getActiveSubscription } from "@/lib/billing/repository";
+import { deleteBrandingStorageAsset } from "@/lib/branding/delete-storage-asset";
 import { updateUserBranding } from "@/lib/branding/repository";
 import { BRAND_LOGOS_BUCKET } from "@/lib/branding/constants";
 import { fileExtensionForMime, inferImageMimeType } from "@/lib/branding/upload-mime";
@@ -60,6 +61,31 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[branding/avatar]", err);
     const message = err instanceof Error ? err.message : "Upload failed.";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const user = await getSupabaseAuthUser();
+    if (!user) {
+      return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+    }
+
+    const subscription = await getActiveSubscription(user.id);
+    if (!subscription) {
+      return NextResponse.json(
+        { error: "Agent avatar is a Pro feature." },
+        { status: 403 },
+      );
+    }
+
+    await deleteBrandingStorageAsset(user.id, "avatar");
+    const branding = await updateUserBranding(user.id, { agentAvatarUrl: null });
+    return NextResponse.json({ agentAvatarUrl: null, branding });
+  } catch (err) {
+    console.error("[branding/avatar DELETE]", err);
+    const message = err instanceof Error ? err.message : "Remove failed.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }
