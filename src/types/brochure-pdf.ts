@@ -13,6 +13,11 @@ export type BrochurePdfProps = {
   priceOnRequestLabel: string;
   priceLabel: string;
   priceAmount: string;
+  /** German rent breakdown (Miete) — populated when transactionType is "rent". */
+  netColdRent?: string;
+  utilityCharges?: string;
+  totalRent?: string;
+  securityDeposit?: string;
   specsTable: { label: string; value: string }[];
   summary: string[];
   fullDescription: string;

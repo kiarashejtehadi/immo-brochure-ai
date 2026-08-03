@@ -144,6 +144,14 @@ export function buildBrochurePdfProps(input: {
     priceOnRequestLabel: input.ui.priceOnRequest,
     priceLabel,
     priceAmount,
+    ...(input.transactionType === "rent"
+      ? {
+          netColdRent: input.rent.netColdRent.trim(),
+          utilityCharges: input.rent.utilityCharges.trim(),
+          totalRent: input.rent.totalRent.trim(),
+          securityDeposit: input.rent.securityDeposit.trim(),
+        }
+      : {}),
     specsTable,
     summary: input.result.summary,
     fullDescription: input.result.fullDescription,

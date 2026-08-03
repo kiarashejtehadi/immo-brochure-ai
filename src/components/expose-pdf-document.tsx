@@ -37,7 +37,11 @@ const PAGE_BODY_MIN_HEIGHT = A4_HEIGHT_PT - PAGE_PAD_V * 2 - 40;
 const MAP_HEIGHT_PT = 220;
 const FLOOR_PLAN_HEIGHT_PT = 220;
 const PAGE4_SPECS_MAX_ROWS = 8;
-const METRIC_BOX_HEIGHT = 56;
+const METRIC_BOX_HEIGHT = 58;
+const HEADER_PAD_TOP = 20;
+const HEADER_PAD_BOTTOM = 15;
+const HEADER_BAR_CLEARANCE = 15;
+const COVER_SECTION_GAP = 25;
 const RHYTHM_SM = 12;
 const RHYTHM_MD = 14;
 const RHYTHM_LG = 16;
@@ -76,7 +80,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
   StyleSheet.create({
     page: {
       paddingHorizontal: PAGE_PAD_H,
-      paddingTop: PAGE_PAD_V + 6,
+      paddingTop: PAGE_PAD_V,
       paddingBottom: PAGE_PAD_V,
       fontFamily: branding.pdfFont,
       fontSize: 10,
@@ -100,20 +104,19 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       flexDirection: "column",
       justifyContent: "space-between",
     },
+    headerContainer: {
+      paddingTop: HEADER_PAD_TOP,
+      paddingBottom: HEADER_PAD_BOTTOM,
+    },
     headerBar: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
       height: 6,
       backgroundColor: branding.primaryColor,
+      marginBottom: HEADER_BAR_CLEARANCE,
     },
     headerRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: RHYTHM_MD,
-      paddingVertical: 4,
     },
     headerLogoWrap: {
       flex: 1,
@@ -142,41 +145,43 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     heroImageWrap: {
       width: "100%",
       height: 240,
-      borderRadius: 6,
+      borderRadius: 8,
       overflow: "hidden",
       backgroundColor: "#f4f4f5",
     },
     heroRow: {
       flexDirection: "row",
-      marginBottom: RHYTHM_LG,
+      justifyContent: "space-between",
+      marginTop: COVER_SECTION_GAP,
+      marginBottom: COVER_SECTION_GAP,
       alignItems: "stretch",
     },
     heroImageCol: {
-      width: "48%",
+      width: "50%",
       height: 240,
       flexDirection: "column",
     },
     heroContentCol: {
-      width: "48%",
+      width: "45%",
       justifyContent: "flex-start",
-      paddingRight: RHYTHM_LG,
     },
     heroPlaceholder: {
       width: "100%",
       height: 240,
-      borderRadius: 6,
+      borderRadius: 8,
       backgroundColor: "#f4f4f5",
       alignItems: "center",
       justifyContent: "center",
     },
     coverBullets: {
-      marginTop: RHYTHM_MD,
+      marginTop: COVER_SECTION_GAP,
     },
     summaryBlock: {
       marginTop: RHYTHM_SM,
     },
     metricsWrap: {
-      marginTop: RHYTHM_LG,
+      marginTop: COVER_SECTION_GAP,
+      marginBottom: COVER_SECTION_GAP,
     },
     metricsRow: {
       flexDirection: "row",
@@ -206,16 +211,22 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       borderRadius: 6,
     },
     metricLabel: {
-      fontSize: 7,
+      fontSize: 6.5,
       color: "#71717a",
       marginBottom: 4,
       textAlign: "center",
     },
     metricValue: {
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: 700,
       textAlign: "center",
       lineHeight: 1.2,
+    },
+    metricValueSmall: {
+      fontSize: 9,
+      fontWeight: 700,
+      textAlign: "center",
+      lineHeight: 1.25,
     },
     title: {
       fontSize: 20,
@@ -485,17 +496,56 @@ function fmt(amount: string, currency: CurrencyCode, fallback: string) {
   return formatPriceAmount(amount, currency, fallback);
 }
 
-function formatCoverRent(props: BrochurePdfProps): string {
-  if (!props.priceAmount.trim()) return props.priceOnRequestLabel || "Price on request";
-  return fmt(props.priceAmount, props.currency, props.priceOnRequestLabel);
+type RentFinancials = {
+  netColdRent: string;
+  utilityCharges: string;
+  totalRent: string;
+  securityDeposit: string;
+};
+
+const FINANCIAL_SPEC_LABEL =
+  /kaltmiete|nettokaltmiete|net cold rent|nebenkosten|utility charges?|gesamtmiete|warmmiete|total rent|kaution|deposit|security deposit/i;
+
+function resolveRentFinancials(props: BrochurePdfProps): RentFinancials {
+  return {
+    netColdRent: props.netColdRent?.trim() ?? "",
+    utilityCharges: props.utilityCharges?.trim() ?? "",
+    totalRent: props.totalRent?.trim() || (props.transactionType === "rent" ? props.priceAmount.trim() : ""),
+    securityDeposit: props.securityDeposit?.trim() ?? "",
+  };
 }
 
-function formatCoverSize(size: string): string {
-  return size.trim() ? `${size.trim()} m²` : "-";
+function formatGermanEuro(amount: string, currency: CurrencyCode): string {
+  if (!amount.trim()) return "-";
+  const formatted = fmt(amount, currency, "-");
+  return formatted === "-" ? "-" : formatted;
 }
 
-function formatCoverRooms(rooms: string): string {
-  return rooms.trim() ? `${rooms.trim()} Rooms` : "-";
+function formatCoverAreaRooms(size: string, rooms: string): string {
+  const sizePart = size.trim() ? `${size.trim()} m²` : "";
+  const roomsPart = rooms.trim() ? `${rooms.trim()} Zimmer` : "";
+  if (sizePart && roomsPart) return `${sizePart} | ${roomsPart}`;
+  if (sizePart) return sizePart;
+  if (roomsPart) return roomsPart;
+  return "-";
+}
+
+function buildGermanRentFinancialRows(
+  financials: RentFinancials,
+  currency: CurrencyCode,
+): { label: string; value: string }[] {
+  return [
+    { label: "Net Cold Rent (Kaltmiete)", value: formatGermanEuro(financials.netColdRent, currency) },
+    { label: "Utility Charges (Nebenkosten)", value: formatGermanEuro(financials.utilityCharges, currency) },
+    { label: "Total Rent (Gesamtmiete)", value: formatGermanEuro(financials.totalRent, currency) },
+    { label: "Deposit (Kaution)", value: formatGermanEuro(financials.securityDeposit, currency) },
+  ];
+}
+
+function filterNonFinancialListingRows(rows: { label: string; value: string }[]) {
+  return filterPdfListingDetailRows(rows).filter(
+    (row) => !FINANCIAL_SPEC_LABEL.test(row.label.trim()),
+  );
 }
 
 function pdfWordNoHyphens(word: string): string[] {
@@ -512,7 +562,7 @@ function PdfPageChrome({
   badge: string;
 }) {
   return (
-    <View wrap={false}>
+    <View wrap={false} style={s.headerContainer}>
       <View style={s.headerBar} />
       <View style={s.headerRow}>
         <View style={s.headerLogoWrap}>
@@ -583,6 +633,7 @@ function PdfMetricCell({
   value,
   accentColor,
   highlight,
+  compact,
   isLast,
 }: {
   styles: ReturnType<typeof createStyles>;
@@ -590,6 +641,7 @@ function PdfMetricCell({
   value: string;
   accentColor: string;
   highlight?: boolean;
+  compact?: boolean;
   isLast?: boolean;
 }) {
   return (
@@ -604,7 +656,10 @@ function PdfMetricCell({
         {label}
       </Text>
       <Text
-        style={[s.metricValue, highlight ? { color: accentColor } : {}]}
+        style={[
+          compact ? s.metricValueSmall : s.metricValue,
+          highlight ? { color: accentColor } : {},
+        ]}
         wrap={false}
       >
         {value}
@@ -613,39 +668,90 @@ function PdfMetricCell({
   );
 }
 
-function PdfMetricsRow({
+function PdfGermanRentMetricsRow({
   styles: s,
-  rentDisplay,
-  sizeDisplay,
-  roomsDisplay,
+  financials,
+  size,
+  rooms,
+  currency,
   accentColor,
 }: {
   styles: ReturnType<typeof createStyles>;
-  rentDisplay: string;
-  sizeDisplay: string;
-  roomsDisplay: string;
+  financials: RentFinancials;
+  size: string;
+  rooms: string;
+  currency: CurrencyCode;
   accentColor: string;
 }) {
   return (
     <View style={s.metricsRow} wrap={false}>
       <PdfMetricCell
         styles={s}
-        label="Rent"
-        value={rentDisplay}
+        label="Kaltmiete"
+        value={formatGermanEuro(financials.netColdRent, currency)}
+        accentColor={accentColor}
+      />
+      <PdfMetricCell
+        styles={s}
+        label="Nebenkosten"
+        value={formatGermanEuro(financials.utilityCharges, currency)}
+        accentColor={accentColor}
+      />
+      <PdfMetricCell
+        styles={s}
+        label="Gesamtmiete"
+        value={formatGermanEuro(financials.totalRent, currency)}
         accentColor={accentColor}
         highlight
       />
       <PdfMetricCell
         styles={s}
-        label="Size"
-        value={sizeDisplay}
+        label="Wohnfläche / Zimmer"
+        value={formatCoverAreaRooms(size, rooms)}
         accentColor={accentColor}
+        compact
+        isLast
+      />
+    </View>
+  );
+}
+
+function PdfSaleMetricsRow({
+  styles: s,
+  priceAmount,
+  currency,
+  priceOnRequestLabel,
+  size,
+  rooms,
+  accentColor,
+}: {
+  styles: ReturnType<typeof createStyles>;
+  priceAmount: string;
+  currency: CurrencyCode;
+  priceOnRequestLabel: string;
+  size: string;
+  rooms: string;
+  accentColor: string;
+}) {
+  const priceDisplay = priceAmount.trim()
+    ? formatGermanEuro(priceAmount, currency)
+    : priceOnRequestLabel;
+
+  return (
+    <View style={s.metricsRow} wrap={false}>
+      <PdfMetricCell
+        styles={s}
+        label="Kaufpreis"
+        value={priceDisplay}
+        accentColor={accentColor}
+        highlight
       />
       <PdfMetricCell
         styles={s}
-        label="Rooms"
-        value={roomsDisplay}
+        label="Wohnfläche / Zimmer"
+        value={formatCoverAreaRooms(size, rooms)}
         accentColor={accentColor}
+        compact
         isLast
       />
     </View>
@@ -876,14 +982,20 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
     .map((src) => sanitizePdfImageSrc(src))
     .filter((src): src is string => Boolean(src));
   const showWatermark = props.showWatermark === true;
-  const rentDisplay = formatCoverRent(props);
-  const sizeDisplay = formatCoverSize(props.size);
-  const roomsDisplay = formatCoverRooms(props.rooms);
+  const rentFinancials = resolveRentFinancials(props);
   const displayAddress = formatPdfDisplayAddress(props.address);
   const storyParagraphs = splitPdfParagraphs(props.fullDescription);
   const locationParagraphs = splitPdfParagraphs(props.locationDescription);
   const floorPlanSrc = sanitizePdfImageSrc(props.floorPlanDataUrl);
-  const page4Specs = filterPdfListingDetailRows(props.specsTable).slice(0, PAGE4_SPECS_MAX_ROWS);
+  const page4FinancialRows =
+    props.transactionType === "rent"
+      ? buildGermanRentFinancialRows(rentFinancials, props.currency)
+      : [];
+  const page4OtherSpecs = filterNonFinancialListingRows(props.specsTable).slice(
+    0,
+    props.transactionType === "rent" ? PAGE4_SPECS_MAX_ROWS - 4 : PAGE4_SPECS_MAX_ROWS,
+  );
+  const page4ListingRows = [...page4FinancialRows, ...page4OtherSpecs];
   const coverBullets = props.summary.filter(
     (line) => line.trim() && !isLikelyRawPdfMetadata(line),
   );
@@ -916,13 +1028,26 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             )}
           </View>
           <View wrap={false} style={s.metricsWrap}>
-            <PdfMetricsRow
-              styles={s}
-              rentDisplay={rentDisplay}
-              sizeDisplay={sizeDisplay}
-              roomsDisplay={roomsDisplay}
-              accentColor={branding.accentColor}
-            />
+            {props.transactionType === "rent" ? (
+              <PdfGermanRentMetricsRow
+                styles={s}
+                financials={rentFinancials}
+                size={props.size}
+                rooms={props.rooms}
+                currency={props.currency}
+                accentColor={branding.accentColor}
+              />
+            ) : (
+              <PdfSaleMetricsRow
+                styles={s}
+                priceAmount={props.priceAmount}
+                currency={props.currency}
+                priceOnRequestLabel={props.priceOnRequestLabel}
+                size={props.size}
+                rooms={props.rooms}
+                accentColor={branding.accentColor}
+              />
+            )}
           </View>
           {coverBullets.length > 0 ? (
             <View style={s.coverBullets} wrap={false}>
@@ -1031,8 +1156,8 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             <View wrap={false} style={s.page4BottomRow}>
               <View style={s.page4Column}>
                 <Text style={[s.h2, { marginTop: 0 }]}>Listing details</Text>
-                {page4Specs.length > 0 ? (
-                  <PdfTable styles={s} rows={page4Specs} variant="details" />
+                {page4ListingRows.length > 0 ? (
+                  <PdfTable styles={s} rows={page4ListingRows} variant="details" />
                 ) : null}
               </View>
               <View style={s.page4ColumnRight}>
