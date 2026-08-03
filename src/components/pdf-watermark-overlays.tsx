@@ -88,33 +88,33 @@ const wm = StyleSheet.create({
 export function PageBackdropWatermarks({ page }: { page: 1 | 2 | 3 | 4 }) {
   if (page === 1) {
     return (
-      <>
+      <View>
         <Text style={[wm.diagonalLarge, { top: 280, left: 50 }]}>{PDF_WATERMARK_BRAND}</Text>
         <Text style={[wm.diagonalMedium, { top: 480, left: 130 }]}>FREE TIER</Text>
-      </>
+      </View>
     );
   }
   if (page === 2) {
     return (
-      <>
+      <View>
         <Text style={[wm.diagonalLarge, { top: 300, left: 40 }]}>{PDF_WATERMARK_BRAND}</Text>
         <Text style={[wm.diagonalMedium, { top: 560, left: 100 }]}>FREE TIER</Text>
-      </>
+      </View>
     );
   }
   if (page === 3) {
     return (
-      <>
+      <View>
         <Text style={[wm.diagonalLarge, { top: 260, left: 55 }]}>{PDF_WATERMARK_BRAND}</Text>
         <Text style={[wm.diagonalMedium, { top: 520, left: 115 }]}>FREE TIER</Text>
-      </>
+      </View>
     );
   }
   return (
-    <>
+    <View>
       <Text style={[wm.diagonalLarge, { top: 280, left: 50 }]}>{PDF_WATERMARK_BRAND}</Text>
       <Text style={[wm.diagonalMedium, { top: 540, left: 120 }]}>FREE TIER</Text>
-    </>
+    </View>
   );
 }
 
@@ -148,7 +148,7 @@ export function WatermarkedImage({
       {/* eslint-disable-next-line jsx-a11y/alt-text */}
       <Image src={safeSrc} style={imageStyle} />
       {showWatermark ? (
-        <>
+        <View>
           <View
             style={{
               position: "absolute",
@@ -168,7 +168,7 @@ export function WatermarkedImage({
           <View style={wm.imageCorner}>
             <Text style={wm.imageCornerText}>{PDF_WATERMARK_BRAND}</Text>
           </View>
-        </>
+        </View>
       ) : null}
     </View>
   );

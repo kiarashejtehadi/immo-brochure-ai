@@ -10,7 +10,7 @@ function CheckoutReturnRedirectInner() {
   const router = useRouter();
 
   useEffect(() => {
-    if (searchParams.get("checkout") !== "success") return;
+    if (searchParams?.get("checkout") !== "success") return;
     router.replace({ pathname: "/create", query: { checkout: "success" } });
   }, [searchParams, router]);
 
@@ -25,8 +25,8 @@ function CheckoutSubscribedRedirectInner() {
 
   useEffect(() => {
     if (loading || !isSignedIn || !status?.hasActiveSubscription) return;
-    if (searchParams.get("checkout") === "success") return;
-    if (searchParams.get("plan") === "credits_pack") return;
+    if (searchParams?.get("checkout") === "success") return;
+    if (searchParams?.get("plan") === "credits_pack") return;
     router.replace("/create");
   }, [isSignedIn, loading, router, searchParams, status?.hasActiveSubscription]);
 

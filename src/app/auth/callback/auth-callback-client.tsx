@@ -65,6 +65,10 @@ export function AuthCallbackClient() {
 
     async function completeAuth() {
       try {
+        if (!searchParams) {
+          router.replace("/en?auth=error&reason=missing_auth_params");
+          return;
+        }
         const supabase = createSupabaseBrowserClient();
         const nextParam = searchParams.get("next");
         const storedPath = nextParam?.startsWith("/")

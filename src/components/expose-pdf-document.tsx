@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   Document,
   Image,
@@ -404,7 +404,7 @@ function PdfPageChrome({
   badge: string;
 }) {
   return (
-    <>
+    <View>
       <View style={s.headerBar} />
       <View style={s.headerRow}>
         {branding.logoDataUrl ? (
@@ -415,7 +415,7 @@ function PdfPageChrome({
         )}
         <Text style={[s.badge, { marginBottom: 0 }]}>{badge}</Text>
       </View>
-    </>
+    </View>
   );
 }
 
@@ -441,11 +441,13 @@ function PdfPageLayout({
   return (
     <Page size="A4" style={s.page}>
       {showWatermark ? <PageBackdropWatermarks page={watermarkPage} /> : null}
-      {showWatermark && textWatermarks
-        ? textWatermarks.map((mark, i) => (
+      {showWatermark && textWatermarks ? (
+        <View>
+          {textWatermarks.map((mark, i) => (
             <TextAreaWatermark key={i} top={mark.top} />
-          ))
-        : null}
+          ))}
+        </View>
+      ) : null}
       <View style={s.pageColumn}>
         <PdfPageChrome styles={s} branding={branding} badge={badge} />
         <View style={s.pageMain}>{children}</View>
@@ -701,7 +703,7 @@ function PdfPageFooter({
   );
 }
 
-function ExposePdfDocumentInner(props: BrochurePdfProps) {
+export function ExposePdfDocument(props: BrochurePdfProps) {
   const branding = resolveBranding(props);
   const s = createStyles(branding);
   const hero = sanitizePdfImageSrc(props.photoDataUrls[0]);
@@ -870,8 +872,5 @@ function ExposePdfDocumentInner(props: BrochurePdfProps) {
     </Document>
   );
 }
-
-export const ExposePdfDocument = memo(ExposePdfDocumentInner);
-ExposePdfDocument.displayName = "ExposePdfDocument";
 
 export type ExposePdfDocumentProps = BrochurePdfProps;

@@ -5,12 +5,19 @@ import path from "node:path";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  /** Keep react-pdf on the Node client React build — bundling into RSC crashes with `reading 'S'`. */
+  serverExternalPackages: ["@react-pdf/renderer"],
   transpilePackages: [
-    "@react-pdf/renderer",
     "remotion",
     "@remotion/player",
     "@remotion/web-renderer",
   ],
+  experimental: {
+    middlewareClientMaxBodySize: "20mb",
+    serverActions: {
+      bodySizeLimit: "20mb",
+    },
+  },
   /** Block remote image optimization/CDN fetches — UI assets are same-origin /public only. */
   images: {
     remotePatterns: [],
