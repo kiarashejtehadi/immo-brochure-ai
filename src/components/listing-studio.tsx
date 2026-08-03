@@ -15,6 +15,7 @@ import { FreeTrialFormBanner } from "@/components/free-trial-form-banner";
 import { getMarketingCopy } from "@/lib/i18n-marketing";
 import { fetchDemoPhotos, getDemoListingContent } from "@/lib/demo-listing";
 import { prepareImagesForApi, fileToBase64, compressImageForUpload } from "@/lib/prepare-images";
+import { MAX_VISION_IMAGES, API_VISION_IMAGE_MAX_EDGE } from "@/lib/generate-vision";
 import {
   buildBrochurePdfProps,
   buildGeneratePayload,
@@ -720,7 +721,10 @@ function ListingStudioContent() {
     const timeoutId = window.setTimeout(() => controller.abort(), 90_000);
 
     try {
-      const images = await prepareImagesForApi(photos.map((p) => p.file));
+      const images = await prepareImagesForApi(
+        photos.map((p) => p.file),
+        { limit: MAX_VISION_IMAGES, maxEdge: API_VISION_IMAGE_MAX_EDGE },
+      );
       let floorPlan: { base64: string; mimeType: string } | undefined;
       if (floorPlanFile) {
         const compressed = await compressImageForUpload(floorPlanFile);

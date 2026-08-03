@@ -1,4 +1,5 @@
 import { yieldToMainThread } from "@/lib/yield-to-main-thread";
+import { API_VISION_IMAGE_MAX_EDGE } from "@/lib/generate-vision";
 
 const MAX_EDGE = 1280;
 const JPEG_QUALITY = 0.82;
@@ -77,12 +78,21 @@ export function fileToBase64(file: File): Promise<{ base64: string; mimeType: st
   });
 }
 
-export async function prepareImagesForApi(files: File[]) {
-  const results: { base64: string; mimeType: string }[] = [];
-  for (const file of files) {
-    const compressed = await compressImageForUpload(file);
-    results.push(await fileToBase64(compressed));
-    await yieldToMainThread();
-  }
-  return results;
+export async function prepareImagesForApi(
+  files: File[],
+  options?: { limit?: number; maxEdge?: number },
+) {
+  const batch = files.slice(0, options?.limit ?? files.length);
+  const maxEdge = options?.maxEdge ?? MAX_EDGE;
+
+  await yieldToMainThread();
+
+  return Promise.all(
+    batch.map(async (file) => {
+      const compressed = await resizeImageFile(file, maxEdge, JPEG_QUALITY);
+      return fileToBase64(compressed);
+    }),
+  );
 }
+
+export { API_VISION_IMAGE_MAX_EDGE };

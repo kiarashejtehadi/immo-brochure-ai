@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import type { ListingAddress } from "@/types/listing";
 import type { LocationEnrichment, NearbyPoi, PoiCategory } from "@/types/location-poi";
 import { geocodeAddress } from "@/lib/location/geocode-address";
@@ -172,7 +173,7 @@ async function fetchOverpassPois(lat: number, lon: number): Promise<NearbyPoi[]>
 out center tags;
 `;
 
-  const res = await fetch(OVERPASS_URL, {
+  const res = await fetchWithTimeout(OVERPASS_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -180,6 +181,7 @@ out center tags;
       "User-Agent": USER_AGENT,
     },
     body: `data=${encodeURIComponent(query)}`,
+    timeoutMs: 5_000,
   });
 
   if (!res.ok) return [];

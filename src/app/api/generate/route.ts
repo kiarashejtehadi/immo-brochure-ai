@@ -9,6 +9,7 @@ import {
   moderateTexts,
 } from "@/lib/openai-moderation";
 import { GENERATION_SAFETY_INSTRUCTIONS } from "@/lib/professional-tone-guardrail";
+import { MAX_VISION_IMAGES } from "@/lib/generate-vision";
 import {
   buildFurnishingSystemInstruction,
   buildVisionAnalysisNote,
@@ -39,7 +40,14 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 90;
 
-const MAX_VISION_IMAGES = 3;
+const LOCATION_ENRICHMENT_BUDGET_MS = 4_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
 
 function ensureHashtags(caption: string, tags: string[]): string {
   let text = caption.trim();
@@ -257,25 +265,26 @@ export async function POST(request: Request) {
   const instagramTags = getCaptionHashtags(outputLanguage);
 
   let locationRules = buildLocationPromptInstructions(listingAddress, null);
+  const enrichmentTask = fetchLocationEnrichment(listingAddress).catch((err) => {
+    console.warn("[api/generate] location enrichment failed", err);
+    return null;
+  });
+
   try {
-    const [, enrichment] = await Promise.all([
-      moderateTexts(openai, [collectGenerateModerationText(body)]).catch((err) => {
-        if (err instanceof ModerationBlockedError) throw err;
-        console.warn("[api/generate] moderation skipped", err);
-      }),
-      fetchLocationEnrichment(listingAddress).catch((err) => {
-        console.warn("[api/generate] location enrichment failed", err);
-        return null;
-      }),
-    ]);
-    if (enrichment) {
-      locationRules = buildLocationPromptInstructions(listingAddress, enrichment);
-    }
+    await moderateTexts(openai, [collectGenerateModerationText(body)]).catch((err) => {
+      if (err instanceof ModerationBlockedError) throw err;
+      console.warn("[api/generate] moderation skipped", err);
+    });
   } catch (err) {
     if (err instanceof ModerationBlockedError) {
       return NextResponse.json({ error: CONTENT_FLAGGED_ERROR }, { status: 400 });
     }
     throw err;
+  }
+
+  const enrichment = await withTimeout(enrichmentTask, LOCATION_ENRICHMENT_BUDGET_MS, null);
+  if (enrichment) {
+    locationRules = buildLocationPromptInstructions(listingAddress, enrichment);
   }
 
   const propertyPayload = buildPropertyPayload(
@@ -305,8 +314,8 @@ export async function POST(request: Request) {
         })}\n`
       : "";
 
-  const descriptionWordRange = images.length > 0 ? "350-500" : "250-350";
-  const locationWordRange = images.length > 0 ? "120-180" : "80-120";
+  const descriptionWordRange = images.length > 0 ? "280-380" : "250-350";
+  const locationWordRange = images.length > 0 ? "90-140" : "80-120";
 
   const userText = `You are creating a multi-page real estate exposé and social pack.
 
@@ -355,20 +364,13 @@ Schema:
     });
   }
 
-  const systemContent =
-    images.length > 0
-      ? `Expert multilingual real estate copywriter with vision analysis. Valid JSON only. Language: ${outputLanguage}. ${buildVisionAnalysisNote({
-          furnishingStatus,
-          isStagedOrModel,
-          hasFittedKitchen: fittedKitchen,
-        })} ${furnishingRules} ${locationRules} ${GENERATION_SAFETY_INSTRUCTIONS} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`
-      : `Expert multilingual real estate copywriter. Valid JSON only. Language: ${outputLanguage}. ${furnishingRules} ${locationRules} ${GENERATION_SAFETY_INSTRUCTIONS} ${ANTI_DISCRIMINATION_SYSTEM_INSTRUCTION}`;
+  const systemContent = `Expert multilingual real estate copywriter. Return valid JSON only. Language: ${outputLanguage}.`;
 
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.65,
-      max_tokens: images.length > 0 ? 2800 : 1800,
+      max_tokens: images.length > 0 ? 2200 : 1800,
       response_format: { type: "json_object" },
       messages: [
         {
