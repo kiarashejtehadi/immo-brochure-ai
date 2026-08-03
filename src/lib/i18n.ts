@@ -87,6 +87,7 @@ export type UiCopy = {
     generic: string;
     pdfFailed: string;
     pdfTimeout: string;
+    pdfStalled: string;
   };
 };
 
@@ -170,6 +171,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       pdfFailed: "PDF could not be created",
       pdfTimeout:
         "PDF generation timed out. Try again with fewer photos or check your connection.",
+      pdfStalled:
+        "PDF generation took too long. Please try again with smaller images.",
     },
   },
   de: {
@@ -253,6 +256,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       pdfFailed: "PDF konnte nicht erstellt werden",
       pdfTimeout:
         "Zeitüberschreitung bei der PDF-Erstellung. Versuchen Sie es mit weniger Fotos erneut.",
+      pdfStalled:
+        "Die PDF-Erstellung dauerte zu lange. Bitte mit kleineren Bildern erneut versuchen.",
     },
   },
   fr: {
@@ -334,6 +339,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       pdfFailed: "Impossible de créer le PDF",
       pdfTimeout:
         "Délai dépassé lors de la création du PDF. Réessayez avec moins de photos.",
+      pdfStalled:
+        "La génération du PDF a pris trop de temps. Réessayez avec des images plus petites.",
     },
   },
   es: {
@@ -413,6 +420,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       pdfFailed: "No se pudo crear el PDF",
       pdfTimeout:
         "Tiempo agotado al crear el PDF. Inténtelo con menos fotos.",
+      pdfStalled:
+        "La generación del PDF tardó demasiado. Inténtelo con imágenes más pequeñas.",
     },
   },
   it: {
@@ -492,6 +501,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       pdfFailed: "Impossibile creare il PDF",
       pdfTimeout:
         "Timeout durante la creazione del PDF. Riprova con meno foto.",
+      pdfStalled:
+        "La generazione del PDF ha impiegato troppo tempo. Riprova con immagini più piccole.",
     },
   },
   nl: {
@@ -571,6 +582,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       pdfFailed: "PDF kon niet worden gemaakt",
       pdfTimeout:
         "Time-out bij het maken van de PDF. Probeer het met minder foto's.",
+      pdfStalled:
+        "PDF-generatie duurde te lang. Probeer het opnieuw met kleinere afbeeldingen.",
     },
   },
   fa: {
@@ -649,6 +662,7 @@ export const translations: Record<UiLocale, UiCopy> = {
       generic: "خطایی رخ داد",
       pdfFailed: "ساخت PDF ممکن نشد",
       pdfTimeout: "زمان ساخت PDF تمام شد. با عکس‌های کمتر دوباره امتحان کنید.",
+      pdfStalled: "ساخت PDF بیش از حد طول کشید. لطفاً با تصاویر کوچک‌تر دوباره امتحان کنید.",
     },
   },
   ar: {
@@ -727,6 +741,7 @@ export const translations: Record<UiLocale, UiCopy> = {
       generic: "حدث خطأ ما",
       pdfFailed: "تعذّر إنشاء PDF",
       pdfTimeout: "انتهت مهلة إنشاء PDF. حاول مرة أخرى مع عدد أقل من الصور.",
+      pdfStalled: "استغرق إنشاء PDF وقتًا طويلاً. يرجى المحاولة مجددًا بصور أصغر.",
     },
   },
   pl: {
@@ -806,6 +821,8 @@ export const translations: Record<UiLocale, UiCopy> = {
       pdfFailed: "Nie udało się utworzyć PDF",
       pdfTimeout:
         "Przekroczono limit czasu generowania PDF. Spróbuj z mniejszą liczbą zdjęć.",
+      pdfStalled:
+        "Generowanie PDF trwało zbyt długo. Spróbuj ponownie z mniejszymi obrazami.",
     },
   },
 };

@@ -1,9 +1,20 @@
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
-import { compressImageForPdf } from "@/lib/prepare-images";
+import { yieldToMainThread } from "@/lib/yield-to-main-thread";
 
 /** Transparent 1×1 SVG — safe fallback when an image cannot be embedded. */
 export const PDF_BLANK_IMAGE_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4=";
+
+const PDF_MAX_EDGE = 1000;
+const PDF_JPEG_QUALITY = 0.7;
+
+export type PdfReadyImages = {
+  photoDataUrls: string[];
+  floorPlanDataUrl?: string;
+  logoDataUrl?: string;
+  avatarDataUrl?: string;
+  mapDataUrl?: string;
+};
 
 export function isPdfSafeDataUrl(src: string | undefined | null): src is string {
   if (!src?.trim()) return false;
@@ -35,10 +46,54 @@ function readBlobAsDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** Convert a local File to a JPEG/PNG data URL for PDF embedding. */
+/** Non-blocking canvas resize — yields before/after heavy work. */
+async function compressFileForPdf(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) {
+    return file;
+  }
+
+  await yieldToMainThread();
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, PDF_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    await yieldToMainThread();
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    await yieldToMainThread();
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/jpeg", PDF_JPEG_QUALITY);
+    });
+
+    if (!blob) return file;
+
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "photo";
+    return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
+/** Convert a local File to a JPEG data URL for PDF embedding. */
 export async function fileToPdfDataUrl(file: File): Promise<string> {
   try {
-    const compressed = await compressImageForPdf(file);
+    const compressed = await compressFileForPdf(file);
+    await yieldToMainThread();
     const dataUrl = await readBlobAsDataUrl(compressed);
     return isPdfSafeDataUrl(dataUrl) ? dataUrl : PDF_BLANK_IMAGE_DATA_URL;
   } catch (err) {
@@ -53,6 +108,7 @@ export async function urlToPdfDataUrl(url: string): Promise<string | undefined> 
     const res = await fetchWithTimeout(url, { timeoutMs: 8_000 });
     if (!res.ok) return undefined;
     const blob = await res.blob();
+    await yieldToMainThread();
     const dataUrl = await readBlobAsDataUrl(blob);
     return sanitizePdfImageSrc(dataUrl);
   } catch (err) {
@@ -61,37 +117,36 @@ export async function urlToPdfDataUrl(url: string): Promise<string | undefined> 
   }
 }
 
-/** Normalize every image prop before handing off to the PDF document tree. */
+/**
+ * Prepare all PDF image props in one async pass (call from click handlers only — never during render).
+ * Processes photos sequentially with main-thread yields so caption UI stays responsive.
+ */
 export async function preparePdfImageProps(input: {
   photoFiles: File[];
   floorPlanFile?: File | null;
   logoDataUrl?: string;
   avatarDataUrl?: string;
   mapDataUrl?: string;
-}): Promise<{
-  photoDataUrls: string[];
-  floorPlanDataUrl?: string;
-  logoDataUrl?: string;
-  avatarDataUrl?: string;
-  mapDataUrl?: string;
-}> {
-  const [photoDataUrls, floorPlanDataUrl, logoDataUrl, avatarDataUrl, mapDataUrl] =
-    await Promise.all([
-      Promise.all(input.photoFiles.map((file) => fileToPdfDataUrl(file))),
-      input.floorPlanFile ? fileToPdfDataUrl(input.floorPlanFile) : Promise.resolve(undefined),
-      Promise.resolve(sanitizePdfImageSrc(input.logoDataUrl)),
-      Promise.resolve(sanitizePdfImageSrc(input.avatarDataUrl)),
-      Promise.resolve(sanitizePdfImageSrc(input.mapDataUrl)),
-    ]);
+}): Promise<PdfReadyImages> {
+  const photoDataUrls: string[] = [];
+  for (const file of input.photoFiles) {
+    photoDataUrls.push(await fileToPdfDataUrl(file));
+    await yieldToMainThread();
+  }
+
+  let floorPlanDataUrl: string | undefined;
+  if (input.floorPlanFile) {
+    const raw = await fileToPdfDataUrl(input.floorPlanFile);
+    floorPlanDataUrl =
+      raw !== PDF_BLANK_IMAGE_DATA_URL ? raw : undefined;
+    await yieldToMainThread();
+  }
 
   return {
     photoDataUrls,
-    floorPlanDataUrl:
-      floorPlanDataUrl && floorPlanDataUrl !== PDF_BLANK_IMAGE_DATA_URL
-        ? floorPlanDataUrl
-        : undefined,
-    logoDataUrl,
-    avatarDataUrl,
-    mapDataUrl,
+    floorPlanDataUrl,
+    logoDataUrl: sanitizePdfImageSrc(input.logoDataUrl),
+    avatarDataUrl: sanitizePdfImageSrc(input.avatarDataUrl),
+    mapDataUrl: sanitizePdfImageSrc(input.mapDataUrl),
   };
 }

@@ -1,7 +1,7 @@
+import { yieldToMainThread } from "@/lib/yield-to-main-thread";
+
 const MAX_EDGE = 1280;
-const MAX_EDGE_PDF = 1200;
 const JPEG_QUALITY = 0.82;
-const PDF_JPEG_QUALITY = 0.75;
 
 async function resizeImageFile(
   file: File,
@@ -12,11 +12,15 @@ async function resizeImageFile(
     return file;
   }
 
+  await yieldToMainThread();
+
   try {
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    await yieldToMainThread();
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -29,6 +33,8 @@ async function resizeImageFile(
 
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
+
+    await yieldToMainThread();
 
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, "image/jpeg", quality);
@@ -45,11 +51,6 @@ async function resizeImageFile(
 
 export async function compressImageForUpload(file: File): Promise<File> {
   return resizeImageFile(file, MAX_EDGE, JPEG_QUALITY);
-}
-
-/** Smaller images for client-side @react-pdf/renderer (much faster than upload sizes). */
-export async function compressImageForPdf(file: File): Promise<File> {
-  return resizeImageFile(file, MAX_EDGE_PDF, PDF_JPEG_QUALITY);
 }
 
 export function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
@@ -77,6 +78,11 @@ export function fileToBase64(file: File): Promise<{ base64: string; mimeType: st
 }
 
 export async function prepareImagesForApi(files: File[]) {
-  const compressed = await Promise.all(files.map((f) => compressImageForUpload(f)));
-  return Promise.all(compressed.map((f) => fileToBase64(f)));
+  const results: { base64: string; mimeType: string }[] = [];
+  for (const file of files) {
+    const compressed = await compressImageForUpload(file);
+    results.push(await fileToBase64(compressed));
+    await yieldToMainThread();
+  }
+  return results;
 }

@@ -2,41 +2,21 @@ import { pdf } from "@react-pdf/renderer";
 import { ExposePdfDocument } from "@/components/expose-pdf-document";
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
 import { ensurePdfFontsReady } from "@/lib/pdf-fonts";
-import { preparePdfImageProps } from "@/lib/pdf-image-data-url";
 import { withTimeout } from "@/lib/promise-timeout";
 
 /** Max time for @react-pdf/renderer to produce the PDF blob in the browser. */
 export const PDF_RENDER_TIMEOUT_MS = 10_000;
 
-export async function downloadExposePdf(
-  props: BrochurePdfProps & {
-    photoFiles: File[];
-    floorPlanFile?: File | null;
-  },
-) {
+/**
+ * Compile and download a PDF. Image data URLs must already be prepared
+ * (via preparePdfImageProps in the download click handler — never during render).
+ */
+export async function downloadExposePdf(props: BrochurePdfProps) {
   try {
-    console.log("PDF: Preparing images...");
+    console.log("PDF: Compiling React-PDF document tree...");
     ensurePdfFontsReady(props.fontFamily);
 
-    const images = await preparePdfImageProps({
-      photoFiles: props.photoFiles,
-      floorPlanFile: props.floorPlanFile,
-      logoDataUrl: props.logoDataUrl,
-      avatarDataUrl: props.avatarDataUrl,
-      mapDataUrl: props.mapDataUrl,
-    });
-
-    const docProps: BrochurePdfProps = {
-      ...props,
-      photoDataUrls: images.photoDataUrls,
-      floorPlanDataUrl: images.floorPlanDataUrl,
-      logoDataUrl: images.logoDataUrl,
-      avatarDataUrl: images.avatarDataUrl,
-      mapDataUrl: images.mapDataUrl,
-    };
-
-    console.log("PDF: Compiling React-PDF document tree...");
-    const doc = <ExposePdfDocument {...docProps} />;
+    const doc = <ExposePdfDocument {...props} />;
 
     console.log("PDF: Executing pdf(Doc).toBlob()...");
     const blob = await withTimeout(

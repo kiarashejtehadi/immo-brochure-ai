@@ -24,6 +24,7 @@ import {
   getDefaultCountryForLocale,
 } from "@/lib/location/format-address";
 import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
+import { preparePdfImageProps, type PdfReadyImages } from "@/lib/pdf-image-data-url";
 import { resolvePdfDownloadError } from "@/lib/pdf-download-error";
 import {
   getUiCopy,
@@ -411,6 +412,36 @@ function ListingStudioContent() {
 
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const pdfReadyImagesRef = useRef<PdfReadyImages | null>(null);
+  const pdfImagesFingerprintRef = useRef("");
+
+  const PDF_PREP_WATCHDOG_MS = 12_000;
+
+  function buildPdfImagesFingerprint(): string {
+    const photoKey = photos
+      .map((p) => `${p.file.name}:${p.file.size}:${p.file.lastModified}`)
+      .join("|");
+    const floorKey = floorPlanFile
+      ? `${floorPlanFile.name}:${floorPlanFile.size}:${floorPlanFile.lastModified}`
+      : "";
+    return `${photoKey}::${floorKey}`;
+  }
+
+  useEffect(() => {
+    pdfReadyImagesRef.current = null;
+    pdfImagesFingerprintRef.current = "";
+  }, [photos, floorPlanFile]);
+
+  useEffect(() => {
+    if (!isDownloadingPdf) return;
+    const watchdog = window.setTimeout(() => {
+      setIsDownloadingPdf(false);
+      setPdfError(copy.errors.pdfStalled);
+      pdfReadyImagesRef.current = null;
+      pdfImagesFingerprintRef.current = "";
+    }, PDF_PREP_WATCHDOG_MS);
+    return () => window.clearTimeout(watchdog);
+  }, [isDownloadingPdf, copy.errors.pdfStalled]);
 
   const heatingLabel = useCallback(
     (source: HeatingSource) => {
@@ -733,18 +764,43 @@ function ListingStudioContent() {
   }
 
   async function handleDownloadPdf() {
-    if (!result) return;
+    if (!result || isDownloadingPdf) return;
     setIsDownloadingPdf(true);
     setPdfError(null);
     try {
       const isPro = billingStatus?.isPro === true;
       const agentForPdf = resolvePdfAgentContact(agentForLocale, brandingProfile);
       const brand = pdfBrandingFromProfile(brandingProfile, isPro);
+      const fingerprint = buildPdfImagesFingerprint();
+
       const [logoDataUrl, avatarDataUrl, mapDataUrl] = await Promise.all([
         brand.logoUrl ? logoUrlToDataUrl(brand.logoUrl) : Promise.resolve(undefined),
         brand.avatarUrl ? avatarUrlToDataUrl(brand.avatarUrl) : Promise.resolve(undefined),
         fetchMapForPdf(address),
       ]);
+
+      let readyImages = pdfReadyImagesRef.current;
+      if (!readyImages || pdfImagesFingerprintRef.current !== fingerprint) {
+        console.log("PDF: Preparing images...");
+        readyImages = await preparePdfImageProps({
+          photoFiles: photos.map((p) => p.file),
+          floorPlanFile,
+          logoDataUrl,
+          avatarDataUrl,
+          mapDataUrl,
+        });
+        pdfReadyImagesRef.current = readyImages;
+        pdfImagesFingerprintRef.current = fingerprint;
+      } else {
+        readyImages = {
+          ...readyImages,
+          logoDataUrl,
+          avatarDataUrl,
+          mapDataUrl,
+        };
+        console.log("PDF: Using cached photo data URLs");
+      }
+
       const pdfProps = buildBrochurePdfProps({
         transactionType,
         form: exposeFormCopy,
@@ -764,8 +820,8 @@ function ListingStudioContent() {
           primaryColor: brand.primaryColor,
           accentColor: brand.accentColor,
           brandColor: brand.brandColor,
-          logoDataUrl,
-          avatarDataUrl,
+          logoDataUrl: readyImages.logoDataUrl,
+          avatarDataUrl: readyImages.avatarDataUrl,
           fontFamily: brand.fontFamily,
           website: brand.website,
           showWatermark: resolveShowPdfWatermark(result, pdfWatermark, billingStatus),
@@ -774,10 +830,11 @@ function ListingStudioContent() {
       const { downloadExposePdf } = await import("@/lib/download-expose-pdf");
       await downloadExposePdf({
         ...pdfProps,
-        mapDataUrl,
-        photoDataUrls: [],
-        photoFiles: photos.map((p) => p.file),
-        floorPlanFile,
+        photoDataUrls: readyImages.photoDataUrls,
+        floorPlanDataUrl: readyImages.floorPlanDataUrl,
+        mapDataUrl: readyImages.mapDataUrl,
+        logoDataUrl: readyImages.logoDataUrl,
+        avatarDataUrl: readyImages.avatarDataUrl,
       });
     } catch (err) {
       setPdfError(resolvePdfDownloadError(err, copy));
@@ -970,9 +1027,23 @@ function ListingStudioContent() {
                 </p>
               ) : null}
               {pdfError && (
-                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                  {pdfError}
-                </p>
+                <div
+                  role="alert"
+                  className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                >
+                  <p className="font-medium">{pdfError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPdfError(null);
+                      pdfReadyImagesRef.current = null;
+                      pdfImagesFingerprintRef.current = "";
+                    }}
+                    className="mt-2 text-xs font-semibold underline underline-offset-2"
+                  >
+                    Dismiss
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -1075,7 +1146,7 @@ function ListingStudioContent() {
                         disabled={isDownloadingPdf}
                         className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
                       >
-                        {isDownloadingPdf ? `${copy.pdfShort}â€¦` : copy.pdfShort}
+                        {isDownloadingPdf ? `${copy.pdfShort}…` : copy.pdfShort}
                       </button>
                     </div>
                   </div>
