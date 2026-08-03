@@ -143,6 +143,10 @@ export function WatermarkedImage({
   const safeSrc = sanitizePdfImageSrc(src);
   if (!safeSrc) return null;
 
+  const imageHeight =
+    typeof imageStyle.height === "number" ? imageStyle.height : 100;
+  const watermarkTop = imageHeight / 2 - diagonalSize / 2;
+
   return (
     <View style={frameStyle ? [wm.imageFrame, frameStyle] : wm.imageFrame}>
       {/* eslint-disable-next-line jsx-a11y/alt-text */}
@@ -152,9 +156,7 @@ export function WatermarkedImage({
           <View
             style={{
               position: "absolute",
-              top:
-                (typeof imageStyle.height === "number" ? imageStyle.height : 100) / 2 -
-                diagonalSize / 2,
+              top: watermarkTop,
               left: 0,
               right: 0,
               alignItems: "center",

@@ -12,12 +12,15 @@ import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
 import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
 import { formatPriceAmount } from "@/lib/currency";
 import { splitPdfParagraphs } from "@/lib/pdf-text-format";
+import { filterPdfTableRows } from "@/lib/pdf-table-rows";
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const MARGIN = 48;
 const MAP_HEIGHT = 220;
 const FLOOR_PLAN_HEIGHT = 200;
+const GALLERY_GAP_AFTER = 16;
+const METRICS_BLOCK_TOP = MARGIN + 124;
 const CONTACT_BORDER = rgb(0.886, 0.91, 0.941);
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
@@ -161,24 +164,32 @@ function drawHeading(ctx: PageContext, text: string): PageContext {
 function drawTable(
   ctx: PageContext,
   rows: { label: string; value: string }[],
+  options?: { x?: number; width?: number; labelWidth?: number },
 ): PageContext {
+  const x = options?.x ?? MARGIN;
+  const width = options?.width ?? CONTENT_WIDTH;
+  const labelWidth = options?.labelWidth ?? 180;
+  const valueX = x + labelWidth;
+  const valueWidth = width - labelWidth;
+
   let next = ctx;
   for (const row of rows) {
     next = ensureSpace(next, 18, "ImmoCaption AI · Details");
     next.page.drawText(row.label, {
-      x: MARGIN,
+      x,
       y: next.y,
       size: 9,
       font: next.bold,
       color: rgb(0.35, 0.35, 0.4),
+      maxWidth: labelWidth - 8,
     });
     next.page.drawText(row.value, {
-      x: MARGIN + 180,
+      x: valueX,
       y: next.y,
       size: 9,
       font: next.regular,
       color: rgb(0.1, 0.1, 0.12),
-      maxWidth: CONTENT_WIDTH - 180,
+      maxWidth: valueWidth,
     });
     next = { ...next, y: next.y - 16 };
   }
@@ -214,7 +225,7 @@ function drawGalleryGrid(ctx: PageContext, images: PDFImage[]): PageContext {
     next.page.drawImage(image, { x, y, width: drawWidth, height: drawHeight });
   });
 
-  return { ...next, y: topY - gridHeight };
+  return { ...next, y: topY - gridHeight - GALLERY_GAP_AFTER };
 }
 
 function drawPageHeader(
@@ -274,6 +285,7 @@ function drawContactBox(
   ctx: PageContext,
   lines: string[],
   avatarImage: PDFImage | null,
+  options?: { x?: number; width?: number },
 ): PageContext {
   const padding = 12;
   const lineHeight = 14;
@@ -281,25 +293,27 @@ function drawContactBox(
   const hasAvatar = avatarImage !== null;
   const contentHeight = Math.max(hasAvatar ? avatarSize : 0, lines.length * lineHeight);
   const boxHeight = contentHeight + padding * 2;
+  const x = options?.x ?? MARGIN;
+  const width = options?.width ?? CONTENT_WIDTH;
 
   const next = ensureSpace(ctx, boxHeight + 16, "ImmoCaption AI · Page 4 — Contact");
   const boxTop = next.y;
 
   next.page.drawRectangle({
-    x: MARGIN,
+    x,
     y: boxTop - boxHeight,
-    width: CONTENT_WIDTH,
+    width,
     height: boxHeight,
     borderColor: CONTACT_BORDER,
     borderWidth: 1,
   });
 
-  const textX = hasAvatar ? MARGIN + padding + avatarSize + 12 : MARGIN + padding;
+  const textX = hasAvatar ? x + padding + avatarSize + 12 : x + padding;
   let textY = boxTop - padding - 10;
 
   if (avatarImage) {
     next.page.drawImage(avatarImage, {
-      x: MARGIN + padding,
+      x: x + padding,
       y: boxTop - padding - avatarSize,
       width: avatarSize,
       height: avatarSize,
@@ -312,12 +326,45 @@ function drawContactBox(
       y: textY,
       size: 10,
       font: next.regular,
-      maxWidth: CONTENT_WIDTH - (textX - MARGIN) - padding,
+      maxWidth: width - (textX - x) - padding,
     });
     textY -= lineHeight;
   }
 
   return { ...next, y: boxTop - boxHeight - 16 };
+}
+
+function drawPage4BottomRow(
+  ctx: PageContext,
+  contactLines: string[],
+  avatarImage: PDFImage | null,
+  specsRows: { label: string; value: string }[],
+): PageContext {
+  const colGap = 12;
+  const colWidth = (CONTENT_WIDTH - colGap) / 2;
+  const leftX = MARGIN;
+  const rightX = MARGIN + colWidth + colGap;
+  const rowTop = ctx.y;
+
+  let leftEnd = { ...ctx, y: rowTop };
+  if (contactLines.length > 0 || avatarImage) {
+    leftEnd = drawContactBox({ ...ctx, y: rowTop }, contactLines, avatarImage, {
+      x: leftX,
+      width: colWidth,
+    });
+  }
+
+  let rightEnd = { ...ctx, y: rowTop };
+  if (specsRows.length > 0) {
+    rightEnd = drawHeading({ ...ctx, y: rowTop }, "Listing details");
+    rightEnd = drawTable(rightEnd, specsRows, {
+      x: rightX,
+      width: colWidth,
+      labelWidth: colWidth * 0.42,
+    });
+  }
+
+  return { ...ctx, y: Math.min(leftEnd.y, rightEnd.y) };
 }
 
 function triggerPdfDownload(bytes: Uint8Array, address: string) {
@@ -398,6 +445,8 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
     ["Size", props.size.trim() ? `${props.size} m²` : "—"],
     ["Rooms", props.rooms.trim() || "—"],
   ] as const;
+  const metricsStartY = ctx.y > METRICS_BLOCK_TOP + 40 ? METRICS_BLOCK_TOP + 40 : ctx.y;
+  ctx = { ...ctx, y: metricsStartY };
   for (const [label, value] of metrics) {
     ctx.page.drawText(label, {
       x: MARGIN,
@@ -424,11 +473,6 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
   if (props.energyLines.length > 0) {
     ctx = drawHeading(ctx, "Energy certificate");
     ctx = drawTable(ctx, props.energyLines);
-  }
-
-  if (props.specsTable.length > 0) {
-    ctx = drawHeading(ctx, "Specifications");
-    ctx = drawTable(ctx, props.specsTable);
   }
 
   ctx = addPage(ctx, "ImmoCaption AI · Page 3 — Location");
@@ -484,9 +528,13 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
     props.website?.trim() ?? "",
   ].filter(Boolean);
 
-  if (contactLines.length > 0 || avatarImage) {
-    ctx = drawHeading(ctx, "Your contact");
-    ctx = drawContactBox(ctx, contactLines, avatarImage);
+  const visibleSpecs = filterPdfTableRows(props.specsTable);
+
+  if (contactLines.length > 0 || avatarImage || visibleSpecs.length > 0) {
+    if (contactLines.length > 0 || avatarImage) {
+      ctx = drawHeading(ctx, "Your contact");
+    }
+    ctx = drawPage4BottomRow(ctx, contactLines, avatarImage, visibleSpecs);
   }
 
   ctx = drawHeading(ctx, "Legal notice");

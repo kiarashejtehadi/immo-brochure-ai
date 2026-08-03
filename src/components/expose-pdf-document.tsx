@@ -128,7 +128,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       fontWeight: 700,
       paddingVertical: 4,
       paddingHorizontal: 10,
-      marginBottom: 12,
+      marginBottom: 0,
       backgroundColor: branding.primaryColor,
     },
     hero: {
@@ -214,7 +214,10 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       color: branding.accentColor,
     },
     body: { fontSize: 10, lineHeight: 1.5, textAlign: "justify" },
-    grid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
+    grid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
+    storySection: {
+      marginTop: 16,
+    },
     galleryCell: {
       width: "48%",
       height: 120,
@@ -258,6 +261,15 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     tableValue: { width: "55%", fontSize: 9, fontWeight: 700 },
     specsTableLabel: { width: "45%", fontSize: 10, color: "#52525b" },
     specsTableValue: { width: "55%", fontSize: 10, fontWeight: 700 },
+    detailsTableLabel: { width: "40%", fontSize: 8, color: "#52525b" },
+    detailsTableValue: { width: "60%", fontSize: 8, fontWeight: 700 },
+    detailsBox: {
+      borderWidth: 1,
+      borderColor: "#E2E8F0",
+      borderRadius: 6,
+      padding: 10,
+      flex: 1,
+    },
     bullet: { fontSize: 9, lineHeight: 1.4, marginBottom: 4 },
     pageFooter: {
       marginTop: "auto",
@@ -300,9 +312,8 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       color: "#92400e",
     },
     floorPlanSection: {
-      flex: 1,
       flexDirection: "column",
-      marginBottom: 12,
+      marginBottom: 16,
     },
     floorPlanWrap: {
       width: "100%",
@@ -400,6 +411,16 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     },
     contactEmail: {
       marginTop: 4,
+    },
+    page4BottomRow: {
+      flexDirection: "row",
+      gap: 12,
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
+    page4Column: {
+      width: "48%",
+      minWidth: 0,
     },
   });
 
@@ -573,19 +594,33 @@ function PdfTable({
 }: {
   styles: ReturnType<typeof createStyles>;
   rows: { label: string; value: string }[];
-  variant?: "default" | "specs";
+  variant?: "default" | "specs" | "details";
 }) {
   const visibleRows = filterPdfTableRows(rows);
   if (visibleRows.length === 0) return null;
 
   const isSpecs = variant === "specs";
+  const isDetails = variant === "details";
 
   return (
-    <View style={isSpecs ? s.specsBox : s.box}>
+    <View style={isDetails ? s.detailsBox : isSpecs ? s.specsBox : s.box}>
       {visibleRows.map((row, i) => (
         <View key={`${row.label}-${i}`} style={isSpecs ? s.specsTableRow : s.tableRow}>
-          <Text style={isSpecs ? s.specsTableLabel : s.tableLabel}>{row.label}</Text>
-          <Text style={isSpecs ? s.specsTableValue : s.tableValue}>{row.value}</Text>
+          <Text
+            style={
+              isDetails ? s.detailsTableLabel : isSpecs ? s.specsTableLabel : s.tableLabel
+            }
+          >
+            {row.label}
+          </Text>
+          <Text
+            style={
+              isDetails ? s.detailsTableValue : isSpecs ? s.specsTableValue : s.tableValue
+            }
+            wrap={isDetails ? false : undefined}
+          >
+            {row.value}
+          </Text>
         </View>
       ))}
     </View>
@@ -831,23 +866,18 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             <Text style={{ color: "#a1a1aa" }}>Additional photos</Text>
           )}
         </View>
-        {storyParagraphs.map((paragraph, i) => (
-          <Text key={i} style={[s.body, { marginBottom: i === storyParagraphs.length - 1 ? 12 : 8 }]}>
-            {paragraph}
-          </Text>
-        ))}
+        <View style={s.storySection}>
+          {storyParagraphs.map((paragraph, i) => (
+            <Text key={i} style={[s.body, { marginBottom: i === storyParagraphs.length - 1 ? 12 : 8 }]}>
+              {paragraph}
+            </Text>
+          ))}
+        </View>
 
         {props.energyLines.length > 0 ? (
           <View style={s.sectionBlock}>
             <Text style={s.h2}>Energy certificate</Text>
             <PdfTable styles={s} rows={props.energyLines} />
-          </View>
-        ) : null}
-
-        {props.specsTable.length > 0 ? (
-          <View style={{ flex: 1, flexDirection: "column" }}>
-            <Text style={s.h2}>Specifications</Text>
-            <PdfTable styles={s} rows={props.specsTable} variant="specs" />
           </View>
         ) : null}
       </PdfPageLayout>
@@ -903,12 +933,22 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
           </View>
         ) : null}
 
-        <PdfContactBlock
-          styles={s}
-          agent={props.agent}
-          avatarDataUrl={branding.avatarDataUrl}
-          website={props.website}
-        />
+        <View style={s.page4BottomRow}>
+          <View style={props.specsTable.length > 0 ? s.page4Column : { width: "100%" }}>
+            <PdfContactBlock
+              styles={s}
+              agent={props.agent}
+              avatarDataUrl={branding.avatarDataUrl}
+              website={props.website}
+            />
+          </View>
+          {props.specsTable.length > 0 ? (
+            <View style={s.page4Column}>
+              <Text style={s.h2}>Listing details</Text>
+              <PdfTable styles={s} rows={props.specsTable} variant="details" />
+            </View>
+          ) : null}
+        </View>
 
         <View style={s.sectionBlock}>
           <Text style={s.h2}>Legal notice</Text>
