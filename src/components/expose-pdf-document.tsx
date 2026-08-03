@@ -12,7 +12,10 @@ import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
 import { resolvePdfFontFamily } from "@/lib/pdf-fonts";
 import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
 import { filterPdfTableRows } from "@/lib/pdf-table-rows";
-import { splitPdfParagraphs } from "@/lib/pdf-text-format";
+import {
+  formatPdfDisplayAddress,
+  splitPdfParagraphs,
+} from "@/lib/pdf-text-format";
 import {
   DEFAULT_ACCENT_COLOR,
   DEFAULT_PRIMARY_COLOR,
@@ -27,13 +30,17 @@ import {
 
 export type { BrochurePdfProps, PDFBrandingProps };
 
-/** A4 page height in pt minus ~20 mm margins on top and bottom. */
+const PAGE_PAD_H = 36;
+const PAGE_PAD_V = 28;
 const A4_HEIGHT_PT = 841.89;
-const PAGE_MARGIN_PT = 57;
-const PAGE_BODY_MIN_HEIGHT = A4_HEIGHT_PT - PAGE_MARGIN_PT * 2;
+const PAGE_BODY_MIN_HEIGHT = A4_HEIGHT_PT - PAGE_PAD_V * 2 - 40;
 const MAP_HEIGHT_PT = 220;
 const FLOOR_PLAN_HEIGHT_PT = 220;
 const PAGE4_SPECS_MAX_ROWS = 8;
+const METRIC_BOX_HEIGHT = 56;
+const RHYTHM_SM = 12;
+const RHYTHM_MD = 14;
+const RHYTHM_LG = 16;
 
 type ResolvedPdfBranding = Required<
   Pick<PDFBrandingProps, "primaryColor" | "accentColor">
@@ -68,9 +75,9 @@ function getStyles(branding: ResolvedPdfBranding) {
 const createStyles = (branding: ResolvedPdfBranding) =>
   StyleSheet.create({
     page: {
-      padding: PAGE_MARGIN_PT,
-      paddingTop: PAGE_MARGIN_PT + 6,
-      paddingBottom: PAGE_MARGIN_PT,
+      paddingHorizontal: PAGE_PAD_H,
+      paddingTop: PAGE_PAD_V + 6,
+      paddingBottom: PAGE_PAD_V,
       fontFamily: branding.pdfFont,
       fontSize: 10,
       color: "#18181b",
@@ -105,13 +112,13 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 12,
+      marginBottom: RHYTHM_MD,
       minHeight: 40,
     },
     headerLogoWrap: {
       flex: 1,
       minWidth: 0,
-      paddingRight: 12,
+      paddingRight: RHYTHM_SM,
     },
     headerBadgeWrap: {
       flexShrink: 0,
@@ -122,14 +129,13 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       objectFit: "contain" as const,
     },
     badge: {
-      alignSelf: "flex-start",
       color: "#fff",
       fontSize: 9,
       fontWeight: 700,
       paddingVertical: 4,
       paddingHorizontal: 10,
-      marginBottom: 0,
       backgroundColor: branding.primaryColor,
+      borderRadius: 2,
     },
     hero: {
       width: "100%",
@@ -139,87 +145,108 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     heroImageWrap: {
       width: "100%",
       flex: 1,
-      minHeight: 240,
+      minHeight: 220,
       borderRadius: 6,
       overflow: "hidden",
       backgroundColor: "#f4f4f5",
     },
     heroRow: {
-      flex: 1,
       flexDirection: "row",
-      marginBottom: 14,
+      marginBottom: RHYTHM_LG,
       alignItems: "stretch",
     },
     heroImageCol: {
       width: "52%",
-      minHeight: 240,
+      minHeight: 220,
       flexDirection: "column",
     },
     heroContentCol: {
       flex: 1,
       justifyContent: "flex-start",
       minWidth: 0,
-      marginLeft: 16,
+      paddingLeft: RHYTHM_LG,
     },
     heroPlaceholder: {
       width: "100%",
       flex: 1,
-      minHeight: 240,
+      minHeight: 220,
       borderRadius: 6,
       backgroundColor: "#f4f4f5",
       alignItems: "center",
       justifyContent: "center",
     },
     summaryBlock: {
-      marginTop: 10,
+      marginTop: RHYTHM_SM,
+    },
+    metricsWrap: {
+      marginTop: RHYTHM_LG,
     },
     metricsRow: {
       flexDirection: "row",
-      marginBottom: 0,
       width: "100%",
+      backgroundColor: "#f8fafc",
+      borderWidth: 1,
+      borderColor: "#e2e8f0",
+      borderRadius: 8,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
     },
     metricCell: {
       flex: 1,
-      borderWidth: 1,
-      borderColor: "#e4e4e7",
-      borderRadius: 6,
+      minHeight: METRIC_BOX_HEIGHT,
+      borderRightWidth: 1,
+      borderRightColor: "#e2e8f0",
       paddingVertical: 10,
-      paddingHorizontal: 8,
+      paddingHorizontal: 10,
       minWidth: 0,
       alignItems: "center",
       justifyContent: "center",
-      marginRight: 10,
     },
     metricCellLast: {
-      marginRight: 0,
+      borderRightWidth: 0,
+    },
+    metricCellHighlight: {
+      backgroundColor: "#ffffff",
+      borderRadius: 6,
     },
     metricLabel: {
       fontSize: 7,
-      textTransform: "uppercase",
       color: "#71717a",
       marginBottom: 4,
       textAlign: "center",
+      letterSpacing: 0.3,
     },
     metricValue: {
       fontSize: 12,
       fontWeight: 700,
       textAlign: "center",
+      lineHeight: 1.2,
     },
-    title: { fontSize: 22, fontWeight: 700, marginBottom: 6 },
-    subtitle: { fontSize: 10, color: "#52525b", marginBottom: 0 },
+    title: {
+      fontSize: 22,
+      fontWeight: 700,
+      lineHeight: 1.2,
+      marginBottom: RHYTHM_SM,
+    },
+    subtitle: {
+      fontSize: 10,
+      lineHeight: 1.45,
+      color: "#52525b",
+      marginBottom: RHYTHM_MD,
+    },
     h2: {
-      fontSize: 11,
+      fontSize: 10,
       fontWeight: 700,
       textTransform: "uppercase",
-      letterSpacing: 1,
-      marginBottom: 8,
-      marginTop: 6,
+      letterSpacing: 0.8,
+      marginBottom: RHYTHM_SM,
+      marginTop: RHYTHM_SM,
       color: branding.accentColor,
     },
-    body: { fontSize: 10, lineHeight: 1.5, textAlign: "justify" },
-    grid: { flexDirection: "row", flexWrap: "wrap", marginBottom: 16 },
+    body: { fontSize: 10, lineHeight: 1.55, textAlign: "justify" },
+    grid: { flexDirection: "row", flexWrap: "wrap", marginBottom: RHYTHM_LG },
     storySection: {
-      marginTop: 16,
+      marginTop: RHYTHM_LG,
     },
     galleryCell: {
       width: "48%",
@@ -242,40 +269,37 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       padding: 10,
       marginBottom: 10,
     },
-    specsBox: {
-      borderWidth: 1,
-      borderColor: branding.accentColor,
-      borderRadius: 6,
-      padding: 14,
-      marginBottom: 10,
-      flex: 1,
-    },
     tableRow: {
       flexDirection: "row",
       borderBottomWidth: 1,
       borderBottomColor: "#f4f4f5",
       paddingVertical: 4,
     },
-    specsTableRow: {
+    detailsTableRow: {
       flexDirection: "row",
+      alignItems: "center",
       borderBottomWidth: 1,
-      borderBottomColor: "#e4e4e7",
-      paddingVertical: 7,
+      borderBottomColor: "#eef2f7",
+      paddingVertical: 4,
     },
     tableLabel: { width: "45%", fontSize: 9, color: "#52525b" },
     tableValue: { width: "55%", fontSize: 9, fontWeight: 700 },
-    specsTableLabel: { width: "45%", fontSize: 10, color: "#52525b" },
-    specsTableValue: { width: "55%", fontSize: 10, fontWeight: 700 },
-    detailsTableLabel: { width: "40%", fontSize: 8, color: "#52525b" },
-    detailsTableValue: { width: "60%", fontSize: 8, fontWeight: 700 },
+    detailsTableLabel: { width: "42%", fontSize: 8, color: "#64748b", lineHeight: 1.3 },
+    detailsTableValue: { width: "58%", fontSize: 8, fontWeight: 700, lineHeight: 1.3 },
     detailsBox: {
       borderWidth: 1,
       borderColor: "#E2E8F0",
       borderRadius: 6,
-      padding: 10,
-      flex: 1,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      backgroundColor: "#fafafa",
     },
-    bullet: { fontSize: 9, lineHeight: 1.4, marginBottom: 4 },
+    bullet: {
+      fontSize: 9,
+      lineHeight: 1.45,
+      marginBottom: 5,
+      paddingLeft: 2,
+    },
     pageFooter: {
       marginTop: "auto",
       borderTopWidth: 1,
@@ -303,7 +327,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       textAlign: "center",
     },
     stagingDisclaimer: {
-      marginTop: 8,
+      marginTop: RHYTHM_SM,
       borderWidth: 1,
       borderColor: "#fde68a",
       backgroundColor: "#fffbeb",
@@ -316,21 +340,30 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       lineHeight: 1.35,
       color: "#92400e",
     },
-    floorPlanSection: {
+    page4Main: {
       flexDirection: "column",
-      marginBottom: 16,
+    },
+    page4TopSection: {
+      marginBottom: RHYTHM_LG,
+    },
+    page4BottomSection: {
+      marginBottom: RHYTHM_MD,
     },
     floorPlanWrap: {
       width: "100%",
       height: FLOOR_PLAN_HEIGHT_PT,
+      maxHeight: FLOOR_PLAN_HEIGHT_PT,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 12,
-      borderRadius: 6,
+      marginTop: RHYTHM_SM,
+      marginBottom: RHYTHM_SM,
+      paddingHorizontal: RHYTHM_SM,
+      paddingVertical: RHYTHM_SM,
+      borderRadius: 8,
       overflow: "hidden",
       backgroundColor: "#fafafa",
       borderWidth: 1,
-      borderColor: "#e4e4e7",
+      borderColor: "#e2e8f0",
     },
     floorPlan: {
       width: "100%",
@@ -343,7 +376,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       height: MAP_HEIGHT_PT,
       borderRadius: 8,
       overflow: "hidden",
-      marginBottom: 16,
+      marginBottom: RHYTHM_LG,
       borderWidth: 1,
       borderColor: "#d4d4d8",
       position: "relative",
@@ -358,16 +391,24 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       position: "absolute",
       top: "50%",
       left: "50%",
-      marginLeft: -12,
-      marginTop: -30,
+      marginLeft: -10,
+      marginTop: -20,
       alignItems: "center",
+    },
+    mapPinDot: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: "#dc2626",
+      borderWidth: 3,
+      borderColor: "#ffffff",
     },
     mapFallback: {
       width: "100%",
       height: MAP_HEIGHT_PT,
       borderRadius: 8,
       overflow: "hidden",
-      marginBottom: 16,
+      marginBottom: RHYTHM_LG,
       borderWidth: 1,
       borderColor: "#cbd5e1",
       backgroundColor: "#e0f2fe",
@@ -388,41 +429,54 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       color: "#1e3a8a",
       textAlign: "center",
       lineHeight: 1.4,
-      marginTop: 8,
+      marginTop: RHYTHM_SM,
     },
     sectionBlock: {
-      marginBottom: 12,
+      marginBottom: RHYTHM_MD,
     },
     contactBox: {
       borderWidth: 1,
       borderColor: "#E2E8F0",
-      borderRadius: 6,
-      padding: 12,
-      marginBottom: 10,
+      borderRadius: 8,
+      padding: RHYTHM_SM,
+      backgroundColor: "#ffffff",
+    },
+    contactLogo: {
+      maxHeight: 28,
+      maxWidth: 100,
+      objectFit: "contain" as const,
+      marginBottom: RHYTHM_SM,
     },
     contactRow: {
       flexDirection: "row",
       alignItems: "flex-start",
-      flexWrap: "nowrap",
     },
     avatarImage: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       objectFit: "cover" as const,
     },
     contactDetails: {
       flex: 1,
       minWidth: 0,
-      marginLeft: 12,
+      paddingLeft: RHYTHM_SM,
     },
-    contactEmail: {
-      marginTop: 4,
+    contactName: {
+      fontSize: 11,
+      fontWeight: 700,
+      lineHeight: 1.3,
+      marginBottom: 3,
+    },
+    contactLine: {
+      fontSize: 9,
+      lineHeight: 1.4,
+      color: "#334155",
+      marginBottom: 3,
     },
     page4BottomRow: {
       flexDirection: "row",
       alignItems: "flex-start",
-      marginBottom: 12,
     },
     page4Column: {
       width: "48%",
@@ -431,59 +485,23 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     page4ColumnRight: {
       width: "48%",
       minWidth: 0,
-      marginLeft: 12,
+      paddingLeft: RHYTHM_MD,
     },
-    page4Main: {
-      flexDirection: "column",
+    legalSection: {
+      marginTop: RHYTHM_SM,
+      paddingTop: RHYTHM_SM,
+      borderTopWidth: 1,
+      borderTopColor: "#e2e8f0",
     },
     legalNoticeText: {
       fontSize: 7,
-      lineHeight: 1.35,
-      color: "#52525b",
+      lineHeight: 1.4,
+      color: "#64748b",
     },
   });
 
 function fmt(amount: string, currency: CurrencyCode, fallback: string) {
   return formatPriceAmount(amount, currency, fallback);
-}
-
-function PdfDropPin() {
-  return (
-    <View style={{ width: 24, height: 32, alignItems: "center" }}>
-      <View
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          backgroundColor: "#dc2626",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <View
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: "#ffffff",
-          }}
-        />
-      </View>
-      <View
-        style={{
-          width: 0,
-          height: 0,
-          borderLeftWidth: 6,
-          borderRightWidth: 6,
-          borderTopWidth: 8,
-          borderLeftColor: "transparent",
-          borderRightColor: "transparent",
-          borderTopColor: "#dc2626",
-          marginTop: -2,
-        }}
-      />
-    </View>
-  );
 }
 
 function PdfPageChrome({
@@ -508,7 +526,7 @@ function PdfPageChrome({
           )}
         </View>
         <View style={s.headerBadgeWrap}>
-          <Text style={[s.badge, { marginBottom: 0 }]} wrap={false}>
+          <Text style={s.badge} wrap={false}>
             {badge}
           </Text>
         </View>
@@ -537,18 +555,20 @@ function PdfPageLayout({
   children: ReactNode;
 }) {
   return (
-    <Page size="A4" style={s.page}>
+    <Page size="A4" style={s.page} wrap={false}>
       {showWatermark ? <PageBackdropWatermarks page={watermarkPage} /> : null}
       {showWatermark && textWatermarks ? (
-        <View>
+        <View wrap={false}>
           {textWatermarks.map((mark, i) => (
             <TextAreaWatermark key={i} top={mark.top} />
           ))}
         </View>
       ) : null}
-      <View style={s.pageColumn}>
+      <View style={s.pageColumn} wrap={false}>
         <PdfPageChrome styles={s} branding={branding} badge={badge} />
-        <View style={s.pageMain}>{children}</View>
+        <View style={s.pageMain} wrap={false}>
+          {children}
+        </View>
         <PdfPageFooter
           styles={s}
           pageLabel={pageLabel}
@@ -576,16 +596,19 @@ function PdfMetricCell({
 }) {
   return (
     <View
-      style={
-        highlight
-          ? [s.metricCell, isLast ? s.metricCellLast : {}, { borderColor: accentColor }]
-          : [s.metricCell, isLast ? s.metricCellLast : {}]
-      }
+      style={[
+        s.metricCell,
+        isLast ? s.metricCellLast : {},
+        highlight ? s.metricCellHighlight : {},
+      ]}
     >
       <Text style={s.metricLabel} wrap={false}>
         {label}
       </Text>
-      <Text style={[s.metricValue, highlight ? { color: accentColor } : {}]} wrap={false}>
+      <Text
+        style={[s.metricValue, highlight ? { color: accentColor } : {}]}
+        wrap={false}
+      >
         {value}
       </Text>
     </View>
@@ -640,31 +663,23 @@ function PdfTable({
 }: {
   styles: ReturnType<typeof createStyles>;
   rows: { label: string; value: string }[];
-  variant?: "default" | "specs" | "details";
+  variant?: "default" | "details";
 }) {
   const visibleRows = filterPdfTableRows(rows);
   if (visibleRows.length === 0) return null;
 
-  const isSpecs = variant === "specs";
   const isDetails = variant === "details";
 
   return (
-    <View style={isDetails ? s.detailsBox : isSpecs ? s.specsBox : s.box}>
+    <View style={isDetails ? s.detailsBox : s.box} wrap={false}>
       {visibleRows.map((row, i) => (
-        <View key={`${row.label}-${i}`} style={isSpecs ? s.specsTableRow : s.tableRow}>
-          <Text
-            style={
-              isDetails ? s.detailsTableLabel : isSpecs ? s.specsTableLabel : s.tableLabel
-            }
-          >
-            {row.label}
-          </Text>
-          <Text
-            style={
-              isDetails ? s.detailsTableValue : isSpecs ? s.specsTableValue : s.tableValue
-            }
-            wrap={isDetails ? false : undefined}
-          >
+        <View
+          key={`${row.label}-${i}`}
+          style={isDetails ? s.detailsTableRow : s.tableRow}
+          wrap={false}
+        >
+          <Text style={isDetails ? s.detailsTableLabel : s.tableLabel}>{row.label}</Text>
+          <Text style={isDetails ? s.detailsTableValue : s.tableValue} wrap={false}>
             {row.value}
           </Text>
         </View>
@@ -715,14 +730,16 @@ function PdfHeroImage({
   );
 }
 
-function PdfContactBlock({
+function PdfContactCard({
   styles: s,
   agent,
+  logoDataUrl,
   avatarDataUrl,
   website,
 }: {
   styles: ReturnType<typeof createStyles>;
   agent: BrochurePdfProps["agent"];
+  logoDataUrl?: string;
   avatarDataUrl?: string;
   website?: string;
 }) {
@@ -730,34 +747,47 @@ function PdfContactBlock({
   const agency = agent.agency.trim();
   const phone = agent.phone.trim();
   const email = agent.email.trim();
-  const hasContact = name || agency || phone || email || website?.trim();
+  const hasContact = name || agency || phone || email || website?.trim() || logoDataUrl;
 
   if (!hasContact) return null;
 
   return (
-    <View style={s.sectionBlock}>
-      <Text style={s.h2}>Your contact</Text>
-      <View style={s.contactBox}>
-        <View style={s.contactRow}>
-          {avatarDataUrl ? (
-            // eslint-disable-next-line jsx-a11y/alt-text
-            <Image style={s.avatarImage} src={avatarDataUrl} />
+    <View style={s.contactBox} wrap={false}>
+      {logoDataUrl ? (
+        // eslint-disable-next-line jsx-a11y/alt-text
+        <Image style={s.contactLogo} src={logoDataUrl} />
+      ) : null}
+      <View style={s.contactRow}>
+        {avatarDataUrl ? (
+          // eslint-disable-next-line jsx-a11y/alt-text
+          <Image style={s.avatarImage} src={avatarDataUrl} />
+        ) : null}
+        <View style={[s.contactDetails, !avatarDataUrl ? { paddingLeft: 0 } : {}]}>
+          {name ? (
+            <Text style={s.contactName} wrap={false}>
+              {name}
+            </Text>
           ) : null}
-          <View style={s.contactDetails}>
-            {name ? <Text style={{ fontSize: 12, fontWeight: 700 }} wrap={false}>{name}</Text> : null}
-            {agency ? <Text style={{ marginTop: name ? 4 : 0 }} wrap={false}>{agency}</Text> : null}
-            {phone ? <Text style={{ marginTop: name || agency ? 4 : 0 }} wrap={false}>{phone}</Text> : null}
-            {email ? (
-              <Text style={s.contactEmail} wrap={false}>
-                {email}
-              </Text>
-            ) : null}
-            {website?.trim() ? (
-              <Text style={{ marginTop: 4 }} wrap={false}>
-                {website.trim()}
-              </Text>
-            ) : null}
-          </View>
+          {agency ? (
+            <Text style={s.contactLine} wrap={false}>
+              {agency}
+            </Text>
+          ) : null}
+          {email ? (
+            <Text style={s.contactLine} wrap={false}>
+              {email}
+            </Text>
+          ) : null}
+          {phone ? (
+            <Text style={s.contactLine} wrap={false}>
+              {phone}
+            </Text>
+          ) : null}
+          {website?.trim() ? (
+            <Text style={s.contactLine} wrap={false}>
+              {website.trim()}
+            </Text>
+          ) : null}
         </View>
       </View>
     </View>
@@ -767,39 +797,14 @@ function PdfContactBlock({
 function PdfFloorPlanImage({
   styles: s,
   src,
-  showWatermark,
 }: {
   styles: ReturnType<typeof createStyles>;
-  src: string | undefined;
-  showWatermark: boolean;
+  src: string;
 }) {
-  const safeSrc = sanitizePdfImageSrc(src);
-  if (!safeSrc) {
-    return (
-      <View style={[s.floorPlanWrap, { alignItems: "center", justifyContent: "center" }]}>
-        <Text style={{ color: "#a1a1aa", fontSize: 9 }}>Floor plan</Text>
-      </View>
-    );
-  }
-
-  if (showWatermark) {
-    return (
-      <View style={s.floorPlanWrap}>
-        <WatermarkedImage
-          src={safeSrc}
-          frameStyle={{ width: "100%", height: FLOOR_PLAN_HEIGHT_PT }}
-          imageStyle={s.floorPlan}
-          showWatermark={showWatermark}
-          diagonalSize={16}
-        />
-      </View>
-    );
-  }
-
   return (
-    <View style={s.floorPlanWrap}>
+    <View style={s.floorPlanWrap} wrap={false}>
       {/* eslint-disable-next-line jsx-a11y/alt-text */}
-      <Image src={safeSrc} style={s.floorPlan} />
+      <Image src={src} style={s.floorPlan} />
     </View>
   );
 }
@@ -814,25 +819,27 @@ function PdfLocationMap({
   address: string;
 }) {
   const safeMap = sanitizePdfImageSrc(mapDataUrl);
+  const displayAddress = formatPdfDisplayAddress(address);
+
   if (safeMap) {
     return (
-      <View style={s.mapWrap}>
+      <View style={s.mapWrap} wrap={false}>
         {/* eslint-disable-next-line jsx-a11y/alt-text */}
         <Image src={safeMap} style={s.mapImage} />
         <View style={s.mapPinOverlay}>
-          <PdfDropPin />
+          <View style={s.mapPinDot} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={s.mapFallback}>
+    <View style={s.mapFallback} wrap={false}>
       <View style={{ flex: 1, backgroundColor: "#bfdbfe" }} />
       <View style={s.mapFallbackOverlay}>
-        <PdfDropPin />
-        {address.trim() ? (
-          <Text style={s.mapFallbackAddress}>{address}</Text>
+        <View style={s.mapPinDot} />
+        {displayAddress ? (
+          <Text style={s.mapFallbackAddress}>{displayAddress}</Text>
         ) : (
           <Text style={s.mapFallbackAddress}>Location preview unavailable</Text>
         )}
@@ -876,6 +883,7 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
     : props.priceOnRequestLabel;
   const sizeDisplay = props.size.trim() ? `${props.size} m²` : null;
   const roomsDisplay = props.rooms.trim() || null;
+  const displayAddress = formatPdfDisplayAddress(props.address);
   const storyParagraphs = splitPdfParagraphs(props.fullDescription);
   const locationParagraphs = splitPdfParagraphs(props.locationDescription);
   const floorPlanSrc = sanitizePdfImageSrc(props.floorPlanDataUrl);
@@ -892,8 +900,8 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         watermarkPage={1}
         textWatermarks={[{ top: 400 }, { top: 560 }]}
       >
-        <View style={s.pageMainGrow}>
-          <View style={s.heroRow}>
+        <View wrap={false} style={s.pageMainGrow}>
+          <View wrap={false} style={s.heroRow}>
             {hero ? (
               <PdfHeroImage styles={s} src={hero} showWatermark={showWatermark} />
             ) : (
@@ -903,9 +911,7 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             )}
             <View style={s.heroContentCol}>
               <Text style={s.title}>{props.title}</Text>
-              {props.address.trim() ? (
-                <Text style={s.subtitle}>{props.address}</Text>
-              ) : null}
+              {displayAddress ? <Text style={s.subtitle}>{displayAddress}</Text> : null}
               {props.summary.length > 0 ? (
                 <View style={s.summaryBlock}>
                   {props.summary.map((line, i) => (
@@ -917,14 +923,16 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
               ) : null}
             </View>
           </View>
-          <PdfMetricsRow
-            styles={s}
-            priceLabel={props.priceLabel}
-            priceDisplay={priceDisplay}
-            sizeDisplay={sizeDisplay}
-            roomsDisplay={roomsDisplay}
-            accentColor={branding.accentColor}
-          />
+          <View wrap={false} style={s.metricsWrap}>
+            <PdfMetricsRow
+              styles={s}
+              priceLabel={props.priceLabel}
+              priceDisplay={priceDisplay}
+              sizeDisplay={sizeDisplay}
+              roomsDisplay={roomsDisplay}
+              accentColor={branding.accentColor}
+            />
+          </View>
         </View>
       </PdfPageLayout>
 
@@ -937,37 +945,42 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         watermarkPage={2}
         textWatermarks={[{ top: 420 }, { top: 620 }]}
       >
-        <Text style={s.h2}>Property story</Text>
-        <View style={s.grid}>
-          {gallery.length > 0 ? (
-            gallery.map((src, i) => (
-              <WatermarkedImage
-                key={i}
-                src={src}
-                frameStyle={s.galleryCell}
-                imageStyle={s.galleryImg}
-                showWatermark={showWatermark}
-                diagonalSize={12}
-              />
-            ))
-          ) : (
-            <Text style={{ color: "#a1a1aa" }}>Additional photos</Text>
-          )}
-        </View>
-        <View style={s.storySection}>
-          {storyParagraphs.map((paragraph, i) => (
-            <Text key={i} style={[s.body, { marginBottom: i === storyParagraphs.length - 1 ? 12 : 8 }]}>
-              {paragraph}
-            </Text>
-          ))}
-        </View>
-
-        {props.energyLines.length > 0 ? (
-          <View style={s.sectionBlock}>
-            <Text style={s.h2}>Energy certificate</Text>
-            <PdfTable styles={s} rows={props.energyLines} />
+        <View wrap={false}>
+          <Text style={s.h2}>Property story</Text>
+          <View style={s.grid} wrap={false}>
+            {gallery.length > 0 ? (
+              gallery.map((src, i) => (
+                <WatermarkedImage
+                  key={i}
+                  src={src}
+                  frameStyle={s.galleryCell}
+                  imageStyle={s.galleryImg}
+                  showWatermark={showWatermark}
+                  diagonalSize={12}
+                />
+              ))
+            ) : (
+              <Text style={{ color: "#a1a1aa" }}>Additional photos</Text>
+            )}
           </View>
-        ) : null}
+          <View style={s.storySection} wrap={false}>
+            {storyParagraphs.map((paragraph, i) => (
+              <Text
+                key={i}
+                style={[s.body, { marginBottom: i === storyParagraphs.length - 1 ? RHYTHM_MD : RHYTHM_SM }]}
+              >
+                {paragraph}
+              </Text>
+            ))}
+          </View>
+
+          {props.energyLines.length > 0 ? (
+            <View style={s.sectionBlock} wrap={false}>
+              <Text style={s.h2}>Energy certificate</Text>
+              <PdfTable styles={s} rows={props.energyLines} />
+            </View>
+          ) : null}
+        </View>
       </PdfPageLayout>
 
       <PdfPageLayout
@@ -979,22 +992,24 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         watermarkPage={3}
         textWatermarks={[{ top: 280 }, { top: 560 }]}
       >
-        <Text style={s.h2}>Location & neighborhood</Text>
-        <PdfLocationMap
-          styles={s}
-          mapDataUrl={props.mapDataUrl}
-          address={props.address}
-        />
-        {locationParagraphs.map((paragraph, i) => (
-          <Text key={i} style={[s.body, s.sectionBlock, { marginBottom: 8 }]}>
-            {paragraph}
-          </Text>
-        ))}
-        {props.stagingDisclaimer ? (
-          <View style={s.stagingDisclaimer}>
-            <Text style={s.stagingDisclaimerText}>{props.stagingDisclaimer}</Text>
-          </View>
-        ) : null}
+        <View wrap={false}>
+          <Text style={s.h2}>Location & neighborhood</Text>
+          <PdfLocationMap
+            styles={s}
+            mapDataUrl={props.mapDataUrl}
+            address={props.address}
+          />
+          {locationParagraphs.map((paragraph, i) => (
+            <Text key={i} style={[s.body, { marginBottom: RHYTHM_SM }]}>
+              {paragraph}
+            </Text>
+          ))}
+          {props.stagingDisclaimer ? (
+            <View style={s.stagingDisclaimer}>
+              <Text style={s.stagingDisclaimerText}>{props.stagingDisclaimer}</Text>
+            </View>
+          ) : null}
+        </View>
       </PdfPageLayout>
 
       <PdfPageLayout
@@ -1008,31 +1023,35 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
       >
         <View wrap={false} style={s.page4Main}>
           {floorPlanSrc ? (
-            <View style={s.floorPlanSection}>
+            <View wrap={false} style={s.page4TopSection}>
               <Text style={s.h2}>Floor plan</Text>
-              <PdfFloorPlanImage styles={s} src={floorPlanSrc} showWatermark={showWatermark} />
+              <PdfFloorPlanImage styles={s} src={floorPlanSrc} />
             </View>
           ) : null}
 
-          <View style={s.page4BottomRow} wrap={false}>
-            <View style={page4Specs.length > 0 ? s.page4Column : { width: "100%" }}>
-              <PdfContactBlock
-                styles={s}
-                agent={props.agent}
-                avatarDataUrl={branding.avatarDataUrl}
-                website={props.website}
-              />
-            </View>
-            {page4Specs.length > 0 ? (
-              <View style={s.page4ColumnRight}>
-                <Text style={s.h2}>Listing details</Text>
-                <PdfTable styles={s} rows={page4Specs} variant="details" />
+          <View wrap={false} style={s.page4BottomSection}>
+            <View wrap={false} style={s.page4BottomRow}>
+              <View style={page4Specs.length > 0 ? s.page4Column : { width: "100%" }}>
+                <Text style={[s.h2, { marginTop: 0 }]}>Your contact</Text>
+                <PdfContactCard
+                  styles={s}
+                  agent={props.agent}
+                  logoDataUrl={branding.logoDataUrl}
+                  avatarDataUrl={branding.avatarDataUrl}
+                  website={props.website}
+                />
               </View>
-            ) : null}
+              {page4Specs.length > 0 ? (
+                <View style={s.page4ColumnRight}>
+                  <Text style={[s.h2, { marginTop: 0 }]}>Listing details</Text>
+                  <PdfTable styles={s} rows={page4Specs} variant="details" />
+                </View>
+              ) : null}
+            </View>
           </View>
 
-          <View style={s.sectionBlock} wrap={false}>
-            <Text style={s.h2}>Legal notice</Text>
+          <View wrap={false} style={s.legalSection}>
+            <Text style={[s.h2, { marginTop: 0 }]}>Legal notice</Text>
             <Text style={s.legalNoticeText}>
               {props.agent.legalDisclaimer.trim() || props.legalDisclaimerFallback}
             </Text>

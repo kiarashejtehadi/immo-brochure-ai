@@ -18,3 +18,17 @@ export function splitPdfParagraphs(text: string): string[] {
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
 }
+
+/** Normalize address for PDF display (title case, not forced uppercase). */
+export function formatPdfDisplayAddress(address: string): string {
+  const trimmed = address.trim();
+  if (!trimmed) return "";
+  return trimmed
+    .split(/\s+/)
+    .map((word) => {
+      if (/^\d+[a-zA-Z]?[-/]?\d*$/.test(word)) return word;
+      if (word.length <= 2 && word === word.toUpperCase()) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
