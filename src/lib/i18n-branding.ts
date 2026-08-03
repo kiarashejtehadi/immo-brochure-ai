@@ -404,6 +404,15 @@ export type BrandKitCopy = {
   previewBadge: string;
   previewLogoPlaceholder: string;
   previewAgencyFallback: string;
+  previewAgentFallback: string;
+  previewCoverPhotoPlaceholder: string;
+  previewContactHeading: string;
+  previewMetricPrice: string;
+  previewMetricSize: string;
+  previewMetricRooms: string;
+  previewExpandHint: string;
+  previewExpandLabel: string;
+  previewClose: string;
 };
 
 const brandKitEn: BrandKitCopy = {
@@ -445,6 +454,15 @@ const brandKitEn: BrandKitCopy = {
   previewBadge: "FOR RENT",
   previewLogoPlaceholder: "Your logo",
   previewAgencyFallback: "Your agency",
+  previewAgentFallback: "Agent name",
+  previewCoverPhotoPlaceholder: "Cover photo",
+  previewContactHeading: "Your contact",
+  previewMetricPrice: "Price",
+  previewMetricSize: "Size",
+  previewMetricRooms: "Rooms",
+  previewExpandHint: "Click to expand",
+  previewExpandLabel: "Expand PDF cover preview",
+  previewClose: "Close preview",
 };
 
 const brandKitDe: BrandKitCopy = {
@@ -486,6 +504,15 @@ const brandKitDe: BrandKitCopy = {
   previewBadge: "ZU VERMIETEN",
   previewLogoPlaceholder: "Ihr Logo",
   previewAgencyFallback: "Ihre Agentur",
+  previewAgentFallback: "Maklername",
+  previewCoverPhotoPlaceholder: "Titelbild",
+  previewContactHeading: "Ihr Kontakt",
+  previewMetricPrice: "Preis",
+  previewMetricSize: "Fläche",
+  previewMetricRooms: "Zimmer",
+  previewExpandHint: "Zum Vergrößern klicken",
+  previewExpandLabel: "PDF-Titelvorschau vergrößern",
+  previewClose: "Vorschau schließen",
 };
 
 export function getBrandKitCopy(locale: UiLocale): BrandKitCopy {

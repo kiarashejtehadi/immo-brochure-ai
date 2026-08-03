@@ -13,6 +13,18 @@ export function isBrandFontFamily(value: string | null | undefined): value is Br
   return value === "modern" || value === "classic" || value === "minimal";
 }
 
+/** Maps brand kit font choice to CSS font stacks for HTML previews. */
+export function cssFontFamily(fontFamily?: BrandFontFamily | string | null): string {
+  switch (fontFamily) {
+    case "classic":
+      return "Georgia, 'Times New Roman', serif";
+    case "minimal":
+      return "ui-monospace, SFMono-Regular, Menlo, monospace";
+    default:
+      return "system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+  }
+}
+
 /** Maps brand kit font choice to built-in @react-pdf/renderer fonts. */
 export function pdfFontFamily(fontFamily?: BrandFontFamily | string | null): string {
   switch (fontFamily) {

@@ -261,7 +261,14 @@ export function BrandKitSettings({
         </div>
 
         <div className="xl:sticky xl:top-6 xl:self-start">
-          <BrandKitPreview branding={branding} copy={copy} />
+          <BrandKitPreview
+            branding={branding}
+            copy={copy}
+            colorsEditable={isPro && !creditPackOnly}
+            onPrimaryColorChange={(color) => onBrandingChange({ brandColor: color })}
+            onAccentColorChange={(color) => onBrandingChange({ accentColor: color })}
+            onColorsLocked={onUpgrade}
+          />
         </div>
       </div>
     </section>
