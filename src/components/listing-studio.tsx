@@ -825,8 +825,8 @@ function ListingStudioContent() {
 
   async function handleDownloadPdf() {
     if (!result || isDownloadingPdf) return;
-    setIsDownloadingPdf(true);
     setPdfError(null);
+
     try {
       const isPro = billingStatus?.isPro === true;
       const agentForPdf = resolvePdfAgentContact(agentForLocale, brandingProfile);
@@ -890,9 +890,10 @@ function ListingStudioContent() {
         },
       });
 
-      const { downloadExposePdf } = await importWithChunkRetry(() =>
-        import("@/lib/download-expose-pdf"),
-      );
+      // Set loading state only after image prep — keeps canvas work off the spinner re-render path.
+      setIsDownloadingPdf(true);
+
+      const { downloadExposePdf } = await import("@/lib/download-expose-pdf");
 
       await withTimeout(
         downloadExposePdf({

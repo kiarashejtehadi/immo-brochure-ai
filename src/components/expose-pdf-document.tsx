@@ -52,6 +52,18 @@ function resolveBranding(props: BrochurePdfProps): ResolvedPdfBranding {
   };
 }
 
+const stylesCache = new Map<string, ReturnType<typeof createStyles>>();
+
+function getStyles(branding: ResolvedPdfBranding) {
+  const key = `${branding.primaryColor}|${branding.accentColor}|${branding.pdfFont}`;
+  let styles = stylesCache.get(key);
+  if (!styles) {
+    styles = createStyles(branding);
+    stylesCache.set(key, styles);
+  }
+  return styles;
+}
+
 const createStyles = (branding: ResolvedPdfBranding) =>
   StyleSheet.create({
     page: {
@@ -705,7 +717,7 @@ function PdfPageFooter({
 
 export function ExposePdfDocument(props: BrochurePdfProps) {
   const branding = resolveBranding(props);
-  const s = createStyles(branding);
+  const s = getStyles(branding);
   const hero = sanitizePdfImageSrc(props.photoDataUrls[0]);
   const gallery = props.photoDataUrls
     .slice(1, 5)

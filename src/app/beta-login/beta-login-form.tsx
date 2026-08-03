@@ -1,15 +1,25 @@
 "use client";
 
-import { useActionState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import { submitBetaLogin, type BetaLoginState } from "./actions";
 
 const initialState: BetaLoginState = {};
 
-export function BetaLoginForm({ redirectTo }: { redirectTo: string }) {
-  const [state, formAction, pending] = useActionState(
-    submitBetaLogin,
-    initialState,
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+    >
+      {pending ? "Checking…" : "Continue"}
+    </button>
   );
+}
+
+export function BetaLoginForm({ redirectTo }: { redirectTo: string }) {
+  const [state, formAction] = useFormState(submitBetaLogin, initialState);
 
   return (
     <form action={formAction} className="mt-8 space-y-4">
@@ -35,13 +45,7 @@ export function BetaLoginForm({ redirectTo }: { redirectTo: string }) {
           {state.error}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-      >
-        {pending ? "Checking…" : "Continue"}
-      </button>
+      <SubmitButton />
     </form>
   );
 }

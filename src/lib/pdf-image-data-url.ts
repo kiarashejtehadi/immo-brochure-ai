@@ -5,8 +5,8 @@ import { yieldToMainThread } from "@/lib/yield-to-main-thread";
 export const PDF_BLANK_IMAGE_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4=";
 
-const PDF_MAX_EDGE = 1000;
-const PDF_JPEG_QUALITY = 0.7;
+const PDF_MAX_EDGE = 720;
+const PDF_JPEG_QUALITY = 0.62;
 
 export type PdfReadyImages = {
   photoDataUrls: string[];
