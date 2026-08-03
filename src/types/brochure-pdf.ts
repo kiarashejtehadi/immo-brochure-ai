@@ -29,6 +29,8 @@ export type BrochurePdfProps = {
   stagingDisclaimer?: string;
   photoDataUrls: string[];
   floorPlanDataUrl?: string;
+  /** Static map preview for the location section (data URL). */
+  mapDataUrl?: string;
   /** @deprecated Prefer primaryColor */
   brandColor?: string;
   primaryColor?: string;

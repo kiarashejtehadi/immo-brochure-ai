@@ -1,19 +1,13 @@
 import type { ListingAddress } from "@/types/listing";
 import type { LocationEnrichment, NearbyPoi, PoiCategory } from "@/types/location-poi";
+import { geocodeAddress } from "@/lib/location/geocode-address";
 import { formatListingAddress } from "@/lib/location/format-address";
 
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
 const POI_RADIUS_METERS = 1000;
 const CONNECTIVITY_RADIUS_METERS = 50000;
 const MAX_POIS_PER_CATEGORY = 6;
-
-type NominatimResult = {
-  lat: string;
-  lon: string;
-  display_name: string;
-};
 
 type OverpassElement = {
   type: "node" | "way" | "relation";
@@ -158,33 +152,6 @@ function dedupeAndLimit(items: NearbyPoi[], limit: number): NearbyPoi[] {
   return result;
 }
 
-async function geocodeNominatim(
-  query: string,
-): Promise<{ lat: number; lon: number; displayName: string } | null> {
-  const url = new URL(NOMINATIM_URL);
-  url.searchParams.set("q", query);
-  url.searchParams.set("format", "json");
-  url.searchParams.set("limit", "1");
-  url.searchParams.set("addressdetails", "0");
-
-  const res = await fetch(url.toString(), {
-    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
-    next: { revalidate: 86400 },
-  });
-
-  if (!res.ok) return null;
-
-  const data = (await res.json()) as NominatimResult[];
-  const hit = data[0];
-  if (!hit) return null;
-
-  const lat = Number(hit.lat);
-  const lon = Number(hit.lon);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-
-  return { lat, lon, displayName: hit.display_name };
-}
-
 async function fetchOverpassPois(lat: number, lon: number): Promise<NearbyPoi[]> {
   const query = `
 [out:json][timeout:25];
@@ -244,7 +211,7 @@ export async function fetchLocationEnrichment(
   const query = formatListingAddress(address);
   if (!query.trim() || query.length < 6) return null;
 
-  const geocoded = await geocodeNominatim(query);
+  const geocoded = await geocodeAddress(query);
   if (!geocoded) return null;
 
   const allPois = await fetchOverpassPois(geocoded.lat, geocoded.lon);

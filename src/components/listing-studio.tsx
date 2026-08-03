@@ -23,6 +23,7 @@ import {
   formatListingAddress,
   getDefaultCountryForLocale,
 } from "@/lib/location/format-address";
+import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
 import {
   getUiCopy,
   LOCALE_LABELS,
@@ -746,6 +747,7 @@ function ListingStudioContent() {
       if (brand.avatarUrl) {
         avatarDataUrl = await avatarUrlToDataUrl(brand.avatarUrl);
       }
+      const mapDataUrl = await fetchMapForPdf(address);
       const pdfProps = buildBrochurePdfProps({
         transactionType,
         form: exposeFormCopy,
@@ -775,6 +777,7 @@ function ListingStudioContent() {
       const { downloadExposePdf } = await import("@/lib/download-expose-pdf");
       await downloadExposePdf({
         ...pdfProps,
+        mapDataUrl,
         photoDataUrls: [],
         photoFiles: photos.map((p) => p.file),
         floorPlanFile,
