@@ -374,12 +374,14 @@ export type BrandKitCopy = {
   uploadLogo: string;
   uploadLogoPro: string;
   logoHint: string;
+  logoDropLabel: string;
   agentAvatar: string;
   agentAvatarAlt: string;
   noAvatar: string;
   uploadAvatar: string;
   uploadAvatarPro: string;
   avatarHint: string;
+  avatarDropLabel: string;
   primaryColor: string;
   accentColor: string;
   fontFamily: string;
@@ -395,6 +397,13 @@ export type BrandKitCopy = {
   avatarUploaded: string;
   uploadFailed: string;
   uploading: string;
+  previewTitle: string;
+  previewHint: string;
+  previewSampleTitle: string;
+  previewSampleAddress: string;
+  previewBadge: string;
+  previewLogoPlaceholder: string;
+  previewAgencyFallback: string;
 };
 
 const brandKitEn: BrandKitCopy = {
@@ -406,12 +415,14 @@ const brandKitEn: BrandKitCopy = {
   uploadLogo: "Upload logo",
   uploadLogoPro: "Upload logo (Pro)",
   logoHint: "PNG or SVG, max 2 MB.",
+  logoDropLabel: "Drop logo or click to upload",
   agentAvatar: "Agent avatar",
   agentAvatarAlt: "Agent photo",
   noAvatar: "No photo",
   uploadAvatar: "Upload photo",
   uploadAvatarPro: "Upload photo (Pro)",
   avatarHint: "JPEG or PNG for the contact section.",
+  avatarDropLabel: "Drop photo or click to upload",
   primaryColor: "Primary color",
   accentColor: "Accent color",
   fontFamily: "Font style",
@@ -427,19 +438,56 @@ const brandKitEn: BrandKitCopy = {
   avatarUploaded: "Photo uploaded.",
   uploadFailed: "Upload failed.",
   uploading: "Uploading…",
+  previewTitle: "PDF cover preview",
+  previewHint: "Live preview of your logo and colors on the exposé cover page.",
+  previewSampleTitle: "Sample property title",
+  previewSampleAddress: "123 Example Street, Berlin",
+  previewBadge: "FOR RENT",
+  previewLogoPlaceholder: "Your logo",
+  previewAgencyFallback: "Your agency",
 };
 
-const brandKitDe: Partial<BrandKitCopy> = {
+const brandKitDe: BrandKitCopy = {
   title: "Agentur Brand Kit",
   subtitle: "Logo, Farben, Typografie und Impressum für Ihre PDF-Broschüren.",
+  agencyLogo: "Agentur-Logo",
+  agencyLogoAlt: "Agentur-Logo",
+  noLogo: "Kein Logo",
+  uploadLogo: "Logo hochladen",
+  uploadLogoPro: "Logo hochladen (Pro)",
+  logoHint: "PNG oder SVG, max. 2 MB.",
+  logoDropLabel: "Logo ablegen oder klicken zum Hochladen",
+  agentAvatar: "Makler-Foto",
+  agentAvatarAlt: "Makler-Foto",
+  noAvatar: "Kein Foto",
+  uploadAvatar: "Foto hochladen",
+  uploadAvatarPro: "Foto hochladen (Pro)",
+  avatarHint: "JPEG oder PNG für den Kontaktbereich.",
+  avatarDropLabel: "Foto ablegen oder klicken zum Hochladen",
   primaryColor: "Primärfarbe",
   accentColor: "Akzentfarbe",
   fontFamily: "Schriftstil",
+  fontModern: "Modern",
+  fontClassic: "Klassisch",
+  fontMinimal: "Minimal",
   customLegalImprint: "Individuelles Impressum",
+  customLegalImprintPlaceholder: "Agentur-Hinweis für Seite 3 jedes PDFs…",
+  customLegalImprintHint: "Ersetzt den objektbezogenen Rechtstext, wenn gesetzt.",
   saveBrandKit: "Brand Kit speichern",
+  saving: "Wird gespeichert…",
+  logoUploaded: "Logo hochgeladen.",
+  avatarUploaded: "Foto hochgeladen.",
+  uploadFailed: "Upload fehlgeschlagen.",
+  uploading: "Wird hochgeladen…",
+  previewTitle: "PDF-Titelvorschau",
+  previewHint: "Live-Vorschau von Logo und Farben auf der Exposé-Titelseite.",
+  previewSampleTitle: "Beispiel-Objekttitel",
+  previewSampleAddress: "Musterstraße 123, Berlin",
+  previewBadge: "ZU VERMIETEN",
+  previewLogoPlaceholder: "Ihr Logo",
+  previewAgencyFallback: "Ihre Agentur",
 };
 
 export function getBrandKitCopy(locale: UiLocale): BrandKitCopy {
-  const partial = locale === "de" ? brandKitDe : {};
-  return { ...brandKitEn, ...partial };
+  return locale === "de" ? brandKitDe : brandKitEn;
 }

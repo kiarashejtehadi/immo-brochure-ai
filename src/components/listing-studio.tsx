@@ -50,6 +50,11 @@ import {
   type CurrencyCode,
 } from "@/lib/currency";
 import { mergeAgentWithBranding, pdfBrandingFromProfile, logoUrlToDataUrl, avatarUrlToDataUrl, resolvePdfAgentContact } from "@/lib/branding/pdf-branding";
+import {
+  agentDefaultsFromBranding,
+  hasBrandingAgentDefaults,
+  mergeAgentWithBrandingDefaults,
+} from "@/lib/branding/agent-from-branding";
 import { reelBrandingFromProfile } from "@/lib/property-reel";
 import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
@@ -346,6 +351,7 @@ function ListingStudioContent() {
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const { status: billingStatus, refresh: refreshBilling } = useBillingStatus();
   const [brandingProfile, setBrandingProfile] = useState<UserBrandingProfile | null>(null);
+  const brandingAutoFillDone = useRef(false);
   const [browserSignedIn, setBrowserSignedIn] = useState(false);
 
   useEffect(() => {
@@ -383,6 +389,23 @@ function ListingStudioContent() {
       })
       .catch(() => undefined);
   }, [billingStatus?.email]);
+
+  useEffect(() => {
+    if (!brandingProfile || brandingAutoFillDone.current) return;
+    setAgent((current) => {
+      const patch = agentDefaultsFromBranding(brandingProfile, current);
+      if (Object.keys(patch).length === 0) return current;
+      brandingAutoFillDone.current = true;
+      return { ...current, ...patch };
+    });
+  }, [brandingProfile]);
+
+  const canResetFromBranding = hasBrandingAgentDefaults(brandingProfile);
+
+  function handleResetAgentFromBranding() {
+    if (!brandingProfile) return;
+    setAgent((current) => mergeAgentWithBrandingDefaults(current, brandingProfile, { force: true }));
+  }
 
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -865,6 +888,8 @@ function ListingStudioContent() {
             onFloorPlanChange={handleFloorPlanChange}
             agent={agent}
             onAgent={(patch) => setAgent((a) => ({ ...a, ...patch }))}
+            onResetAgentFromBranding={handleResetAgentFromBranding}
+            canResetFromBranding={canResetFromBranding}
             tone={tone}
             onTone={setTone}
             targetLanguage={targetLanguage}

@@ -201,6 +201,8 @@ export type ListingFormProps = {
   onFloorPlanChange: (file: File | null) => void;
   agent: AgentFormData;
   onAgent: (patch: Partial<AgentFormData>) => void;
+  onResetAgentFromBranding?: () => void;
+  canResetFromBranding?: boolean;
   tone: ToneKey;
   onTone: (tone: ToneKey) => void;
   targetLanguage: OutputLanguage;
@@ -253,6 +255,8 @@ export function ListingForm(props: ListingFormProps) {
     onFloorPlanChange,
     agent,
     onAgent,
+    onResetAgentFromBranding,
+    canResetFromBranding,
     tone,
     onTone,
     targetLanguage,
@@ -960,6 +964,18 @@ export function ListingForm(props: ListingFormProps) {
         isOpen={openStep === 6}
         onToggle={() => setOpenStep(6)}
       >
+        {onResetAgentFromBranding ? (
+          <div className="mb-4">
+            <button
+              type="button"
+              disabled={!canResetFromBranding}
+              onClick={onResetAgentFromBranding}
+              className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+            >
+              {copy.resetToBrandingDefaults}
+            </button>
+          </div>
+        ) : null}
         <FormGrid>
           <div>
             <label htmlFor="agentName" className={labelClassName()}>
