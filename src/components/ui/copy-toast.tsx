@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 
 type CopyToastContextValue = {
@@ -17,8 +24,10 @@ export function CopyToastProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => setMessage(null), 2200);
   }, []);
 
+  const value = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <CopyToastContext.Provider value={{ showToast }}>
+    <CopyToastContext.Provider value={value}>
       {children}
       {message ? (
         <div

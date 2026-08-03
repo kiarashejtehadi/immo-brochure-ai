@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import {
   Document,
   Image,
@@ -701,7 +701,7 @@ function PdfPageFooter({
   );
 }
 
-export function ExposePdfDocument(props: BrochurePdfProps) {
+function ExposePdfDocumentInner(props: BrochurePdfProps) {
   const branding = resolveBranding(props);
   const s = createStyles(branding);
   const hero = sanitizePdfImageSrc(props.photoDataUrls[0]);
@@ -870,5 +870,8 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
     </Document>
   );
 }
+
+export const ExposePdfDocument = memo(ExposePdfDocumentInner);
+ExposePdfDocument.displayName = "ExposePdfDocument";
 
 export type ExposePdfDocumentProps = BrochurePdfProps;

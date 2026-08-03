@@ -2,9 +2,11 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -35,11 +37,32 @@ type VoiceFillContextValue = {
 
 const VoiceFillContext = createContext<VoiceFillContextValue | null>(null);
 
+function voiceFillConfigsEqual(
+  a: VoiceFillConfig | null,
+  b: VoiceFillConfig | null,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.locale === b.locale &&
+    a.transactionType === b.transactionType &&
+    a.onParsed === b.onParsed &&
+    a.copy.voiceFillButton === b.copy.voiceFillButton &&
+    a.copy.voiceFillButtonTrial === b.copy.voiceFillButtonTrial &&
+    a.copy.voiceFillListening === b.copy.voiceFillListening &&
+    a.copy.voiceFillProcessing === b.copy.voiceFillProcessing &&
+    a.copy.voiceFillUnsupported === b.copy.voiceFillUnsupported
+  );
+}
+
 export function VoiceFillProvider({ children }: { children: ReactNode }) {
-  const [config, setVoiceFillConfig] = useState<VoiceFillConfig | null>(null);
+  const [config, setConfigState] = useState<VoiceFillConfig | null>(null);
+  const setVoiceFillConfig = useCallback((next: VoiceFillConfig | null) => {
+    setConfigState((prev) => (voiceFillConfigsEqual(prev, next) ? prev : next));
+  }, []);
   const value = useMemo(
     () => ({ config, setVoiceFillConfig }),
-    [config],
+    [config, setVoiceFillConfig],
   );
 
   return (
@@ -57,11 +80,23 @@ export function useVoiceFillRegistration() {
 
 export function useRegisterVoiceFill(config: VoiceFillConfig) {
   const { setVoiceFillConfig } = useVoiceFillRegistration();
+  const configRef = useRef(config);
+  configRef.current = config;
 
   useEffect(() => {
-    setVoiceFillConfig(config);
+    setVoiceFillConfig(configRef.current);
     return () => setVoiceFillConfig(null);
-  }, [config, setVoiceFillConfig]);
+  }, [
+    setVoiceFillConfig,
+    config.locale,
+    config.transactionType,
+    config.onParsed,
+    config.copy.voiceFillButton,
+    config.copy.voiceFillButtonTrial,
+    config.copy.voiceFillListening,
+    config.copy.voiceFillProcessing,
+    config.copy.voiceFillUnsupported,
+  ]);
 }
 
 /** Fixed global mount — renders only when the create workspace registers voice fill. */

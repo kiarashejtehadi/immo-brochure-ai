@@ -232,6 +232,10 @@ function SocialCopyPresetButtons({
 }
 
 function ListingStudioContent() {
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+  console.log("Form Page Render Count:", renderCount.current);
+
   const photoInputRef = useRef<HTMLInputElement>(null);
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLElement>(null);
@@ -240,8 +244,8 @@ function ListingStudioContent() {
   const uiLocale = routeLocale;
   const pathname = usePathname();
   const router = useRouter();
-  const uiCopy = getUiCopy(uiLocale);
-  const formCopy = getFormCopy(uiLocale);
+  const uiCopy = useMemo(() => getUiCopy(uiLocale), [uiLocale]);
+  const formCopy = useMemo(() => getFormCopy(uiLocale), [uiLocale]);
   const workflowCopy = useMemo(
     () => getWorkflowUiCopy(uiLocale),
     [uiLocale],
@@ -279,12 +283,12 @@ function ListingStudioContent() {
 
   useEffect(() => {
     setTargetLanguage(outputLanguageFromLocale(routeLocale));
-    setAgent((prev) => ({
-      ...prev,
-      legalDisclaimer: isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)
-        ? getFormCopy(routeLocale).defaultLegalDisclaimer
-        : prev.legalDisclaimer,
-    }));
+    const defaultDisclaimer = getFormCopy(routeLocale).defaultLegalDisclaimer;
+    setAgent((prev) => {
+      if (!isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)) return prev;
+      if (prev.legalDisclaimer === defaultDisclaimer) return prev;
+      return { ...prev, legalDisclaimer: defaultDisclaimer };
+    });
   }, [routeLocale]);
 
   const [currency, setCurrency] = useState<CurrencyCode>("EUR");
@@ -355,16 +359,23 @@ function ListingStudioContent() {
   const { status: billingStatus, refresh: refreshBilling } = useBillingStatus();
   const [brandingProfile, setBrandingProfile] = useState<UserBrandingProfile | null>(null);
   const brandingAutoFillDone = useRef(false);
+  const checkoutHandledRef = useRef(false);
+  const demoHandledRef = useRef(false);
   const [browserSignedIn, setBrowserSignedIn] = useState(false);
+
+  useEffect(() => {
+    brandingAutoFillDone.current = false;
+  }, [billingStatus?.email]);
 
   useEffect(() => {
     void getBrowserAuthEmail().then((email) => setBrowserSignedIn(Boolean(email)));
   }, [billingStatus?.email]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || checkoutHandledRef.current) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") !== "success") return;
+    checkoutHandledRef.current = true;
     setPurchaseSuccess(true);
     window.dispatchEvent(new Event(BILLING_REFRESH_EVENT));
     void refreshBilling();
@@ -416,8 +427,9 @@ function ListingStudioContent() {
   const pdfImagesFingerprintRef = useRef("");
 
   const PDF_PREP_WATCHDOG_MS = 12_000;
+  const pdfStalledMessage = copy.errors.pdfStalled;
 
-  function buildPdfImagesFingerprint(): string {
+  const buildPdfImagesFingerprint = useCallback((): string => {
     const photoKey = photos
       .map((p) => `${p.file.name}:${p.file.size}:${p.file.lastModified}`)
       .join("|");
@@ -425,7 +437,7 @@ function ListingStudioContent() {
       ? `${floorPlanFile.name}:${floorPlanFile.size}:${floorPlanFile.lastModified}`
       : "";
     return `${photoKey}::${floorKey}`;
-  }
+  }, [photos, floorPlanFile]);
 
   useEffect(() => {
     pdfReadyImagesRef.current = null;
@@ -436,12 +448,12 @@ function ListingStudioContent() {
     if (!isDownloadingPdf) return;
     const watchdog = window.setTimeout(() => {
       setIsDownloadingPdf(false);
-      setPdfError(copy.errors.pdfStalled);
+      setPdfError(pdfStalledMessage);
       pdfReadyImagesRef.current = null;
       pdfImagesFingerprintRef.current = "";
     }, PDF_PREP_WATCHDOG_MS);
     return () => window.clearTimeout(watchdog);
-  }, [isDownloadingPdf, copy.errors.pdfStalled]);
+  }, [isDownloadingPdf, pdfStalledMessage]);
 
   const heatingLabel = useCallback(
     (source: HeatingSource) => {
@@ -455,7 +467,14 @@ function ListingStudioContent() {
       };
       return map[source];
     },
-    [copy],
+    [
+      copy.heatPump,
+      copy.districtHeating,
+      copy.gas,
+      copy.oil,
+      copy.electricity,
+      copy.solar,
+    ],
   );
 
   const reelBranding = useMemo(() => {
@@ -596,10 +615,36 @@ function ListingStudioContent() {
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [exposeLocale]);
 
+  const reelPreviewCopy = useMemo(
+    () => ({
+      exportReel: copy.exportReel,
+      exportingReel: copy.exportingReel,
+      reelHint: copy.reelHint,
+      reelDemoHint: copy.reelDemoHint,
+      reelUpgradeBanner: copy.reelUpgradeBanner,
+      reelExportUnsupported: copy.reelExportUnsupported,
+      reelExportFailed: copy.reelExportFailed,
+      reelSignInRequired: copy.reelSignInRequired,
+      reelPaymentRequired: copy.reelPaymentRequired,
+    }),
+    [
+      copy.exportReel,
+      copy.exportingReel,
+      copy.reelHint,
+      copy.reelDemoHint,
+      copy.reelUpgradeBanner,
+      copy.reelExportUnsupported,
+      copy.reelExportFailed,
+      copy.reelSignInRequired,
+      copy.reelPaymentRequired,
+    ],
+  );
+
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || demoHandledRef.current) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("demo") !== "1") return;
+    demoHandledRef.current = true;
     void loadDemoSample();
     router.replace(pathname);
   }, [loadDemoSample, pathname, router]);
@@ -1059,17 +1104,7 @@ function ListingStudioContent() {
                 input={reelPreviewInput}
                 locale={routeLocale}
                 onSignIn={() => setAuthOpen(true)}
-                copy={{
-                  exportReel: copy.exportReel,
-                  exportingReel: copy.exportingReel,
-                  reelHint: copy.reelHint,
-                  reelDemoHint: copy.reelDemoHint,
-                  reelUpgradeBanner: copy.reelUpgradeBanner,
-                  reelExportUnsupported: copy.reelExportUnsupported,
-                  reelExportFailed: copy.reelExportFailed,
-                  reelSignInRequired: copy.reelSignInRequired,
-                  reelPaymentRequired: copy.reelPaymentRequired,
-                }}
+                copy={reelPreviewCopy}
               />
             ) : !hasGenerated && !isGenerating && !generateError ? (
               <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 px-6 text-center dark:border-zinc-700">
