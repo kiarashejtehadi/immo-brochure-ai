@@ -84,7 +84,7 @@ const wm = StyleSheet.create({
 });
 
 /** Large diagonal marks behind page content. */
-export function PageBackdropWatermarks({ page }: { page: 1 | 2 | 3 }) {
+export function PageBackdropWatermarks({ page }: { page: 1 | 2 | 3 | 4 }) {
   if (page === 1) {
     return (
       <>
@@ -101,10 +101,18 @@ export function PageBackdropWatermarks({ page }: { page: 1 | 2 | 3 }) {
       </>
     );
   }
+  if (page === 3) {
+    return (
+      <>
+        <Text style={[wm.diagonalLarge, { top: 260, left: 55 }]}>{PDF_WATERMARK_BRAND}</Text>
+        <Text style={[wm.diagonalMedium, { top: 520, left: 115 }]}>FREE TIER</Text>
+      </>
+    );
+  }
   return (
     <>
-      <Text style={[wm.diagonalLarge, { top: 260, left: 55 }]}>{PDF_WATERMARK_BRAND}</Text>
-      <Text style={[wm.diagonalMedium, { top: 520, left: 115 }]}>FREE TIER</Text>
+      <Text style={[wm.diagonalLarge, { top: 280, left: 50 }]}>{PDF_WATERMARK_BRAND}</Text>
+      <Text style={[wm.diagonalMedium, { top: 540, left: 120 }]}>FREE TIER</Text>
     </>
   );
 }

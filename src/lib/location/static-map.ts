@@ -1,7 +1,8 @@
 import sharp from "sharp";
 
-const MAP_WIDTH = 600;
-const MAP_HEIGHT = 280;
+/** 16:9 map tile dimensions (pt-equivalent pixels for sharp rendering). */
+const MAP_HEIGHT = 260;
+const MAP_WIDTH = Math.round((MAP_HEIGHT * 16) / 9);
 const TILE_SIZE = 256;
 const OSM_TILE_URL = "https://tile.openstreetmap.org";
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
@@ -74,14 +75,6 @@ async function composeOsmStaticMap(lat: number, lon: number): Promise<Buffer> {
       });
     }
   }
-
-  const pinSvg = Buffer.from(
-    `<svg width="${MAP_WIDTH}" height="${MAP_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="${MAP_WIDTH / 2}" cy="${MAP_HEIGHT / 2}" r="9" fill="#dc2626" stroke="#ffffff" stroke-width="2.5"/>
-      <circle cx="${MAP_WIDTH / 2}" cy="${MAP_HEIGHT / 2}" r="3.5" fill="#ffffff"/>
-    </svg>`,
-  );
-  composites.push({ input: pinSvg, left: 0, top: 0 });
 
   return sharp({
     create: {
