@@ -18,11 +18,16 @@ const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const MARGIN = 48;
 const MAP_HEIGHT = 220;
-const FLOOR_PLAN_HEIGHT = 200;
+const FLOOR_PLAN_HEIGHT = 220;
 const GALLERY_GAP_AFTER = 16;
-const METRICS_BLOCK_TOP = MARGIN + 124;
+const PAGE1_METRICS_ROW_Y = MARGIN + 82;
+const PAGE1_CONTENT_FLOOR = PAGE1_METRICS_ROW_Y + 58;
+const PAGE4_SPECS_MAX_ROWS = 8;
+const MAX_PDF_PAGES = 4;
 const CONTACT_BORDER = rgb(0.886, 0.91, 0.941);
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+
+let pageCount = 0;
 
 function hexToRgb(hex: string | undefined): RGB {
   const value = (hex ?? "#1E3A8A").replace("#", "");
@@ -88,6 +93,7 @@ type PageContext = {
 };
 
 function addPage(ctx: Omit<PageContext, "page" | "y">, pageLabel: string): PageContext {
+  pageCount += 1;
   const page = ctx.doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   page.drawRectangle({
     x: 0,
@@ -122,7 +128,15 @@ function addPage(ctx: Omit<PageContext, "page" | "y">, pageLabel: string): PageC
 
 function ensureSpace(ctx: PageContext, needed: number, pageLabel: string): PageContext {
   if (ctx.y - needed >= MARGIN + 24) return ctx;
+  if (pageCount >= MAX_PDF_PAGES) {
+    return { ...ctx, y: Math.max(MARGIN + needed + 16, ctx.y - needed) };
+  }
   return addPage(ctx, pageLabel);
+}
+
+function ensurePage1Space(ctx: PageContext, needed: number): PageContext {
+  if (ctx.y - needed >= PAGE1_CONTENT_FLOOR) return ctx;
+  return { ...ctx, y: PAGE1_CONTENT_FLOOR };
 }
 
 function drawLines(
@@ -132,10 +146,16 @@ function drawLines(
   font: PDFFont,
   color = rgb(0.1, 0.1, 0.12),
   lineHeight = 1.35,
+  minY = MARGIN + 24,
 ): PageContext {
   let next = ctx;
   for (const line of lines) {
-    next = ensureSpace(next, size * lineHeight + 4, "ImmoCaption AI");
+    if (pageCount === 1) {
+      next = ensurePage1Space(next, size * lineHeight + 4);
+    } else {
+      next = ensureSpace(next, size * lineHeight + 4, "ImmoCaption AI");
+    }
+    if (next.y < minY) break;
     next.page.drawText(line, {
       x: MARGIN,
       y: next.y,
@@ -164,7 +184,7 @@ function drawHeading(ctx: PageContext, text: string): PageContext {
 function drawTable(
   ctx: PageContext,
   rows: { label: string; value: string }[],
-  options?: { x?: number; width?: number; labelWidth?: number },
+  options?: { x?: number; width?: number; labelWidth?: number; skipEnsure?: boolean },
 ): PageContext {
   const x = options?.x ?? MARGIN;
   const width = options?.width ?? CONTENT_WIDTH;
@@ -174,7 +194,9 @@ function drawTable(
 
   let next = ctx;
   for (const row of rows) {
-    next = ensureSpace(next, 18, "ImmoCaption AI · Details");
+    if (!options?.skipEnsure) {
+      next = ensureSpace(next, 18, "ImmoCaption AI · Details");
+    }
     next.page.drawText(row.label, {
       x,
       y: next.y,
@@ -272,6 +294,36 @@ function drawPageHeader(
   return { ...ctx, y: headerTop - 40 };
 }
 
+function drawPage1MetricsRow(
+  ctx: PageContext,
+  metrics: readonly (readonly [string, string])[],
+  accent: RGB,
+): PageContext {
+  const colWidth = CONTENT_WIDTH / metrics.length;
+  const baseY = PAGE1_METRICS_ROW_Y;
+
+  metrics.forEach(([label, value], index) => {
+    const x = MARGIN + index * colWidth + 6;
+    ctx.page.drawText(label.toUpperCase(), {
+      x,
+      y: baseY + 14,
+      size: 7,
+      font: ctx.bold,
+      color: rgb(0.45, 0.45, 0.5),
+    });
+    ctx.page.drawText(value, {
+      x,
+      y: baseY,
+      size: 11,
+      font: ctx.bold,
+      color: index === 0 ? accent : rgb(0.1, 0.1, 0.12),
+      maxWidth: colWidth - 12,
+    });
+  });
+
+  return { ...ctx, y: baseY - 10 };
+}
+
 function drawParagraphs(ctx: PageContext, text: string, size = 10): PageContext {
   let next = ctx;
   for (const paragraph of splitPdfParagraphs(text)) {
@@ -285,7 +337,7 @@ function drawContactBox(
   ctx: PageContext,
   lines: string[],
   avatarImage: PDFImage | null,
-  options?: { x?: number; width?: number },
+  options?: { x?: number; width?: number; skipEnsure?: boolean },
 ): PageContext {
   const padding = 12;
   const lineHeight = 14;
@@ -296,7 +348,11 @@ function drawContactBox(
   const x = options?.x ?? MARGIN;
   const width = options?.width ?? CONTENT_WIDTH;
 
-  const next = ensureSpace(ctx, boxHeight + 16, "ImmoCaption AI · Page 4 — Contact");
+  const next = options?.skipEnsure
+    ? ctx
+    : pageCount >= MAX_PDF_PAGES
+      ? ctx
+      : ensureSpace(ctx, boxHeight + 16, "ImmoCaption AI · Page 4 — Contact");
   const boxTop = next.y;
 
   next.page.drawRectangle({
@@ -334,37 +390,107 @@ function drawContactBox(
   return { ...next, y: boxTop - boxHeight - 16 };
 }
 
-function drawPage4BottomRow(
+function drawPage4Layout(
   ctx: PageContext,
+  floorPlanImage: PDFImage | null,
   contactLines: string[],
   avatarImage: PDFImage | null,
   specsRows: { label: string; value: string }[],
+  legalText: string,
 ): PageContext {
+  let y = ctx.y;
   const colGap = 12;
   const colWidth = (CONTENT_WIDTH - colGap) / 2;
   const leftX = MARGIN;
   const rightX = MARGIN + colWidth + colGap;
-  const rowTop = ctx.y;
 
-  let leftEnd = { ...ctx, y: rowTop };
+  if (floorPlanImage) {
+    ctx.page.drawText("Floor plan", {
+      x: MARGIN,
+      y,
+      size: 14,
+      font: ctx.bold,
+      color: ctx.primary,
+    });
+    y -= 24;
+
+    const planHeight = FLOOR_PLAN_HEIGHT;
+    const planWidth = Math.min(
+      CONTENT_WIDTH,
+      (floorPlanImage.width / floorPlanImage.height) * planHeight,
+    );
+    const planX = MARGIN + (CONTENT_WIDTH - planWidth) / 2;
+    ctx.page.drawImage(floorPlanImage, {
+      x: planX,
+      y: y - planHeight,
+      width: planWidth,
+      height: planHeight,
+    });
+    y -= planHeight + 16;
+  }
+
+  const bottomRowTop = y;
+  let leftBottom = bottomRowTop;
+
   if (contactLines.length > 0 || avatarImage) {
-    leftEnd = drawContactBox({ ...ctx, y: rowTop }, contactLines, avatarImage, {
+    ctx.page.drawText("Your contact", {
       x: leftX,
-      width: colWidth,
+      y: bottomRowTop,
+      size: 14,
+      font: ctx.bold,
+      color: ctx.primary,
     });
+    leftBottom = bottomRowTop - 24;
+    const contactEnd = drawContactBox(
+      { ...ctx, y: leftBottom },
+      contactLines,
+      avatarImage,
+      { x: leftX, width: colWidth, skipEnsure: true },
+    );
+    leftBottom = contactEnd.y;
   }
 
-  let rightEnd = { ...ctx, y: rowTop };
   if (specsRows.length > 0) {
-    rightEnd = drawHeading({ ...ctx, y: rowTop }, "Listing details");
-    rightEnd = drawTable(rightEnd, specsRows, {
+    ctx.page.drawText("Listing details", {
       x: rightX,
-      width: colWidth,
-      labelWidth: colWidth * 0.42,
+      y: bottomRowTop,
+      size: 14,
+      font: ctx.bold,
+      color: ctx.primary,
     });
+    const specsEnd = drawTable(
+      { ...ctx, y: bottomRowTop - 24 },
+      specsRows,
+      { x: rightX, width: colWidth, labelWidth: colWidth * 0.42, skipEnsure: true },
+    );
+    leftBottom = Math.min(leftBottom, specsEnd.y);
   }
 
-  return { ...ctx, y: Math.min(leftEnd.y, rightEnd.y) };
+  const legalTop = MARGIN + 52;
+
+  ctx.page.drawText("Legal notice", {
+    x: MARGIN,
+    y: legalTop + 24,
+    size: 14,
+    font: ctx.bold,
+    color: ctx.primary,
+  });
+
+  const legalLines = wrapText(legalText, ctx.regular, 7, CONTENT_WIDTH).slice(0, 4);
+  let legalY = legalTop + 4;
+  for (const line of legalLines) {
+    ctx.page.drawText(line, {
+      x: MARGIN,
+      y: legalY,
+      size: 7,
+      font: ctx.regular,
+      color: rgb(0.35, 0.35, 0.4),
+      maxWidth: CONTENT_WIDTH,
+    });
+    legalY -= 9;
+  }
+
+  return { ...ctx, y: legalY };
 }
 
 function triggerPdfDownload(bytes: Uint8Array, address: string) {
@@ -411,6 +537,8 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
     ? formatPriceAmount(props.priceAmount, props.currency)
     : props.priceOnRequestLabel;
 
+  pageCount = 0;
+
   let ctx = addPage(
     { doc, regular, bold, primary, accent, showWatermark },
     "ImmoCaption AI · Page 1 — Cover",
@@ -419,6 +547,7 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
   ctx = drawPageHeader(ctx, props.transactionBadge, logoImage);
 
   if (heroImage) {
+    ctx = ensurePage1Space(ctx, 160 + 18);
     const imageHeight = 160;
     const imageWidth = Math.min(CONTENT_WIDTH, (heroImage.width / heroImage.height) * imageHeight);
     ctx.page.drawImage(heroImage, {
@@ -430,40 +559,23 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
     ctx = { ...ctx, y: ctx.y - imageHeight - 18 };
   }
 
+  ctx = ensurePage1Space(ctx, 40);
   ctx = drawLines(ctx, wrapText(props.title, bold, 18, CONTENT_WIDTH), 18, bold, primary, 1.25);
   if (props.address.trim()) {
     ctx = drawLines(ctx, [props.address], 10, regular, rgb(0.4, 0.4, 0.45));
   }
 
   for (const line of props.summary) {
+    ctx = ensurePage1Space(ctx, 14);
     ctx = drawLines(ctx, [`• ${line}`], 10, regular);
   }
 
-  ctx = { ...ctx, y: ctx.y - 8 };
   const metrics = [
     [props.priceLabel, priceDisplay],
     ["Size", props.size.trim() ? `${props.size} m²` : "—"],
     ["Rooms", props.rooms.trim() || "—"],
   ] as const;
-  const metricsStartY = ctx.y > METRICS_BLOCK_TOP + 40 ? METRICS_BLOCK_TOP + 40 : ctx.y;
-  ctx = { ...ctx, y: metricsStartY };
-  for (const [label, value] of metrics) {
-    ctx.page.drawText(label, {
-      x: MARGIN,
-      y: ctx.y,
-      size: 9,
-      font: bold,
-      color: rgb(0.45, 0.45, 0.5),
-    });
-    ctx.page.drawText(value, {
-      x: MARGIN + 100,
-      y: ctx.y,
-      size: 11,
-      font: bold,
-      color: label === props.priceLabel ? accent : rgb(0.1, 0.1, 0.12),
-    });
-    ctx = { ...ctx, y: ctx.y - 18 };
-  }
+  ctx = drawPage1MetricsRow(ctx, metrics, accent);
 
   ctx = addPage(ctx, "ImmoCaption AI · Page 2 — Details");
   ctx = drawHeading(ctx, "Property story");
@@ -501,25 +613,8 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
     );
   }
 
-  ctx = addPage(ctx, "ImmoCaption AI · Page 4 — Contact");
-  if (floorPlanImage) {
-    ctx = drawHeading(ctx, "Floor plan");
-    const planHeight = FLOOR_PLAN_HEIGHT;
-    const planWidth = Math.max(
-      CONTENT_WIDTH * 0.6,
-      Math.min(CONTENT_WIDTH, (floorPlanImage.width / floorPlanImage.height) * planHeight),
-    );
-    const planX = MARGIN + (CONTENT_WIDTH - planWidth) / 2;
-    ctx = ensureSpace(ctx, planHeight + 20, "ImmoCaption AI · Page 4 — Contact");
-    ctx.page.drawImage(floorPlanImage, {
-      x: planX,
-      y: ctx.y - planHeight,
-      width: planWidth,
-      height: planHeight,
-    });
-    ctx = { ...ctx, y: ctx.y - planHeight - 20 };
-  }
-
+  ctx = addPage(ctx, "ImmoCaption AI · Page 4 — Floor plan & contact");
+  const visibleSpecs = filterPdfTableRows(props.specsTable).slice(0, PAGE4_SPECS_MAX_ROWS);
   const contactLines = [
     props.agent.name.trim(),
     props.agent.agency.trim(),
@@ -528,27 +623,13 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
     props.website?.trim() ?? "",
   ].filter(Boolean);
 
-  const visibleSpecs = filterPdfTableRows(props.specsTable);
-
-  if (contactLines.length > 0 || avatarImage || visibleSpecs.length > 0) {
-    if (contactLines.length > 0 || avatarImage) {
-      ctx = drawHeading(ctx, "Your contact");
-    }
-    ctx = drawPage4BottomRow(ctx, contactLines, avatarImage, visibleSpecs);
-  }
-
-  ctx = drawHeading(ctx, "Legal notice");
-  ctx = drawLines(
+  ctx = drawPage4Layout(
     ctx,
-    wrapText(
-      props.agent.legalDisclaimer.trim() || props.legalDisclaimerFallback,
-      regular,
-      8,
-      CONTENT_WIDTH,
-    ),
-    8,
-    regular,
-    rgb(0.35, 0.35, 0.4),
+    floorPlanImage,
+    contactLines,
+    avatarImage,
+    visibleSpecs,
+    props.agent.legalDisclaimer.trim() || props.legalDisclaimerFallback,
   );
 
   const bytes = await doc.save();

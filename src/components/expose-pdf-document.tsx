@@ -3,9 +3,7 @@ import {
   Document,
   Image,
   Page,
-  Path,
   StyleSheet,
-  Svg,
   Text,
   View,
 } from "@react-pdf/renderer";
@@ -34,6 +32,8 @@ const A4_HEIGHT_PT = 841.89;
 const PAGE_MARGIN_PT = 57;
 const PAGE_BODY_MIN_HEIGHT = A4_HEIGHT_PT - PAGE_MARGIN_PT * 2;
 const MAP_HEIGHT_PT = 220;
+const FLOOR_PLAN_HEIGHT_PT = 220;
+const PAGE4_SPECS_MAX_ROWS = 8;
 
 type ResolvedPdfBranding = Required<
   Pick<PDFBrandingProps, "primaryColor" | "accentColor">
@@ -147,7 +147,6 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     heroRow: {
       flex: 1,
       flexDirection: "row",
-      gap: 16,
       marginBottom: 14,
       alignItems: "stretch",
     },
@@ -160,6 +159,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       flex: 1,
       justifyContent: "flex-start",
       minWidth: 0,
+      marginLeft: 16,
     },
     heroPlaceholder: {
       width: "100%",
@@ -175,7 +175,6 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     },
     metricsRow: {
       flexDirection: "row",
-      gap: 10,
       marginBottom: 0,
       width: "100%",
     },
@@ -189,6 +188,10 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       minWidth: 0,
       alignItems: "center",
       justifyContent: "center",
+      marginRight: 10,
+    },
+    metricCellLast: {
+      marginRight: 0,
     },
     metricLabel: {
       fontSize: 7,
@@ -214,7 +217,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       color: branding.accentColor,
     },
     body: { fontSize: 10, lineHeight: 1.5, textAlign: "justify" },
-    grid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
+    grid: { flexDirection: "row", flexWrap: "wrap", marginBottom: 16 },
     storySection: {
       marginTop: 16,
     },
@@ -224,6 +227,8 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       borderRadius: 4,
       overflow: "hidden",
       backgroundColor: "#f4f4f5",
+      marginRight: 8,
+      marginBottom: 8,
     },
     galleryImg: {
       width: "100%",
@@ -317,6 +322,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     },
     floorPlanWrap: {
       width: "100%",
+      height: FLOOR_PLAN_HEIGHT_PT,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 12,
@@ -327,8 +333,9 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       borderColor: "#e4e4e7",
     },
     floorPlan: {
-      width: "60%",
-      height: 200,
+      width: "100%",
+      height: FLOOR_PLAN_HEIGHT_PT,
+      maxHeight: FLOOR_PLAN_HEIGHT_PT,
       objectFit: "contain" as const,
     },
     mapWrap: {
@@ -396,7 +403,6 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     contactRow: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 12,
       flexWrap: "nowrap",
     },
     avatarImage: {
@@ -408,19 +414,32 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     contactDetails: {
       flex: 1,
       minWidth: 0,
+      marginLeft: 12,
     },
     contactEmail: {
       marginTop: 4,
     },
     page4BottomRow: {
       flexDirection: "row",
-      gap: 12,
       alignItems: "flex-start",
       marginBottom: 12,
     },
     page4Column: {
       width: "48%",
       minWidth: 0,
+    },
+    page4ColumnRight: {
+      width: "48%",
+      minWidth: 0,
+      marginLeft: 12,
+    },
+    page4Main: {
+      flexDirection: "column",
+    },
+    legalNoticeText: {
+      fontSize: 7,
+      lineHeight: 1.35,
+      color: "#52525b",
     },
   });
 
@@ -430,16 +449,40 @@ function fmt(amount: string, currency: CurrencyCode, fallback: string) {
 
 function PdfDropPin() {
   return (
-    <Svg width={24} height={32} viewBox="0 0 24 32">
-      <Path
-        d="M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20s12-11 12-20C24 5.373 18.627 0 12 0z"
-        fill="#dc2626"
+    <View style={{ width: 24, height: 32, alignItems: "center" }}>
+      <View
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          backgroundColor: "#dc2626",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <View
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: "#ffffff",
+          }}
+        />
+      </View>
+      <View
+        style={{
+          width: 0,
+          height: 0,
+          borderLeftWidth: 6,
+          borderRightWidth: 6,
+          borderTopWidth: 8,
+          borderLeftColor: "transparent",
+          borderRightColor: "transparent",
+          borderTopColor: "#dc2626",
+          marginTop: -2,
+        }}
       />
-      <Path
-        d="M12 6a4 4 0 100 8 4 4 0 000-8z"
-        fill="#ffffff"
-      />
-    </Svg>
+    </View>
   );
 }
 
@@ -453,7 +496,7 @@ function PdfPageChrome({
   badge: string;
 }) {
   return (
-    <View>
+    <View wrap={false}>
       <View style={s.headerBar} />
       <View style={s.headerRow}>
         <View style={s.headerLogoWrap}>
@@ -522,19 +565,21 @@ function PdfMetricCell({
   value,
   accentColor,
   highlight,
+  isLast,
 }: {
   styles: ReturnType<typeof createStyles>;
   label: string;
   value: string;
   accentColor: string;
   highlight?: boolean;
+  isLast?: boolean;
 }) {
   return (
     <View
       style={
         highlight
-          ? [s.metricCell, { borderColor: accentColor }]
-          : s.metricCell
+          ? [s.metricCell, isLast ? s.metricCellLast : {}, { borderColor: accentColor }]
+          : [s.metricCell, isLast ? s.metricCellLast : {}]
       }
     >
       <Text style={s.metricLabel} wrap={false}>
@@ -563,7 +608,7 @@ function PdfMetricsRow({
   accentColor: string;
 }) {
   return (
-    <View style={s.metricsRow}>
+    <View style={s.metricsRow} wrap={false}>
       <PdfMetricCell
         styles={s}
         label={priceLabel}
@@ -582,6 +627,7 @@ function PdfMetricsRow({
         label="Rooms"
         value={roomsDisplay ?? "—"}
         accentColor={accentColor}
+        isLast
       />
     </View>
   );
@@ -718,6 +764,46 @@ function PdfContactBlock({
   );
 }
 
+function PdfFloorPlanImage({
+  styles: s,
+  src,
+  showWatermark,
+}: {
+  styles: ReturnType<typeof createStyles>;
+  src: string | undefined;
+  showWatermark: boolean;
+}) {
+  const safeSrc = sanitizePdfImageSrc(src);
+  if (!safeSrc) {
+    return (
+      <View style={[s.floorPlanWrap, { alignItems: "center", justifyContent: "center" }]}>
+        <Text style={{ color: "#a1a1aa", fontSize: 9 }}>Floor plan</Text>
+      </View>
+    );
+  }
+
+  if (showWatermark) {
+    return (
+      <View style={s.floorPlanWrap}>
+        <WatermarkedImage
+          src={safeSrc}
+          frameStyle={{ width: "100%", height: FLOOR_PLAN_HEIGHT_PT }}
+          imageStyle={s.floorPlan}
+          showWatermark={showWatermark}
+          diagonalSize={16}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={s.floorPlanWrap}>
+      {/* eslint-disable-next-line jsx-a11y/alt-text */}
+      <Image src={safeSrc} style={s.floorPlan} />
+    </View>
+  );
+}
+
 function PdfLocationMap({
   styles: s,
   mapDataUrl,
@@ -792,6 +878,8 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
   const roomsDisplay = props.rooms.trim() || null;
   const storyParagraphs = splitPdfParagraphs(props.fullDescription);
   const locationParagraphs = splitPdfParagraphs(props.locationDescription);
+  const floorPlanSrc = sanitizePdfImageSrc(props.floorPlanDataUrl);
+  const page4Specs = filterPdfTableRows(props.specsTable).slice(0, PAGE4_SPECS_MAX_ROWS);
 
   return (
     <Document title={`Exposé – ${props.title}`}>
@@ -918,43 +1006,37 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         watermarkPage={4}
         textWatermarks={[{ top: 320 }, { top: 580 }]}
       >
-        {props.floorPlanDataUrl ? (
-          <View style={s.floorPlanSection}>
-            <Text style={s.h2}>Floor plan</Text>
-            <View style={s.floorPlanWrap}>
-              <WatermarkedImage
-                src={props.floorPlanDataUrl}
-                frameStyle={{ width: "60%", height: 200, alignItems: "center", justifyContent: "center" }}
-                imageStyle={s.floorPlan}
-                showWatermark={showWatermark}
-                diagonalSize={18}
-              />
-            </View>
-          </View>
-        ) : null}
-
-        <View style={s.page4BottomRow}>
-          <View style={props.specsTable.length > 0 ? s.page4Column : { width: "100%" }}>
-            <PdfContactBlock
-              styles={s}
-              agent={props.agent}
-              avatarDataUrl={branding.avatarDataUrl}
-              website={props.website}
-            />
-          </View>
-          {props.specsTable.length > 0 ? (
-            <View style={s.page4Column}>
-              <Text style={s.h2}>Listing details</Text>
-              <PdfTable styles={s} rows={props.specsTable} variant="details" />
+        <View wrap={false} style={s.page4Main}>
+          {floorPlanSrc ? (
+            <View style={s.floorPlanSection}>
+              <Text style={s.h2}>Floor plan</Text>
+              <PdfFloorPlanImage styles={s} src={floorPlanSrc} showWatermark={showWatermark} />
             </View>
           ) : null}
-        </View>
 
-        <View style={s.sectionBlock}>
-          <Text style={s.h2}>Legal notice</Text>
-          <Text style={{ fontSize: 8, lineHeight: 1.4, color: "#52525b" }}>
-            {props.agent.legalDisclaimer.trim() || props.legalDisclaimerFallback}
-          </Text>
+          <View style={s.page4BottomRow} wrap={false}>
+            <View style={page4Specs.length > 0 ? s.page4Column : { width: "100%" }}>
+              <PdfContactBlock
+                styles={s}
+                agent={props.agent}
+                avatarDataUrl={branding.avatarDataUrl}
+                website={props.website}
+              />
+            </View>
+            {page4Specs.length > 0 ? (
+              <View style={s.page4ColumnRight}>
+                <Text style={s.h2}>Listing details</Text>
+                <PdfTable styles={s} rows={page4Specs} variant="details" />
+              </View>
+            ) : null}
+          </View>
+
+          <View style={s.sectionBlock} wrap={false}>
+            <Text style={s.h2}>Legal notice</Text>
+            <Text style={s.legalNoticeText}>
+              {props.agent.legalDisclaimer.trim() || props.legalDisclaimerFallback}
+            </Text>
+          </View>
         </View>
       </PdfPageLayout>
     </Document>
