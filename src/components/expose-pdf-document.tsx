@@ -14,6 +14,7 @@ import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
 import { resolvePdfFontFamily } from "@/lib/pdf-fonts";
 import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
 import { filterPdfTableRows } from "@/lib/pdf-table-rows";
+import { splitPdfParagraphs } from "@/lib/pdf-text-format";
 import {
   DEFAULT_ACCENT_COLOR,
   DEFAULT_PRIMARY_COLOR,
@@ -32,7 +33,7 @@ export type { BrochurePdfProps, PDFBrandingProps };
 const A4_HEIGHT_PT = 841.89;
 const PAGE_MARGIN_PT = 57;
 const PAGE_BODY_MIN_HEIGHT = A4_HEIGHT_PT - PAGE_MARGIN_PT * 2;
-const MAP_HEIGHT_PT = 260;
+const MAP_HEIGHT_PT = 220;
 
 type ResolvedPdfBranding = Required<
   Pick<PDFBrandingProps, "primaryColor" | "accentColor">
@@ -105,6 +106,15 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: 12,
+      minHeight: 40,
+    },
+    headerLogoWrap: {
+      flex: 1,
+      minWidth: 0,
+      paddingRight: 12,
+    },
+    headerBadgeWrap: {
+      flexShrink: 0,
     },
     logoImage: {
       maxHeight: 40,
@@ -295,11 +305,10 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       marginBottom: 12,
     },
     floorPlanWrap: {
-      flex: 1,
       width: "100%",
-      minHeight: 300,
       alignItems: "center",
       justifyContent: "center",
+      marginBottom: 12,
       borderRadius: 6,
       overflow: "hidden",
       backgroundColor: "#fafafa",
@@ -307,10 +316,8 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       borderColor: "#e4e4e7",
     },
     floorPlan: {
-      width: "100%",
-      height: "100%",
-      minHeight: 300,
-      maxHeight: 480,
+      width: "60%",
+      height: 200,
       objectFit: "contain" as const,
     },
     mapWrap: {
@@ -318,8 +325,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       height: MAP_HEIGHT_PT,
       borderRadius: 8,
       overflow: "hidden",
-      marginTop: 6,
-      marginBottom: 12,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: "#d4d4d8",
       position: "relative",
@@ -343,8 +349,7 @@ const createStyles = (branding: ResolvedPdfBranding) =>
       height: MAP_HEIGHT_PT,
       borderRadius: 8,
       overflow: "hidden",
-      marginTop: 6,
-      marginBottom: 12,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: "#cbd5e1",
       backgroundColor: "#e0f2fe",
@@ -370,10 +375,18 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     sectionBlock: {
       marginBottom: 12,
     },
+    contactBox: {
+      borderWidth: 1,
+      borderColor: "#E2E8F0",
+      borderRadius: 6,
+      padding: 12,
+      marginBottom: 10,
+    },
     contactRow: {
       flexDirection: "row",
       alignItems: "flex-start",
       gap: 12,
+      flexWrap: "nowrap",
     },
     avatarImage: {
       width: 50,
@@ -384,6 +397,9 @@ const createStyles = (branding: ResolvedPdfBranding) =>
     contactDetails: {
       flex: 1,
       minWidth: 0,
+    },
+    contactEmail: {
+      marginTop: 4,
     },
   });
 
@@ -419,13 +435,19 @@ function PdfPageChrome({
     <View>
       <View style={s.headerBar} />
       <View style={s.headerRow}>
-        {branding.logoDataUrl ? (
-          // eslint-disable-next-line jsx-a11y/alt-text
-          <Image style={s.logoImage} src={branding.logoDataUrl} />
-        ) : (
-          <Text style={{ fontSize: 9, color: "#71717a" }}>Immo Brochure AI</Text>
-        )}
-        <Text style={[s.badge, { marginBottom: 0 }]}>{badge}</Text>
+        <View style={s.headerLogoWrap}>
+          {branding.logoDataUrl ? (
+            // eslint-disable-next-line jsx-a11y/alt-text
+            <Image style={s.logoImage} src={branding.logoDataUrl} />
+          ) : (
+            <Text style={{ fontSize: 9, color: "#71717a" }}>Immo Brochure AI</Text>
+          )}
+        </View>
+        <View style={s.headerBadgeWrap}>
+          <Text style={[s.badge, { marginBottom: 0 }]} wrap={false}>
+            {badge}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -634,21 +656,25 @@ function PdfContactBlock({
   return (
     <View style={s.sectionBlock}>
       <Text style={s.h2}>Your contact</Text>
-      <View style={s.box}>
+      <View style={s.contactBox}>
         <View style={s.contactRow}>
           {avatarDataUrl ? (
             // eslint-disable-next-line jsx-a11y/alt-text
             <Image style={s.avatarImage} src={avatarDataUrl} />
           ) : null}
           <View style={s.contactDetails}>
-            {name ? <Text style={{ fontSize: 12, fontWeight: 700 }}>{name}</Text> : null}
-            {agency ? <Text style={{ marginTop: name ? 4 : 0 }}>{agency}</Text> : null}
-            {phone ? <Text style={{ marginTop: name || agency ? 4 : 0 }}>{phone}</Text> : null}
+            {name ? <Text style={{ fontSize: 12, fontWeight: 700 }} wrap={false}>{name}</Text> : null}
+            {agency ? <Text style={{ marginTop: name ? 4 : 0 }} wrap={false}>{agency}</Text> : null}
+            {phone ? <Text style={{ marginTop: name || agency ? 4 : 0 }} wrap={false}>{phone}</Text> : null}
             {email ? (
-              <Text style={{ marginTop: name || agency || phone ? 4 : 0 }}>{email}</Text>
+              <Text style={s.contactEmail} wrap={false}>
+                {email}
+              </Text>
             ) : null}
             {website?.trim() ? (
-              <Text style={{ marginTop: 4 }}>{website.trim()}</Text>
+              <Text style={{ marginTop: 4 }} wrap={false}>
+                {website.trim()}
+              </Text>
             ) : null}
           </View>
         </View>
@@ -729,6 +755,8 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
     : props.priceOnRequestLabel;
   const sizeDisplay = props.size.trim() ? `${props.size} m²` : null;
   const roomsDisplay = props.rooms.trim() || null;
+  const storyParagraphs = splitPdfParagraphs(props.fullDescription);
+  const locationParagraphs = splitPdfParagraphs(props.locationDescription);
 
   return (
     <Document title={`Exposé – ${props.title}`}>
@@ -803,7 +831,11 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             <Text style={{ color: "#a1a1aa" }}>Additional photos</Text>
           )}
         </View>
-        <Text style={[s.body, { marginBottom: 12 }]}>{props.fullDescription}</Text>
+        {storyParagraphs.map((paragraph, i) => (
+          <Text key={i} style={[s.body, { marginBottom: i === storyParagraphs.length - 1 ? 12 : 8 }]}>
+            {paragraph}
+          </Text>
+        ))}
 
         {props.energyLines.length > 0 ? (
           <View style={s.sectionBlock}>
@@ -830,12 +862,16 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
         textWatermarks={[{ top: 280 }, { top: 560 }]}
       >
         <Text style={s.h2}>Location & neighborhood</Text>
-        <Text style={[s.body, s.sectionBlock]}>{props.locationDescription}</Text>
         <PdfLocationMap
           styles={s}
           mapDataUrl={props.mapDataUrl}
           address={props.address}
         />
+        {locationParagraphs.map((paragraph, i) => (
+          <Text key={i} style={[s.body, s.sectionBlock, { marginBottom: 8 }]}>
+            {paragraph}
+          </Text>
+        ))}
         {props.stagingDisclaimer ? (
           <View style={s.stagingDisclaimer}>
             <Text style={s.stagingDisclaimerText}>{props.stagingDisclaimer}</Text>
@@ -858,7 +894,7 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             <View style={s.floorPlanWrap}>
               <WatermarkedImage
                 src={props.floorPlanDataUrl}
-                frameStyle={{ width: "100%", height: "100%", minHeight: 300 }}
+                frameStyle={{ width: "60%", height: 200, alignItems: "center", justifyContent: "center" }}
                 imageStyle={s.floorPlan}
                 showWatermark={showWatermark}
                 diagonalSize={18}

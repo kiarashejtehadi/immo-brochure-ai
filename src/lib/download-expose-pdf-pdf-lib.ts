@@ -11,10 +11,14 @@ import type { BrochurePdfProps } from "@/types/brochure-pdf";
 import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
 import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
 import { formatPriceAmount } from "@/lib/currency";
+import { splitPdfParagraphs } from "@/lib/pdf-text-format";
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const MARGIN = 48;
+const MAP_HEIGHT = 220;
+const FLOOR_PLAN_HEIGHT = 200;
+const CONTACT_BORDER = rgb(0.886, 0.91, 0.941);
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
 function hexToRgb(hex: string | undefined): RGB {
@@ -213,6 +217,109 @@ function drawGalleryGrid(ctx: PageContext, images: PDFImage[]): PageContext {
   return { ...next, y: topY - gridHeight };
 }
 
+function drawPageHeader(
+  ctx: PageContext,
+  badge: string,
+  logoImage: PDFImage | null,
+): PageContext {
+  const headerTop = PAGE_HEIGHT - MARGIN - 12;
+
+  if (logoImage) {
+    const logoHeight = 28;
+    const logoWidth = Math.min(120, (logoImage.width / logoImage.height) * logoHeight);
+    ctx.page.drawImage(logoImage, {
+      x: MARGIN,
+      y: headerTop - logoHeight,
+      width: logoWidth,
+      height: logoHeight,
+    });
+  }
+
+  const badgeFontSize = 9;
+  const badgePadding = 8;
+  const badgeTextWidth = ctx.bold.widthOfTextAtSize(badge, badgeFontSize);
+  const badgeWidth = badgeTextWidth + badgePadding * 2;
+  const badgeHeight = 18;
+  const badgeX = PAGE_WIDTH - MARGIN - badgeWidth;
+  const badgeY = headerTop - badgeHeight + 4;
+
+  ctx.page.drawRectangle({
+    x: badgeX,
+    y: badgeY,
+    width: badgeWidth,
+    height: badgeHeight,
+    color: ctx.primary,
+  });
+  ctx.page.drawText(badge, {
+    x: badgeX + badgePadding,
+    y: badgeY + 5,
+    size: badgeFontSize,
+    font: ctx.bold,
+    color: rgb(1, 1, 1),
+  });
+
+  return { ...ctx, y: headerTop - 40 };
+}
+
+function drawParagraphs(ctx: PageContext, text: string, size = 10): PageContext {
+  let next = ctx;
+  for (const paragraph of splitPdfParagraphs(text)) {
+    next = drawLines(next, wrapText(paragraph, next.regular, size, CONTENT_WIDTH), size, next.regular);
+    next = { ...next, y: next.y - 6 };
+  }
+  return next;
+}
+
+function drawContactBox(
+  ctx: PageContext,
+  lines: string[],
+  avatarImage: PDFImage | null,
+): PageContext {
+  const padding = 12;
+  const lineHeight = 14;
+  const avatarSize = 48;
+  const hasAvatar = avatarImage !== null;
+  const contentHeight = Math.max(hasAvatar ? avatarSize : 0, lines.length * lineHeight);
+  const boxHeight = contentHeight + padding * 2;
+
+  const next = ensureSpace(ctx, boxHeight + 16, "ImmoCaption AI · Page 4 — Contact");
+  const boxTop = next.y;
+
+  next.page.drawRectangle({
+    x: MARGIN,
+    y: boxTop - boxHeight,
+    width: CONTENT_WIDTH,
+    height: boxHeight,
+    borderColor: CONTACT_BORDER,
+    borderWidth: 1,
+  });
+
+  const textX = hasAvatar ? MARGIN + padding + avatarSize + 12 : MARGIN + padding;
+  let textY = boxTop - padding - 10;
+
+  if (avatarImage) {
+    next.page.drawImage(avatarImage, {
+      x: MARGIN + padding,
+      y: boxTop - padding - avatarSize,
+      width: avatarSize,
+      height: avatarSize,
+    });
+  }
+
+  for (const line of lines) {
+    next.page.drawText(line, {
+      x: textX,
+      y: textY,
+      size: 10,
+      font: next.regular,
+      maxWidth: CONTENT_WIDTH - (textX - MARGIN) - padding,
+    });
+    textY -= lineHeight;
+  }
+
+  return { ...next, y: boxTop - boxHeight - 16 };
+}
+
 function triggerPdfDownload(bytes: Uint8Array, address: string) {
   const slug =
     address
@@ -262,32 +369,7 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
     "ImmoCaption AI · Page 1 — Cover",
   );
 
-  if (logoImage) {
-    const logoHeight = 28;
-    const logoWidth = Math.min(120, (logoImage.width / logoImage.height) * logoHeight);
-    ctx.page.drawImage(logoImage, {
-      x: MARGIN,
-      y: ctx.y - logoHeight,
-      width: logoWidth,
-      height: logoHeight,
-    });
-    ctx = { ...ctx, y: ctx.y - logoHeight - 16 };
-  }
-
-  ctx.page.drawRectangle({
-    x: PAGE_WIDTH - MARGIN - 86,
-    y: PAGE_HEIGHT - MARGIN - 12,
-    width: 86,
-    height: 18,
-    color: primary,
-  });
-  ctx.page.drawText(props.transactionBadge, {
-    x: PAGE_WIDTH - MARGIN - 80,
-    y: PAGE_HEIGHT - MARGIN - 8,
-    size: 9,
-    font: bold,
-    color: rgb(1, 1, 1),
-  });
+  ctx = drawPageHeader(ctx, props.transactionBadge, logoImage);
 
   if (heroImage) {
     const imageHeight = 160;
@@ -337,12 +419,7 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
   ctx = addPage(ctx, "ImmoCaption AI · Page 2 — Details");
   ctx = drawHeading(ctx, "Property story");
   ctx = drawGalleryGrid(ctx, galleryImages);
-  ctx = drawLines(
-    ctx,
-    wrapText(props.fullDescription, regular, 10, CONTENT_WIDTH),
-    10,
-    regular,
-  );
+  ctx = drawParagraphs(ctx, props.fullDescription);
 
   if (props.energyLines.length > 0) {
     ctx = drawHeading(ctx, "Energy certificate");
@@ -356,25 +433,19 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
 
   ctx = addPage(ctx, "ImmoCaption AI · Page 3 — Location");
   ctx = drawHeading(ctx, "Location & neighborhood");
-  ctx = drawLines(
-    ctx,
-    wrapText(props.locationDescription, regular, 10, CONTENT_WIDTH),
-    10,
-    regular,
-  );
 
   if (mapImage) {
-    const mapHeight = 180;
-    const mapWidth = Math.min(CONTENT_WIDTH, (mapImage.width / mapImage.height) * mapHeight);
-    ctx = ensureSpace(ctx, mapHeight + 20, "ImmoCaption AI · Page 3 — Location");
+    ctx = ensureSpace(ctx, MAP_HEIGHT + 16, "ImmoCaption AI · Page 3 — Location");
     ctx.page.drawImage(mapImage, {
       x: MARGIN,
-      y: ctx.y - mapHeight,
-      width: mapWidth,
-      height: mapHeight,
+      y: ctx.y - MAP_HEIGHT,
+      width: CONTENT_WIDTH,
+      height: MAP_HEIGHT,
     });
-    ctx = { ...ctx, y: ctx.y - mapHeight - 16 };
+    ctx = { ...ctx, y: ctx.y - MAP_HEIGHT - 16 };
   }
+
+  ctx = drawParagraphs(ctx, props.locationDescription);
 
   if (props.stagingDisclaimer?.trim()) {
     ctx = drawLines(
@@ -389,10 +460,15 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
   ctx = addPage(ctx, "ImmoCaption AI · Page 4 — Contact");
   if (floorPlanImage) {
     ctx = drawHeading(ctx, "Floor plan");
-    const planHeight = 220;
-    const planWidth = Math.min(CONTENT_WIDTH, (floorPlanImage.width / floorPlanImage.height) * planHeight);
+    const planHeight = FLOOR_PLAN_HEIGHT;
+    const planWidth = Math.max(
+      CONTENT_WIDTH * 0.6,
+      Math.min(CONTENT_WIDTH, (floorPlanImage.width / floorPlanImage.height) * planHeight),
+    );
+    const planX = MARGIN + (CONTENT_WIDTH - planWidth) / 2;
+    ctx = ensureSpace(ctx, planHeight + 20, "ImmoCaption AI · Page 4 — Contact");
     ctx.page.drawImage(floorPlanImage, {
-      x: MARGIN,
+      x: planX,
       y: ctx.y - planHeight,
       width: planWidth,
       height: planHeight,
@@ -410,24 +486,7 @@ export async function downloadExposePdfWithPdfLib(props: BrochurePdfProps): Prom
 
   if (contactLines.length > 0 || avatarImage) {
     ctx = drawHeading(ctx, "Your contact");
-    if (avatarImage) {
-      const avatarSize = 48;
-      ctx.page.drawImage(avatarImage, {
-        x: MARGIN,
-        y: ctx.y - avatarSize,
-        width: avatarSize,
-        height: avatarSize,
-      });
-      ctx = drawLines(
-        { ...ctx, y: ctx.y - 4 },
-        contactLines,
-        10,
-        regular,
-      );
-      ctx = { ...ctx, y: ctx.y - avatarSize - 12 };
-    } else {
-      ctx = drawLines(ctx, contactLines, 10, regular);
-    }
+    ctx = drawContactBox(ctx, contactLines, avatarImage);
   }
 
   ctx = drawHeading(ctx, "Legal notice");
