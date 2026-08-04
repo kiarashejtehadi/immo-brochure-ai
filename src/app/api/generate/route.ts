@@ -20,7 +20,7 @@ import {
   normalizeListingAddress,
 } from "@/lib/location/format-address";
 import { fetchLocationEnrichment } from "@/lib/location/geocode-pois";
-import { buildLocationPromptInstructions } from "@/lib/location/location-prompt";
+import { buildLocationPromptInstructions, buildLocationContextPayload } from "@/lib/location/location-prompt";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { formatPriceAmount, normalizeCurrency } from "@/lib/currency";
@@ -40,7 +40,7 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 90;
 
-const LOCATION_ENRICHMENT_BUDGET_MS = 4_000;
+const LOCATION_ENRICHMENT_BUDGET_MS = 6_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise.race([
@@ -113,6 +113,7 @@ function buildPropertyPayload(
   outputLanguage: OutputLanguage,
   listingAddress: ListingAddress,
   formattedAddress: string,
+  locationContext: ReturnType<typeof buildLocationContextPayload>,
 ) {
   const currency = normalizeCurrency(body.currency);
   const format = (amount: string) =>
@@ -162,6 +163,7 @@ function buildPropertyPayload(
       name: body.agent.name || "Not specified",
       agency: body.agent.agency || "Not specified",
     },
+    locationContext,
   };
 
   if (body.transactionType === "rent") {
@@ -264,7 +266,7 @@ export async function POST(request: Request) {
   const outputLanguage = normalizeOutputLanguage(body.targetLanguage);
   const instagramTags = getCaptionHashtags(outputLanguage);
 
-  let locationRules = buildLocationPromptInstructions(listingAddress, null);
+  let locationRules = buildLocationPromptInstructions(listingAddress, null, outputLanguage);
   const enrichmentTask = fetchLocationEnrichment(listingAddress).catch((err) => {
     console.warn("[api/generate] location enrichment failed", err);
     return null;
@@ -283,8 +285,13 @@ export async function POST(request: Request) {
   }
 
   const enrichment = await withTimeout(enrichmentTask, LOCATION_ENRICHMENT_BUDGET_MS, null);
+  const locationContext = buildLocationContextPayload(listingAddress, enrichment);
   if (enrichment) {
-    locationRules = buildLocationPromptInstructions(listingAddress, enrichment);
+    locationRules = buildLocationPromptInstructions(
+      listingAddress,
+      enrichment,
+      outputLanguage,
+    );
   }
 
   const propertyPayload = buildPropertyPayload(
@@ -292,6 +299,7 @@ export async function POST(request: Request) {
     outputLanguage,
     listingAddress,
     formattedAddress,
+    locationContext,
   );
 
   const images = (body.images ?? []).slice(0, MAX_VISION_IMAGES);

@@ -1,14 +1,27 @@
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import type { ListingAddress } from "@/types/listing";
-import type { LocationEnrichment, NearbyPoi, PoiCategory } from "@/types/location-poi";
-import { geocodeAddress } from "@/lib/location/geocode-address";
+import type {
+  LandmarkKind,
+  LocationEnrichment,
+  NearbyLandmark,
+  NearbyPoi,
+  PoiCategory,
+} from "@/types/location-poi";
+import {
+  geocodeAddress,
+  reverseGeocodeDistrict,
+  searchDistrictLandmarks,
+  type GeocodedAddress,
+} from "@/lib/location/geocode-address";
 import { formatListingAddress } from "@/lib/location/format-address";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
 const POI_RADIUS_METERS = 1000;
+const FALLBACK_LANDMARK_RADIUS_METERS = 2500;
 const CONNECTIVITY_RADIUS_METERS = 50000;
 const MAX_POIS_PER_CATEGORY = 6;
+const MAX_NEARBY_LANDMARKS = 10;
 
 type OverpassElement = {
   type: "node" | "way" | "relation";
@@ -18,6 +31,27 @@ type OverpassElement = {
   center?: { lat: number; lon: number };
   tags?: Record<string, string>;
 };
+
+const GENERIC_POI_NAMES = new Set([
+  "bus stop",
+  "green space",
+  "rail station",
+  "rail halt",
+  "tram",
+  "subway",
+  "shop",
+  "supermarket",
+  "convenience",
+  "marketplace",
+  "motorway junction",
+  "park",
+  "garden",
+  "nature reserve",
+  "airport",
+  "water",
+  "river",
+  "canal",
+]);
 
 function haversineMeters(
   lat1: number,
@@ -47,11 +81,18 @@ function poiName(tags: Record<string, string> | undefined, fallback: string): st
   if (!tags) return fallback;
   return (
     tags.name?.trim() ||
+    tags["name:de"]?.trim() ||
     tags["name:en"]?.trim() ||
     tags.brand?.trim() ||
     tags.operator?.trim() ||
     fallback
   );
+}
+
+function isNamedPoi(name: string): boolean {
+  const normalized = name.trim().toLowerCase();
+  if (normalized.length < 3) return false;
+  return !GENERIC_POI_NAMES.has(normalized);
 }
 
 function classifyTransit(tags: Record<string, string>): { category: PoiCategory; subtype: string } | null {
@@ -104,6 +145,40 @@ function classifyElement(
   }
 
   if (
+    tags.waterway === "river" ||
+    tags.waterway === "canal" ||
+    tags.waterway === "stream" ||
+    (tags.natural === "water" && tags.name)
+  ) {
+    return {
+      category: "water",
+      name: poiName(tags, tags.waterway ?? "water"),
+      subtype: tags.waterway ?? tags.natural,
+    };
+  }
+
+  if (
+    tags.tourism === "attraction" ||
+    tags.tourism === "museum" ||
+    tags.tourism === "viewpoint" ||
+    tags.tourism === "artwork" ||
+    tags.historic ||
+    tags.amenity === "theatre" ||
+    tags.amenity === "arts_centre"
+  ) {
+    const subtype =
+      tags.historic ??
+      tags.tourism ??
+      tags.amenity ??
+      "landmark";
+    return {
+      category: "culture",
+      name: poiName(tags, subtype.replace("_", " ")),
+      subtype,
+    };
+  }
+
+  if (
     tags.shop === "supermarket" ||
     tags.shop === "mall" ||
     tags.shop === "convenience" ||
@@ -137,6 +212,58 @@ function classifyElement(
   return null;
 }
 
+function poiToLandmarkKind(category: PoiCategory): LandmarkKind {
+  if (category === "parks") return "park";
+  return category;
+}
+
+function landmarkPriority(poi: NearbyPoi): number {
+  if (poi.category === "culture") return 0;
+  if (poi.category === "parks" && isNamedPoi(poi.name)) return 1;
+  if (poi.category === "water" && isNamedPoi(poi.name)) return 2;
+  if (
+    poi.category === "transit" &&
+    isNamedPoi(poi.name) &&
+    poi.subtype !== "bus stop"
+  ) {
+    return poi.subtype === "subway" ? 3 : 4;
+  }
+  if (poi.category === "parks") return 5;
+  if (poi.category === "transit" && poi.subtype !== "bus stop") return 6;
+  return 9;
+}
+
+export function buildNearbyLandmarks(allPois: NearbyPoi[]): NearbyLandmark[] {
+  const seen = new Set<string>();
+  const candidates = allPois
+    .filter((poi) => {
+      if (poi.category === "shopping" || poi.category === "connectivity") return false;
+      if (poi.category === "transit" && poi.subtype === "bus stop") return false;
+      return isNamedPoi(poi.name);
+    })
+    .sort((a, b) => {
+      const priorityDiff = landmarkPriority(a) - landmarkPriority(b);
+      if (priorityDiff !== 0) return priorityDiff;
+      return a.distanceMeters - b.distanceMeters;
+    });
+
+  const landmarks: NearbyLandmark[] = [];
+  for (const poi of candidates) {
+    const key = poi.name.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    landmarks.push({
+      name: poi.name.trim(),
+      kind: poiToLandmarkKind(poi.category),
+      distanceMeters: poi.distanceMeters,
+      subtype: poi.subtype,
+    });
+    if (landmarks.length >= MAX_NEARBY_LANDMARKS) break;
+  }
+
+  return landmarks;
+}
+
 function dedupeAndLimit(items: NearbyPoi[], limit: number): NearbyPoi[] {
   const seen = new Set<string>();
   const sorted = [...items].sort((a, b) => a.distanceMeters - b.distanceMeters);
@@ -153,20 +280,33 @@ function dedupeAndLimit(items: NearbyPoi[], limit: number): NearbyPoi[] {
   return result;
 }
 
-async function fetchOverpassPois(lat: number, lon: number): Promise<NearbyPoi[]> {
+async function fetchOverpassPois(
+  lat: number,
+  lon: number,
+  radiusMeters = POI_RADIUS_METERS,
+): Promise<NearbyPoi[]> {
   const query = `
 [out:json][timeout:25];
 (
-  node["railway"~"station|halt|tram_stop|subway_entrance"](around:${POI_RADIUS_METERS},${lat},${lon});
-  node["public_transport"="station"](around:${POI_RADIUS_METERS},${lat},${lon});
-  node["highway"="bus_stop"](around:${POI_RADIUS_METERS},${lat},${lon});
-  node["amenity"~"bus_station|supermarket|marketplace"](around:${POI_RADIUS_METERS},${lat},${lon});
-  node["station"~"subway|tram"](around:${POI_RADIUS_METERS},${lat},${lon});
-  node["leisure"~"park|garden|nature_reserve"](around:${POI_RADIUS_METERS},${lat},${lon});
-  node["shop"~"supermarket|mall|convenience"](around:${POI_RADIUS_METERS},${lat},${lon});
-  node["landuse"="forest"](around:${POI_RADIUS_METERS},${lat},${lon});
-  node["natural"="wood"](around:${POI_RADIUS_METERS},${lat},${lon});
-  way["leisure"="park"](around:${POI_RADIUS_METERS},${lat},${lon});
+  node["railway"~"station|halt|tram_stop|subway_entrance"]["name"](around:${radiusMeters},${lat},${lon});
+  node["public_transport"="station"]["name"](around:${radiusMeters},${lat},${lon});
+  node["highway"="bus_stop"](around:${radiusMeters},${lat},${lon});
+  node["amenity"~"bus_station|supermarket|marketplace|theatre|arts_centre"](around:${radiusMeters},${lat},${lon});
+  node["station"~"subway|tram"](around:${radiusMeters},${lat},${lon});
+  node["leisure"~"park|garden|nature_reserve"]["name"](around:${radiusMeters},${lat},${lon});
+  way["leisure"~"park|garden|nature_reserve"]["name"](around:${radiusMeters},${lat},${lon});
+  relation["leisure"="park"]["name"](around:${radiusMeters},${lat},${lon});
+  node["shop"~"supermarket|mall|convenience"](around:${radiusMeters},${lat},${lon});
+  node["landuse"="forest"](around:${radiusMeters},${lat},${lon});
+  node["natural"="wood"](around:${radiusMeters},${lat},${lon});
+  way["waterway"~"river|canal|stream"]["name"](around:${radiusMeters},${lat},${lon});
+  relation["waterway"~"river|canal"]["name"](around:${radiusMeters},${lat},${lon});
+  node["natural"="water"]["name"](around:${radiusMeters},${lat},${lon});
+  way["natural"="water"]["name"](around:${radiusMeters},${lat},${lon});
+  node["tourism"~"attraction|museum|viewpoint|artwork"]["name"](around:${radiusMeters},${lat},${lon});
+  way["tourism"~"attraction|museum"]["name"](around:${radiusMeters},${lat},${lon});
+  node["historic"]["name"](around:${radiusMeters},${lat},${lon});
+  way["historic"]["name"](around:${radiusMeters},${lat},${lon});
   node["aeroway"="aerodrome"](around:${CONNECTIVITY_RADIUS_METERS},${lat},${lon});
   node["highway"="motorway_junction"](around:5000,${lat},${lon});
 );
@@ -181,7 +321,7 @@ out center tags;
       "User-Agent": USER_AGENT,
     },
     body: `data=${encodeURIComponent(query)}`,
-    timeoutMs: 5_000,
+    timeoutMs: 6_000,
   });
 
   if (!res.ok) return [];
@@ -207,6 +347,73 @@ out center tags;
   return pois;
 }
 
+function buildDistrictContext(
+  address: ListingAddress,
+  geocoded: {
+    suburb?: string;
+    cityDistrict?: string;
+    postcode?: string;
+    city?: string;
+  },
+): string {
+  const district =
+    geocoded.cityDistrict ||
+    geocoded.suburb ||
+    address.city.trim();
+  return [
+    address.postalCode.trim(),
+    address.city.trim() || geocoded.city?.trim(),
+    district,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+async function fetchDistrictFallbackLandmarks(
+  lat: number,
+  lon: number,
+  districtContext: string,
+): Promise<NearbyLandmark[]> {
+  if (!districtContext.trim()) return [];
+
+  const queries = [
+    `${districtContext} park`,
+    `${districtContext} U-Bahn`,
+    `${districtContext} landmark`,
+  ];
+
+  const seen = new Set<string>();
+  const landmarks: NearbyLandmark[] = [];
+
+  for (const query of queries) {
+    const hits = await searchDistrictLandmarks(query, { lat, lon }, 4, 3_500);
+    for (const hit of hits) {
+      const key = hit.name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      landmarks.push({
+        name: hit.name,
+        kind: inferLandmarkKindFromName(hit.name),
+        distanceMeters: haversineMeters(lat, lon, hit.lat, hit.lon),
+      });
+      if (landmarks.length >= MAX_NEARBY_LANDMARKS) {
+        return landmarks.sort((a, b) => a.distanceMeters - b.distanceMeters);
+      }
+    }
+  }
+
+  return landmarks.sort((a, b) => a.distanceMeters - b.distanceMeters);
+}
+
+function inferLandmarkKindFromName(name: string): LandmarkKind {
+  const lower = name.toLowerCase();
+  if (/park|garten|garden|schlosspark/.test(lower)) return "park";
+  if (/spree|see|fluss|river|canal|ufer|wasser/.test(lower)) return "water";
+  if (/u-bahn|s-bahn|bahnhof|station|metro/.test(lower)) return "transit";
+  if (/museum|schloss|denkmal|kirche|theater|monument|platz/.test(lower)) return "culture";
+  return "culture";
+}
+
 export async function fetchLocationEnrichment(
   address: ListingAddress,
 ): Promise<LocationEnrichment | null> {
@@ -216,7 +423,45 @@ export async function fetchLocationEnrichment(
   const geocoded = await geocodeAddress(query);
   if (!geocoded) return null;
 
-  const allPois = await fetchOverpassPois(geocoded.lat, geocoded.lon);
+  let reverseDistrict: Pick<
+    GeocodedAddress,
+    "suburb" | "cityDistrict" | "postcode" | "city"
+  > = {};
+  try {
+    reverseDistrict = await reverseGeocodeDistrict(geocoded.lat, geocoded.lon);
+  } catch {
+    // district labels are optional; fallback queries use postal code + city
+  }
+
+  const districtMeta = {
+    suburb: geocoded.suburb ?? reverseDistrict.suburb,
+    cityDistrict: geocoded.cityDistrict ?? reverseDistrict.cityDistrict,
+    postcode: geocoded.postcode ?? reverseDistrict.postcode ?? address.postalCode.trim(),
+    city: geocoded.city ?? reverseDistrict.city ?? address.city.trim(),
+  };
+
+  const districtContext = buildDistrictContext(address, districtMeta);
+
+  let allPois = await fetchOverpassPois(geocoded.lat, geocoded.lon);
+  let nearbyLandmarks = buildNearbyLandmarks(allPois);
+
+  if (nearbyLandmarks.length === 0) {
+    const widerPois = await fetchOverpassPois(
+      geocoded.lat,
+      geocoded.lon,
+      FALLBACK_LANDMARK_RADIUS_METERS,
+    );
+    allPois = widerPois;
+    nearbyLandmarks = buildNearbyLandmarks(widerPois);
+  }
+
+  if (nearbyLandmarks.length === 0) {
+    nearbyLandmarks = await fetchDistrictFallbackLandmarks(
+      geocoded.lat,
+      geocoded.lon,
+      districtContext,
+    );
+  }
 
   const transit = dedupeAndLimit(
     allPois.filter((p) => p.category === "transit"),
@@ -234,14 +479,26 @@ export async function fetchLocationEnrichment(
     allPois.filter((p) => p.category === "connectivity"),
     MAX_POIS_PER_CATEGORY,
   );
+  const water = dedupeAndLimit(
+    allPois.filter((p) => p.category === "water"),
+    MAX_POIS_PER_CATEGORY,
+  );
+  const culture = dedupeAndLimit(
+    allPois.filter((p) => p.category === "culture"),
+    MAX_POIS_PER_CATEGORY,
+  );
 
   return {
     lat: geocoded.lat,
     lon: geocoded.lon,
     displayName: geocoded.displayName,
+    nearbyLandmarks,
+    districtContext,
     transit,
     parks,
     shopping,
     connectivity,
+    water,
+    culture,
   };
 }
