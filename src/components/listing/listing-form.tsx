@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
 import { FormAccordionCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
+import { MarketConfigBar } from "@/components/listing/market-config-bar";
 import type { BillingStatusResponse } from "@/types/billing";
 import type { FormCopy } from "@/lib/i18n-form";
 import type { WorkflowUiCopy } from "@/lib/i18n-workflow";
@@ -40,6 +41,9 @@ import type {
   RentFormData,
   SaleFormData,
   TransactionType,
+  TargetMarket,
+  UserRole,
+  CommissionPreset,
   GenerateResult,
 } from "@/types/listing";
 
@@ -82,6 +86,7 @@ const HEATING_SOURCES: HeatingSource[] = [
   "oil",
   "electricity",
   "solar",
+  "wood_pellets",
 ];
 
 const PROPERTY_TYPES: PropertyType[] = [
@@ -167,6 +172,17 @@ function NumericField({
 
 export type ListingFormProps = {
   copy: UiCopy & FormCopy & WorkflowUiCopy;
+  targetMarket: TargetMarket;
+  onTargetMarket: (market: TargetMarket) => void;
+  userRole: UserRole;
+  onUserRole: (role: UserRole) => void;
+  commissionPreset: CommissionPreset;
+  onCommissionPreset: (preset: CommissionPreset) => void;
+  bedrooms: string;
+  onBedrooms: (value: string) => void;
+  bathrooms: string;
+  onBathrooms: (value: string) => void;
+  onFillDemoDach?: () => void;
   transactionType: TransactionType;
   onTransactionType: (type: TransactionType) => void;
   property: PropertyDetails;
@@ -221,6 +237,17 @@ export type ListingFormProps = {
 export function ListingForm(props: ListingFormProps) {
   const {
     copy,
+    targetMarket,
+    onTargetMarket,
+    userRole,
+    onUserRole,
+    commissionPreset,
+    onCommissionPreset,
+    bedrooms,
+    onBedrooms,
+    bathrooms,
+    onBathrooms,
+    onFillDemoDach,
     transactionType,
     onTransactionType,
     property,
@@ -273,6 +300,50 @@ export function ListingForm(props: ListingFormProps) {
   } = props;
 
   const epcDetailsVisible = energy.certificateType !== "na";
+  const isDach = targetMarket === "dach";
+  const [globalEnergyOpen, setGlobalEnergyOpen] = useState(false);
+
+  const transactionToggle = (
+    <div className="flex gap-1 rounded-lg bg-indigo-50/80 p-1 dark:bg-indigo-950/40">
+      <button
+        type="button"
+        onClick={() => onTransactionType("rent")}
+        className={cn(
+          "flex-1 rounded-md py-2.5 text-sm font-semibold transition-all duration-200",
+          transactionType === "rent"
+            ? segmentActive
+            : "text-zinc-600 hover:text-indigo-700 dark:text-zinc-400 dark:hover:text-indigo-300",
+        )}
+      >
+        {isDach ? copy.dachForRent : copy.forRent}
+      </button>
+      <button
+        type="button"
+        onClick={() => onTransactionType("sale")}
+        className={cn(
+          "flex-1 rounded-md py-2.5 text-sm font-semibold transition-all duration-200",
+          transactionType === "sale"
+            ? segmentActive
+            : "text-zinc-600 hover:text-indigo-700 dark:text-zinc-400 dark:hover:text-indigo-300",
+        )}
+      >
+        {isDach ? copy.dachForSale : copy.forSale}
+      </button>
+    </div>
+  );
+
+  const dachConditionLabel = useCallback(
+    (value: PropertyCondition) => {
+      const map: Record<PropertyCondition, string> = {
+        first_occupancy: copy.dachConditionFirstOccupancy,
+        modernized: copy.dachConditionRenovated,
+        well_maintained: copy.dachConditionMaintained,
+        needs_renovation: copy.dachConditionNeedsRenovation,
+      };
+      return map[value];
+    },
+    [copy],
+  );
 
   const hasMinimumFields =
     property.propertyType !== "" &&
@@ -332,38 +403,21 @@ export function ListingForm(props: ListingFormProps) {
 
   return (
     <div className="space-y-3 pb-8">
+      <MarketConfigBar
+        copy={copy}
+        targetMarket={targetMarket}
+        onTargetMarket={onTargetMarket}
+        userRole={userRole}
+        onUserRole={onUserRole}
+      />
+
       <FormAccordionCard
         step={1}
         title={copy.sectionListingOverview}
         isOpen={openStep === 1}
         onToggle={() => setOpenStep(1)}
       >
-        <div className="flex gap-1 rounded-lg bg-indigo-50/80 p-1 dark:bg-indigo-950/40">
-          <button
-            type="button"
-            onClick={() => onTransactionType("rent")}
-            className={cn(
-              "flex-1 rounded-md py-2.5 text-sm font-semibold transition-all duration-200",
-              transactionType === "rent"
-                ? segmentActive
-                : "text-zinc-600 hover:text-indigo-700 dark:text-zinc-400 dark:hover:text-indigo-300",
-            )}
-          >
-            {copy.forRent}
-          </button>
-          <button
-            type="button"
-            onClick={() => onTransactionType("sale")}
-            className={cn(
-              "flex-1 rounded-md py-2.5 text-sm font-semibold transition-all duration-200",
-              transactionType === "sale"
-                ? segmentActive
-                : "text-zinc-600 hover:text-indigo-700 dark:text-zinc-400 dark:hover:text-indigo-300",
-            )}
-          >
-            {copy.forSale}
-          </button>
-        </div>
+        {!isDach ? transactionToggle : null}
 
         <div>
           <label htmlFor="propertyType" className={labelClassName()}>
@@ -449,6 +503,8 @@ export function ListingForm(props: ListingFormProps) {
         isOpen={openStep === 2}
         onToggle={() => setOpenStep(2)}
       >
+        {isDach ? <div className="mb-4">{transactionToggle}</div> : null}
+
         <FormGrid cols={3}>
           <NumericField
             id="size"
@@ -464,123 +520,190 @@ export function ListingForm(props: ListingFormProps) {
             onChange={onRooms}
             placeholder="3"
           />
-          <div>
-            <label htmlFor="floorLevel" className={labelClassName()}>
-              {copy.floorLevel}
-            </label>
-            <input
-              id="floorLevel"
-              placeholder={copy.floorLevelPlaceholder}
-              value={property.floorLevel}
-              onChange={(e) => onProperty({ floorLevel: e.target.value })}
-              className={inputClassName()}
-            />
-          </div>
-
-          {transactionType === "rent" ? (
+          {!isDach ? (
             <>
               <NumericField
-                id="netColdRent"
-                label={`${copy.netColdRent} (${currency})`}
-                value={rent.netColdRent}
-                onChange={(v) => onRent({ netColdRent: v })}
-                hint={
-                  <PriceHint
-                    amount={rent.netColdRent}
-                    currency={currency}
-                    priceOnRequestLabel={copy.priceOnRequest}
-                    show={hasMounted}
-                  />
-                }
+                id="bedrooms"
+                label={copy.bedrooms}
+                value={bedrooms}
+                onChange={onBedrooms}
+                placeholder="2"
               />
               <NumericField
-                id="utilityCharges"
-                label={`${copy.utilityCharges} (${currency})`}
-                value={rent.utilityCharges}
-                onChange={(v) => onRent({ utilityCharges: v })}
-                hint={
-                  <PriceHint
-                    amount={rent.utilityCharges}
-                    currency={currency}
-                    priceOnRequestLabel={copy.priceOnRequest}
-                    show={hasMounted}
-                  />
-                }
-              />
-              <NumericField
-                id="totalRent"
-                label={`${copy.totalRent} (${currency})`}
-                value={rent.totalRent}
-                onChange={(v) => onRent({ totalRent: v })}
-                hint={
-                  <PriceHint
-                    amount={rent.totalRent}
-                    currency={currency}
-                    priceOnRequestLabel={copy.priceOnRequest}
-                    show={hasMounted}
-                  />
-                }
-              />
-              <NumericField
-                id="securityDeposit"
-                label={`${copy.securityDeposit} (${currency})`}
-                value={rent.securityDeposit}
-                onChange={(v) => onRent({ securityDeposit: v })}
-                hint={
-                  <PriceHint
-                    amount={rent.securityDeposit}
-                    currency={currency}
-                    priceOnRequestLabel={copy.priceOnRequest}
-                    show={hasMounted}
-                  />
-                }
+                id="bathrooms"
+                label={copy.bathrooms}
+                value={bathrooms}
+                onChange={onBathrooms}
+                placeholder="1"
+                allowDecimal
               />
             </>
           ) : (
-            <>
-              <NumericField
-                id="purchasePrice"
-                label={`${copy.purchasePrice} (${currency})`}
-                value={sale.purchasePrice}
-                onChange={(v) => onSale({ purchasePrice: v })}
-                hint={
-                  <PriceHint
-                    amount={sale.purchasePrice}
-                    currency={currency}
-                    priceOnRequestLabel={copy.priceOnRequest}
-                    show={hasMounted}
-                  />
-                }
+            <div>
+              <label htmlFor="floorLevel" className={labelClassName()}>
+                {copy.floorLevel}
+              </label>
+              <input
+                id="floorLevel"
+                placeholder={copy.floorLevelPlaceholder}
+                value={property.floorLevel}
+                onChange={(e) => onProperty({ floorLevel: e.target.value })}
+                className={inputClassName()}
               />
-              <NumericField
-                id="hoaFee"
-                label={`${copy.hoaFee} (${currency})`}
-                value={sale.hoaFee}
-                onChange={(v) => onSale({ hoaFee: v })}
-                hint={
-                  <PriceHint
-                    amount={sale.hoaFee}
-                    currency={currency}
-                    priceOnRequestLabel={copy.priceOnRequest}
-                    show={hasMounted}
-                  />
-                }
-              />
-              <div className="sm:col-span-2 lg:col-span-1">
-                <label htmlFor="rentalYield" className={labelClassName()}>
-                  {copy.rentalYield}
-                </label>
-                <input
-                  id="rentalYield"
-                  value={sale.rentalYield}
-                  onChange={(e) => onSale({ rentalYield: e.target.value })}
-                  className={inputClassName()}
-                />
-              </div>
-            </>
+            </div>
           )}
 
-          {showCurrencySelect ? (
+          {isDach ? (
+            transactionType === "rent" ? (
+              <>
+                <NumericField
+                  id="netColdRent"
+                  label={`${copy.netColdRent} (€)`}
+                  value={rent.netColdRent}
+                  onChange={(v) => onRent({ netColdRent: v })}
+                  hint={
+                    <PriceHint
+                      amount={rent.netColdRent}
+                      currency={currency}
+                      priceOnRequestLabel={copy.priceOnRequest}
+                      show={hasMounted}
+                    />
+                  }
+                />
+                <NumericField
+                  id="utilityCharges"
+                  label={`${copy.utilityCharges} (€)`}
+                  value={rent.utilityCharges}
+                  onChange={(v) => onRent({ utilityCharges: v })}
+                  hint={
+                    <PriceHint
+                      amount={rent.utilityCharges}
+                      currency={currency}
+                      priceOnRequestLabel={copy.priceOnRequest}
+                      show={hasMounted}
+                    />
+                  }
+                />
+                <NumericField
+                  id="totalRent"
+                  label={`${copy.totalRent} (€)`}
+                  value={rent.totalRent}
+                  onChange={(v) => onRent({ totalRent: v })}
+                  hint={
+                    <PriceHint
+                      amount={rent.totalRent}
+                      currency={currency}
+                      priceOnRequestLabel={copy.priceOnRequest}
+                      show={hasMounted}
+                    />
+                  }
+                />
+                <div>
+                  <label htmlFor="securityDeposit" className={labelClassName()}>
+                    {copy.dachDeposit}
+                  </label>
+                  <input
+                    id="securityDeposit"
+                    placeholder="3 Monatskaltmieten"
+                    value={rent.securityDeposit}
+                    onChange={(e) => onRent({ securityDeposit: e.target.value })}
+                    className={inputClassName()}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <NumericField
+                  id="purchasePrice"
+                  label={`${copy.purchasePrice} (€)`}
+                  value={sale.purchasePrice}
+                  onChange={(v) => onSale({ purchasePrice: v })}
+                  hint={
+                    <PriceHint
+                      amount={sale.purchasePrice}
+                      currency={currency}
+                      priceOnRequestLabel={copy.priceOnRequest}
+                      show={hasMounted}
+                    />
+                  }
+                />
+                <NumericField
+                  id="hoaFee"
+                  label={copy.dachHouseFee}
+                  value={sale.hoaFee}
+                  onChange={(v) => onSale({ hoaFee: v })}
+                  hint={
+                    <PriceHint
+                      amount={sale.hoaFee}
+                      currency={currency}
+                      priceOnRequestLabel={copy.priceOnRequest}
+                      show={hasMounted}
+                    />
+                  }
+                />
+              </>
+            )
+          ) : transactionType === "rent" ? (
+            <NumericField
+              id="globalPrice"
+              label={`${copy.globalPrice} (${currency})`}
+              value={rent.totalRent || rent.netColdRent}
+              onChange={(v) => onRent({ totalRent: v, netColdRent: v })}
+              hint={
+                <PriceHint
+                  amount={rent.totalRent || rent.netColdRent}
+                  currency={currency}
+                  priceOnRequestLabel={copy.priceOnRequest}
+                  show={hasMounted}
+                />
+              }
+            />
+          ) : (
+            <NumericField
+              id="globalPurchasePrice"
+              label={`${copy.globalPrice} (${currency})`}
+              value={sale.purchasePrice}
+              onChange={(v) => onSale({ purchasePrice: v })}
+              hint={
+                <PriceHint
+                  amount={sale.purchasePrice}
+                  currency={currency}
+                  priceOnRequestLabel={copy.priceOnRequest}
+                  show={hasMounted}
+                />
+              }
+            />
+          )}
+
+          {!isDach ? null : (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <p className={labelClassName()}>{copy.commissionLabel}</p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                {(["commission_free", "buyer_commission"] as CommissionPreset[]).map((preset) => (
+                  <label
+                    key={preset}
+                    className={cn(
+                      "flex flex-1 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm",
+                      commissionPreset === preset
+                        ? "border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-950/40"
+                        : "border-zinc-200 dark:border-zinc-700",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="commissionPreset"
+                      checked={commissionPreset === preset}
+                      onChange={() => onCommissionPreset(preset)}
+                      className="text-indigo-600"
+                    />
+                    {preset === "commission_free" ? copy.commissionFree : copy.commissionBuyer}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!isDach && showCurrencySelect ? (
             <div>
               <label htmlFor="currency" className={labelClassName()}>
                 {copy.currency}
@@ -608,164 +731,324 @@ export function ListingForm(props: ListingFormProps) {
         isOpen={openStep === 3}
         onToggle={() => setOpenStep(3)}
       >
-        <FormGrid>
-          <div>
-            <label htmlFor="parking" className={labelClassName()}>
-              {copy.parking}
-            </label>
-            <select
-              id="parking"
-              value={property.parking}
-              onChange={(e) =>
-                onProperty({ parking: e.target.value as ParkingType | "" })
-              }
-              className={inputClassName()}
-            >
-              <option value="">—</option>
-              {PARKING_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {parkingLabel(type)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <NumericField
-            id="parkingFee"
-            label={`${copy.parkingFee} (${currency})`}
-            value={property.parkingFee}
-            onChange={(v) => onProperty({ parkingFee: v })}
-            hint={
-              <PriceHint
-                amount={property.parkingFee}
-                currency={currency}
-                priceOnRequestLabel={copy.priceOnRequest}
-                show={hasMounted}
-              />
-            }
-          />
-          <div className="sm:col-span-2">
-            <label htmlFor="condition" className={labelClassName()}>
-              {copy.condition}
-            </label>
-            <select
-              id="condition"
-              value={property.condition}
-              onChange={(e) =>
-                onProperty({ condition: e.target.value as PropertyCondition | "" })
-              }
-              className={inputClassName()}
-            >
-              <option value="">—</option>
-              {CONDITIONS.map((value) => (
-                <option key={value} value={value}>
-                  {conditionLabel(value)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <NumericField
-            id="constructionYear"
-            label={copy.constructionYear}
-            value={energy.constructionYear}
-            onChange={(v) => onEnergy({ constructionYear: v })}
-            allowDecimal={false}
-            placeholder="1998"
-          />
-          <NumericField
-            id="heatingInstallYear"
-            label={copy.heatingInstallYear}
-            value={energy.heatingInstallYear}
-            onChange={(v) => onEnergy({ heatingInstallYear: v })}
-            allowDecimal={false}
-            placeholder="2015"
-          />
-        </FormGrid>
-
-        <div className="rounded-lg border border-zinc-100 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            {copy.epcSection}
-          </p>
-          <FormGrid>
-            <div className="sm:col-span-2">
-              <label htmlFor="certType" className={labelClassName()}>
-                {copy.certificateType}
-              </label>
-              <select
-                id="certType"
-                value={energy.certificateType}
-                onChange={(e) => {
-                  const certificateType = e.target.value as EnergyCertificateType;
-                  if (certificateType === "na") {
-                    onEnergy({ certificateType, energyValue: "", energyClass: "" });
-                  } else {
-                    onEnergy({ certificateType });
-                  }
-                }}
-                className={inputClassName()}
-              >
-                <option value="consumption">{copy.certConsumption}</option>
-                <option value="demand">{copy.certDemand}</option>
-                <option value="na">{copy.certNa}</option>
-              </select>
-            </div>
-            {epcDetailsVisible ? (
-              <>
-                <div className="animate-fade-in-up">
-                  <NumericField
-                    id="energyValue"
-                    label={copy.energyValue}
-                    value={energy.energyValue}
-                    onChange={(v) => onEnergy({ energyValue: v })}
-                    allowDecimal
-                    placeholder="120"
-                  />
-                </div>
-                <div className="animate-fade-in-up animate-fade-in-up-delay-1">
-                  <label htmlFor="energyClass" className={labelClassName()}>
-                    {copy.energyClass}
+        {isDach ? (
+          <>
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                {copy.epcSection}
+              </p>
+              <FormGrid>
+                <div className="sm:col-span-2">
+                  <label htmlFor="certType" className={labelClassName()}>
+                    {copy.certificateType}
                   </label>
                   <select
-                    id="energyClass"
-                    value={energy.energyClass}
+                    id="certType"
+                    value={energy.certificateType}
+                    onChange={(e) => {
+                      const certificateType = e.target.value as EnergyCertificateType;
+                      if (certificateType === "na") {
+                        onEnergy({ certificateType, energyValue: "", energyClass: "" });
+                      } else {
+                        onEnergy({ certificateType });
+                      }
+                    }}
+                    className={inputClassName()}
+                  >
+                    <option value="consumption">{copy.certConsumption}</option>
+                    <option value="demand">{copy.certDemand}</option>
+                    <option value="na">{copy.dachCertHeritage}</option>
+                  </select>
+                </div>
+                {epcDetailsVisible ? (
+                  <>
+                    <div>
+                      <label htmlFor="energyClass" className={labelClassName()}>
+                        {copy.energyClass}
+                      </label>
+                      <select
+                        id="energyClass"
+                        value={energy.energyClass}
+                        onChange={(e) =>
+                          onEnergy({ energyClass: e.target.value as EnergyClass | "" })
+                        }
+                        className={inputClassName()}
+                      >
+                        <option value="">—</option>
+                        {ENERGY_CLASSES.map((cls) => (
+                          <option key={cls} value={cls}>
+                            {cls}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <NumericField
+                      id="energyValue"
+                      label={copy.energyValueKwh}
+                      value={energy.energyValue}
+                      onChange={(v) => onEnergy({ energyValue: v })}
+                      allowDecimal
+                      placeholder="120"
+                    />
+                  </>
+                ) : null}
+                <div className="sm:col-span-2">
+                  <label htmlFor="heatingSource" className={labelClassName()}>
+                    {copy.heatingSource}
+                  </label>
+                  <select
+                    id="heatingSource"
+                    value={energy.heatingSource}
                     onChange={(e) =>
-                      onEnergy({ energyClass: e.target.value as EnergyClass | "" })
+                      onEnergy({
+                        heatingSource: e.target.value as HeatingSource | "",
+                      })
                     }
                     className={inputClassName()}
                   >
                     <option value="">—</option>
-                    {ENERGY_CLASSES.map((cls) => (
-                      <option key={cls} value={cls}>
-                        {cls}
+                    {HEATING_SOURCES.map((src) => (
+                      <option key={src} value={src}>
+                        {src === "wood_pellets" ? copy.woodPellets : heatingLabel(src)}
                       </option>
                     ))}
                   </select>
                 </div>
-              </>
-            ) : null}
-            <div className="sm:col-span-2">
-              <label htmlFor="heatingSource" className={labelClassName()}>
-                {copy.heatingSource}
-              </label>
-              <select
-                id="heatingSource"
-                value={energy.heatingSource}
-                onChange={(e) =>
-                  onEnergy({
-                    heatingSource: e.target.value as HeatingSource | "",
-                  })
-                }
-                className={inputClassName()}
-              >
-                <option value="">—</option>
-                {HEATING_SOURCES.map((src) => (
-                  <option key={src} value={src}>
-                    {heatingLabel(src)}
-                  </option>
-                ))}
-              </select>
+                <NumericField
+                  id="constructionYear"
+                  label={copy.constructionYear}
+                  value={energy.constructionYear}
+                  onChange={(v) => onEnergy({ constructionYear: v })}
+                  allowDecimal={false}
+                  placeholder="1998"
+                />
+                <div>
+                  <label htmlFor="condition" className={labelClassName()}>
+                    {copy.condition}
+                  </label>
+                  <select
+                    id="condition"
+                    value={property.condition}
+                    onChange={(e) =>
+                      onProperty({ condition: e.target.value as PropertyCondition | "" })
+                    }
+                    className={inputClassName()}
+                  >
+                    <option value="">—</option>
+                    {CONDITIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {dachConditionLabel(value)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </FormGrid>
             </div>
-          </FormGrid>
-        </div>
+            <FormGrid>
+              <div>
+                <label htmlFor="parking" className={labelClassName()}>
+                  {copy.parking}
+                </label>
+                <select
+                  id="parking"
+                  value={property.parking}
+                  onChange={(e) =>
+                    onProperty({ parking: e.target.value as ParkingType | "" })
+                  }
+                  className={inputClassName()}
+                >
+                  <option value="">—</option>
+                  {PARKING_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {parkingLabel(type)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <NumericField
+                id="parkingFee"
+                label={`${copy.parkingFee} (€)`}
+                value={property.parkingFee}
+                onChange={(v) => onProperty({ parkingFee: v })}
+                hint={
+                  <PriceHint
+                    amount={property.parkingFee}
+                    currency={currency}
+                    priceOnRequestLabel={copy.priceOnRequest}
+                    show={hasMounted}
+                  />
+                }
+              />
+            </FormGrid>
+          </>
+        ) : (
+          <>
+            <FormGrid>
+              <div>
+                <label htmlFor="parking" className={labelClassName()}>
+                  {copy.parking}
+                </label>
+                <select
+                  id="parking"
+                  value={property.parking}
+                  onChange={(e) =>
+                    onProperty({ parking: e.target.value as ParkingType | "" })
+                  }
+                  className={inputClassName()}
+                >
+                  <option value="">—</option>
+                  {PARKING_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {parkingLabel(type)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <NumericField
+                id="parkingFee"
+                label={`${copy.parkingFee} (${currency})`}
+                value={property.parkingFee}
+                onChange={(v) => onProperty({ parkingFee: v })}
+                hint={
+                  <PriceHint
+                    amount={property.parkingFee}
+                    currency={currency}
+                    priceOnRequestLabel={copy.priceOnRequest}
+                    show={hasMounted}
+                  />
+                }
+              />
+              <div className="sm:col-span-2">
+                <label htmlFor="condition" className={labelClassName()}>
+                  {copy.condition}
+                </label>
+                <select
+                  id="condition"
+                  value={property.condition}
+                  onChange={(e) =>
+                    onProperty({ condition: e.target.value as PropertyCondition | "" })
+                  }
+                  className={inputClassName()}
+                >
+                  <option value="">—</option>
+                  {CONDITIONS.map((value) => (
+                    <option key={value} value={value}>
+                      {conditionLabel(value)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </FormGrid>
+
+            <button
+              type="button"
+              onClick={() => setGlobalEnergyOpen((open) => !open)}
+              className="mt-2 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-left text-sm font-medium text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            >
+              {copy.globalEnergyExpand}
+              <span className="float-right text-zinc-400">{globalEnergyOpen ? "−" : "+"}</span>
+            </button>
+
+            {globalEnergyOpen ? (
+              <div className="mt-3 rounded-lg border border-zinc-100 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+                <FormGrid>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="certTypeGlobal" className={labelClassName()}>
+                      {copy.certificateType}
+                    </label>
+                    <select
+                      id="certTypeGlobal"
+                      value={energy.certificateType}
+                      onChange={(e) => {
+                        const certificateType = e.target.value as EnergyCertificateType;
+                        if (certificateType === "na") {
+                          onEnergy({ certificateType, energyValue: "", energyClass: "" });
+                        } else {
+                          onEnergy({ certificateType });
+                        }
+                      }}
+                      className={inputClassName()}
+                    >
+                      <option value="consumption">{copy.certConsumption}</option>
+                      <option value="demand">{copy.certDemand}</option>
+                      <option value="na">{copy.certNa}</option>
+                    </select>
+                  </div>
+                  {epcDetailsVisible ? (
+                    <>
+                      <NumericField
+                        id="energyValueGlobal"
+                        label={copy.energyValue}
+                        value={energy.energyValue}
+                        onChange={(v) => onEnergy({ energyValue: v })}
+                        allowDecimal
+                        placeholder="120"
+                      />
+                      <div>
+                        <label htmlFor="energyClassGlobal" className={labelClassName()}>
+                          {copy.energyClass}
+                        </label>
+                        <select
+                          id="energyClassGlobal"
+                          value={energy.energyClass}
+                          onChange={(e) =>
+                            onEnergy({ energyClass: e.target.value as EnergyClass | "" })
+                          }
+                          className={inputClassName()}
+                        >
+                          <option value="">—</option>
+                          {ENERGY_CLASSES.map((cls) => (
+                            <option key={cls} value={cls}>
+                              {cls}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  ) : null}
+                  <div className="sm:col-span-2">
+                    <label htmlFor="heatingSourceGlobal" className={labelClassName()}>
+                      {copy.heatingSource}
+                    </label>
+                    <select
+                      id="heatingSourceGlobal"
+                      value={energy.heatingSource}
+                      onChange={(e) =>
+                        onEnergy({
+                          heatingSource: e.target.value as HeatingSource | "",
+                        })
+                      }
+                      className={inputClassName()}
+                    >
+                      <option value="">—</option>
+                      {HEATING_SOURCES.map((src) => (
+                        <option key={src} value={src}>
+                          {src === "wood_pellets" ? copy.woodPellets : heatingLabel(src)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <NumericField
+                    id="constructionYearGlobal"
+                    label={copy.constructionYear}
+                    value={energy.constructionYear}
+                    onChange={(v) => onEnergy({ constructionYear: v })}
+                    allowDecimal={false}
+                    placeholder="1998"
+                  />
+                  <NumericField
+                    id="heatingInstallYearGlobal"
+                    label={copy.heatingInstallYear}
+                    value={energy.heatingInstallYear}
+                    onChange={(v) => onEnergy({ heatingInstallYear: v })}
+                    allowDecimal={false}
+                    placeholder="2015"
+                  />
+                </FormGrid>
+              </div>
+            ) : null}
+          </>
+        )}
       </FormAccordionCard>
 
       <FormAccordionCard
@@ -964,16 +1247,27 @@ export function ListingForm(props: ListingFormProps) {
         isOpen={openStep === 6}
         onToggle={() => setOpenStep(6)}
       >
-        {onResetAgentFromBranding ? (
-          <div className="mb-4">
-            <button
-              type="button"
-              disabled={!canResetFromBranding}
-              onClick={onResetAgentFromBranding}
-              className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
-            >
-              {copy.resetToBrandingDefaults}
-            </button>
+        {(onResetAgentFromBranding || onFillDemoDach) ? (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {onResetAgentFromBranding ? (
+              <button
+                type="button"
+                disabled={!canResetFromBranding}
+                onClick={onResetAgentFromBranding}
+                className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+              >
+                {copy.resetToBrandingDefaults}
+              </button>
+            ) : null}
+            {onFillDemoDach ? (
+              <button
+                type="button"
+                onClick={onFillDemoDach}
+                className="cursor-pointer rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-900 transition hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-100 dark:hover:bg-indigo-950"
+              >
+                {copy.fillDemoDachListing}
+              </button>
+            ) : null}
           </div>
         ) : null}
         <FormGrid>
@@ -999,6 +1293,19 @@ export function ListingForm(props: ListingFormProps) {
               className={inputClassName()}
             />
           </div>
+          {isDach ? (
+            <div className="sm:col-span-2">
+              <label htmlFor="companyAddress" className={labelClassName()}>
+                {copy.agentCompanyAddress}
+              </label>
+              <input
+                id="companyAddress"
+                value={agent.companyAddress}
+                onChange={(e) => onAgent({ companyAddress: e.target.value })}
+                className={inputClassName()}
+              />
+            </div>
+          ) : null}
           <div>
             <label htmlFor="phone" className={labelClassName()}>
               {copy.phone}
@@ -1023,6 +1330,20 @@ export function ListingForm(props: ListingFormProps) {
               className={inputClassName()}
             />
           </div>
+          {isDach ? (
+            <div className="sm:col-span-2">
+              <label htmlFor="licenseId" className={labelClassName()}>
+                {copy.agentLicenseId}
+              </label>
+              <input
+                id="licenseId"
+                value={agent.licenseId}
+                onChange={(e) => onAgent({ licenseId: e.target.value })}
+                placeholder="§ 34c GewO — …"
+                className={inputClassName()}
+              />
+            </div>
+          ) : null}
         </FormGrid>
 
         <div>

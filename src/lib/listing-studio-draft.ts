@@ -3,13 +3,16 @@ import type { CurrencyCode } from "@/lib/currency";
 import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
 import type {
   AgentFormData,
+  CommissionPreset,
   EnergyFormData,
   GenerateResult,
   ListingAddress,
   PropertyDetails,
   RentFormData,
   SaleFormData,
+  TargetMarket,
   TransactionType,
+  UserRole,
 } from "@/types/listing";
 
 export const LISTING_STUDIO_DRAFT_STORAGE_KEY = "listing-studio-draft-v1";
@@ -30,6 +33,11 @@ export type ListingStudioDraft = {
   savedAt: number;
   targetLanguage: OutputLanguage;
   currency: CurrencyCode;
+  targetMarket: TargetMarket;
+  userRole: UserRole;
+  commissionPreset: CommissionPreset;
+  bedrooms: string;
+  bathrooms: string;
   transactionType: TransactionType;
   address: ListingAddress;
   size: string;

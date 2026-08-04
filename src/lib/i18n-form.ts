@@ -1,4 +1,5 @@
 ﻿import type { UiLocale } from "@/lib/i18n";
+import { DACH_LEGAL_DISCLAIMER } from "@/lib/listing-market-presets";
 
 export type FormCopy = {
   exposeLanguage: string;
@@ -105,6 +106,34 @@ export type FormCopy = {
   stagingDisclaimerUnfurnished: string;
   stagingDisclaimerPartially: string;
   resetToBrandingDefaults: string;
+  targetMarketLabel: string;
+  targetMarketDach: string;
+  targetMarketGlobal: string;
+  userRoleLabel: string;
+  userRoleAgent: string;
+  userRolePrivateSeller: string;
+  commissionLabel: string;
+  commissionFree: string;
+  commissionBuyer: string;
+  globalPrice: string;
+  bedrooms: string;
+  bathrooms: string;
+  agentCompanyAddress: string;
+  agentLicenseId: string;
+  fillDemoDachListing: string;
+  dachForRent: string;
+  dachForSale: string;
+  dachHouseFee: string;
+  dachDeposit: string;
+  dachCertHeritage: string;
+  woodPellets: string;
+  energyValueKwh: string;
+  globalEnergyExpand: string;
+  dachConditionFirstOccupancy: string;
+  dachConditionFullyRenovated: string;
+  dachConditionRenovated: string;
+  dachConditionMaintained: string;
+  dachConditionNeedsRenovation: string;
 };
 
 const en: FormCopy = {
@@ -220,6 +249,34 @@ const en: FormCopy = {
   stagingDisclaimerPartially:
     "Note: Interior furniture shown is for staging purposes only. The unit is delivered partially furnished with built-in fixtures as specified.",
   resetToBrandingDefaults: "Reset to account branding defaults",
+  targetMarketLabel: "Target market",
+  targetMarketDach: "🇩🇪 DACH (DE / AT / CH)",
+  targetMarketGlobal: "🌐 Global / Standard",
+  userRoleLabel: "Your role",
+  userRoleAgent: "Real estate agent / broker",
+  userRolePrivateSeller: "Private seller / landlord",
+  commissionLabel: "Commission / agent fee (Provision)",
+  commissionFree: "Commission free (Provisionsfrei)",
+  commissionBuyer: "Buyer commission (e.g. 3.57% incl. VAT)",
+  globalPrice: "Price",
+  bedrooms: "Bedrooms",
+  bathrooms: "Bathrooms",
+  agentCompanyAddress: "Company address (Impressum)",
+  agentLicenseId: "License / § 34c GewO ID (optional)",
+  fillDemoDachListing: "Fill demo DACH listing",
+  dachForRent: "For rent (Miete)",
+  dachForSale: "For sale (Kauf)",
+  dachHouseFee: "HOA fee / Hausgeld (€/month)",
+  dachDeposit: "Deposit (Kaution)",
+  dachCertHeritage: "Not required / heritage protection (Denkmalschutz)",
+  woodPellets: "Wood pellets (Holzpellets)",
+  energyValueKwh: "Final energy demand / consumption (kWh/(m²·a))",
+  globalEnergyExpand: "Advanced specifications (energy certificate)",
+  dachConditionFirstOccupancy: "First occupancy (Erstbezug)",
+  dachConditionFullyRenovated: "Fully renovated (Vollständig saniert)",
+  dachConditionRenovated: "Renovated (Saniert)",
+  dachConditionMaintained: "Well maintained (Gepflegt)",
+  dachConditionNeedsRenovation: "Needs renovation (Renovierungsbedürftig)",
 };
 
 const de: Partial<FormCopy> = {
@@ -334,6 +391,34 @@ const de: Partial<FormCopy> = {
   stagingDisclaimerPartially:
     "Hinweis: Gezeigte Einrichtung dient nur Staging-Zwecken. Das Objekt wird teilmöbliert mit den angegebenen Einbauten übergeben.",
   resetToBrandingDefaults: "Auf Konto-Branding zurücksetzen",
+  targetMarketLabel: "Zielmarkt",
+  targetMarketDach: "🇩🇪 DACH (DE / AT / CH)",
+  targetMarketGlobal: "🌐 Global / Standard",
+  userRoleLabel: "Ihre Rolle",
+  userRoleAgent: "Immobilienmakler / Broker",
+  userRolePrivateSeller: "Privatverkäufer / Vermieter",
+  commissionLabel: "Provision",
+  commissionFree: "Provisionsfrei",
+  commissionBuyer: "Käuferprovision (z. B. 3,57 % inkl. MwSt.)",
+  globalPrice: "Preis",
+  bedrooms: "Schlafzimmer",
+  bathrooms: "Badezimmer",
+  agentCompanyAddress: "Firmenadresse (Impressum)",
+  agentLicenseId: "Erlaubnis / § 34c GewO (optional)",
+  fillDemoDachListing: "Demo-DACH-Listing ausfüllen",
+  dachForRent: "Zur Miete (Miete)",
+  dachForSale: "Zum Kauf (Kauf)",
+  dachHouseFee: "Hausgeld / Wohngeld (€/Monat)",
+  dachDeposit: "Kaution",
+  dachCertHeritage: "Nicht erforderlich / Denkmalschutz",
+  woodPellets: "Holzpellets",
+  energyValueKwh: "Endenergiebedarf / -verbrauch (kWh/(m²·a))",
+  globalEnergyExpand: "Erweiterte Angaben (Energieausweis)",
+  dachConditionFirstOccupancy: "Erstbezug",
+  dachConditionFullyRenovated: "Vollständig saniert",
+  dachConditionRenovated: "Saniert",
+  dachConditionMaintained: "Gepflegt",
+  dachConditionNeedsRenovation: "Renovierungsbedürftig",
 };
 
 const fr: Partial<FormCopy> = {
@@ -882,9 +967,10 @@ export function getFormCopy(locale: UiLocale): FormCopy {
   return { ...en, ...(formTranslations[locale] ?? {}) };
 }
 
-const ALL_DEFAULT_LEGAL_DISCLAIMERS = new Set(
-  Object.values(formTranslations).map((t) => t.defaultLegalDisclaimer),
-);
+const ALL_DEFAULT_LEGAL_DISCLAIMERS = new Set([
+  ...Object.values(formTranslations).map((t) => t.defaultLegalDisclaimer),
+  DACH_LEGAL_DISCLAIMER,
+]);
 
 /** True if the text is still one of the built-in locale defaults (not user-written). */
 export function isKnownDefaultLegalDisclaimer(text: string): boolean {

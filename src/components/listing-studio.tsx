@@ -81,17 +81,28 @@ import {
   writeListingStudioDraft,
   type ListingStudioDraft,
 } from "@/lib/listing-studio-draft";
+import {
+  buildDachDemoListingPreset,
+  calculateWarmRent,
+  commissionTermsFromPreset,
+  DACH_LEGAL_DISCLAIMER,
+  dachMarketPresetApply,
+  parseCommissionPreset,
+} from "@/lib/listing-market-presets";
 import { cn } from "@/lib/utils";
 import type {
-  TransactionType,
+  AgentFormData,
+  CommissionPreset,
+  EnergyFormData,
+  GenerateResult,
+  HeatingSource,
+  ListingAddress,
+  PropertyDetails,
   RentFormData,
   SaleFormData,
-  EnergyFormData,
-  HeatingSource,
-  GenerateResult,
-  AgentFormData,
-  PropertyDetails,
-  ListingAddress,
+  TargetMarket,
+  TransactionType,
+  UserRole,
 } from "@/types/listing";
 
 const MAX_PHOTOS = 5;
@@ -124,8 +135,10 @@ type PhotoPreview = {
 const DEFAULT_AGENT: AgentFormData = {
   name: "",
   agency: "",
+  companyAddress: "",
   phone: "",
   email: "",
+  licenseId: "",
   legalDisclaimer: "",
 };
 
@@ -143,7 +156,7 @@ const EMPTY_SALE: SaleFormData = {
   purchasePrice: "",
   hoaFee: "",
   rentalYield: "",
-  commissionTerms: "",
+  commissionTerms: "Provisionsfrei",
 };
 
 const DEFAULT_PROPERTY: PropertyDetails = {
@@ -291,9 +304,13 @@ function ListingStudioContent() {
     [uiLocale],
   );
 
-  const [targetLanguage, setTargetLanguage] = useState<OutputLanguage>(() =>
-    outputLanguageFromLocale(routeLocale),
-  );
+  const [targetLanguage, setTargetLanguage] = useState<OutputLanguage>("German");
+  const [targetMarket, setTargetMarket] = useState<TargetMarket>("dach");
+  const [userRole, setUserRole] = useState<UserRole>("agent");
+  const [commissionPreset, setCommissionPreset] = useState<CommissionPreset>("commission_free");
+  const [bedrooms, setBedrooms] = useState("");
+  const [bathrooms, setBathrooms] = useState("");
+  const totalRentManualRef = useRef(false);
 
   const exposeLocale = useMemo(
     () => localeFromTargetLanguage(targetLanguage),
@@ -309,24 +326,37 @@ function ListingStudioContent() {
   );
 
   useEffect(() => {
-    setTargetLanguage(outputLanguageFromLocale(routeLocale));
-    const defaultDisclaimer = getFormCopy(routeLocale).defaultLegalDisclaimer;
+    if (targetMarket === "global") {
+      setTargetLanguage(outputLanguageFromLocale(routeLocale));
+    }
+    const defaultDisclaimer =
+      targetMarket === "dach"
+        ? DACH_LEGAL_DISCLAIMER
+        : getFormCopy(routeLocale).defaultLegalDisclaimer;
     setAgent((prev) => {
       if (!isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)) return prev;
       if (prev.legalDisclaimer === defaultDisclaimer) return prev;
       return { ...prev, legalDisclaimer: defaultDisclaimer };
     });
-  }, [routeLocale]);
+  }, [routeLocale, targetMarket]);
 
   const [currency, setCurrency] = useState<CurrencyCode>("EUR");
   const activeCurrency =
-    uiLocale === "en" ? currency : getDefaultCurrencyForLocale(uiLocale);
+    targetMarket === "dach"
+      ? "EUR"
+      : uiLocale === "en"
+        ? currency
+        : getDefaultCurrencyForLocale(uiLocale);
 
   useEffect(() => {
+    if (targetMarket === "dach") {
+      setCurrency("EUR");
+      return;
+    }
     if (uiLocale !== "en") {
       setCurrency(getDefaultCurrencyForLocale(uiLocale));
     }
-  }, [uiLocale]);
+  }, [uiLocale, targetMarket]);
 
   const [hasMounted, setHasMounted] = useState(false);
   useEffect(() => {
@@ -355,8 +385,97 @@ function ListingStudioContent() {
   const [energy, setEnergy] = useState<EnergyFormData>({ ...DEFAULT_ENERGY });
   const [agent, setAgent] = useState<AgentFormData>(() => ({
     ...DEFAULT_AGENT,
-    legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
+    legalDisclaimer: DACH_LEGAL_DISCLAIMER,
   }));
+
+  const handleRentPatch = useCallback((patch: Partial<RentFormData>) => {
+    setRent((prev) => {
+      const next = { ...prev, ...patch };
+      const manualTotalEdit =
+        "totalRent" in patch && !("netColdRent" in patch) && !("utilityCharges" in patch);
+      if (manualTotalEdit) {
+        totalRentManualRef.current = true;
+      }
+      if (
+        ("netColdRent" in patch || "utilityCharges" in patch) &&
+        !totalRentManualRef.current
+      ) {
+        const calculated = calculateWarmRent(next.netColdRent, next.utilityCharges);
+        if (calculated) next.totalRent = calculated;
+      }
+      return next;
+    });
+  }, []);
+
+  const handleTargetMarketChange = useCallback(
+    (market: TargetMarket) => {
+      setTargetMarket(market);
+      if (market === "dach") {
+        const preset = dachMarketPresetApply();
+        setCurrency(preset.currency);
+        setTargetLanguage(preset.targetLanguage);
+        setAgent((prev) => {
+          if (
+            !prev.legalDisclaimer.trim() ||
+            isKnownDefaultLegalDisclaimer(prev.legalDisclaimer) ||
+            prev.legalDisclaimer === getFormCopy(routeLocale).defaultLegalDisclaimer
+          ) {
+            return { ...prev, legalDisclaimer: DACH_LEGAL_DISCLAIMER };
+          }
+          return prev;
+        });
+        return;
+      }
+      setTargetLanguage(outputLanguageFromLocale(routeLocale));
+      setAgent((prev) => {
+        if (
+          prev.legalDisclaimer === DACH_LEGAL_DISCLAIMER ||
+          isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)
+        ) {
+          return {
+            ...prev,
+            legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
+          };
+        }
+        return prev;
+      });
+    },
+    [routeLocale],
+  );
+
+  const handleCommissionPresetChange = useCallback((preset: CommissionPreset) => {
+    setCommissionPreset(preset);
+    setSale((prev) => ({
+      ...prev,
+      commissionTerms: commissionTermsFromPreset(preset),
+    }));
+  }, []);
+
+  const loadDachDemoListing = useCallback(() => {
+    const demo = buildDachDemoListingPreset();
+    setTargetMarket(demo.targetMarket);
+    setUserRole(demo.userRole);
+    setCommissionPreset(demo.commissionPreset);
+    setTransactionType(demo.transactionType);
+    setAddress(demo.address);
+    setSize(demo.size);
+    setRooms(demo.rooms);
+    setBedrooms(demo.bedrooms);
+    setBathrooms(demo.bathrooms);
+    setProperty({ ...demo.property });
+    setRent({ ...demo.rent });
+    setSale({ ...demo.sale });
+    setEnergy({ ...demo.energy });
+    setAgent({ ...demo.agent });
+    setFeatures(demo.features);
+    setTargetLanguage("German");
+    setCurrency("EUR");
+    totalRentManualRef.current = true;
+    setResult(null);
+    setHasGenerated(false);
+    setIsDemoSample(false);
+    setGenerateError(null);
+  }, []);
 
   function handleExposeLanguageChange(lang: OutputLanguage) {
     setTargetLanguage(lang);
@@ -365,12 +484,14 @@ function ListingStudioContent() {
   const agentForLocale = useMemo(
     () => ({
       ...agent,
-      legalDisclaimer: resolveLegalDisclaimer(
-        agent.legalDisclaimer,
-        uiLocale,
-      ),
+      legalDisclaimer:
+        targetMarket === "dach" &&
+        (agent.legalDisclaimer.trim() === DACH_LEGAL_DISCLAIMER ||
+          isKnownDefaultLegalDisclaimer(agent.legalDisclaimer))
+          ? DACH_LEGAL_DISCLAIMER
+          : resolveLegalDisclaimer(agent.legalDisclaimer, uiLocale),
     }),
-    [agent, uiLocale],
+    [agent, uiLocale, targetMarket],
   );
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("story");
@@ -466,6 +587,12 @@ function ListingStudioContent() {
       return null;
     });
     setFloorPlanFile(null);
+    setTargetMarket("dach");
+    setUserRole("agent");
+    setCommissionPreset("commission_free");
+    setBedrooms("");
+    setBathrooms("");
+    totalRentManualRef.current = false;
     setTransactionType("rent");
     setAddress({
       ...DEFAULT_LISTING_ADDRESS,
@@ -481,9 +608,9 @@ function ListingStudioContent() {
     setEnergy({ ...DEFAULT_ENERGY });
     setAgent({
       ...DEFAULT_AGENT,
-      legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
+      legalDisclaimer: DACH_LEGAL_DISCLAIMER,
     });
-    setTargetLanguage(outputLanguageFromLocale(routeLocale));
+    setTargetLanguage("German");
     if (uiLocale === "en") setCurrency("EUR");
     setResult(null);
     setHasGenerated(false);
@@ -496,6 +623,13 @@ function ListingStudioContent() {
 
   const applyListingDraft = useCallback((draft: ListingStudioDraft) => {
     setTargetLanguage(draft.targetLanguage);
+    setTargetMarket(draft.targetMarket ?? "dach");
+    setUserRole(draft.userRole ?? "agent");
+    setCommissionPreset(
+      draft.commissionPreset ?? parseCommissionPreset(draft.sale.commissionTerms),
+    );
+    setBedrooms(draft.bedrooms ?? "");
+    setBathrooms(draft.bathrooms ?? "");
     setCurrency(draft.currency);
     setTransactionType(draft.transactionType);
     setAddress(draft.address);
@@ -594,6 +728,11 @@ function ListingStudioContent() {
             ownerKey,
             savedAt: Date.now(),
             targetLanguage,
+            targetMarket,
+            userRole,
+            commissionPreset,
+            bedrooms,
+            bathrooms,
             currency: activeCurrency,
             transactionType,
             address,
@@ -628,6 +767,11 @@ function ListingStudioContent() {
     billingStatus?.email,
     authEmail,
     targetLanguage,
+    targetMarket,
+    userRole,
+    commissionPreset,
+    bedrooms,
+    bathrooms,
     activeCurrency,
     transactionType,
     address,
@@ -690,6 +834,7 @@ function ListingStudioContent() {
         oil: copy.oil,
         electricity: copy.electricity,
         solar: copy.solar,
+        wood_pellets: copy.woodPellets,
       };
       return map[source];
     },
@@ -700,6 +845,7 @@ function ListingStudioContent() {
       copy.oil,
       copy.electricity,
       copy.solar,
+      copy.woodPellets,
     ],
   );
 
@@ -1195,6 +1341,17 @@ function ListingStudioContent() {
           ) : null}
           <ListingForm
             copy={copy}
+            targetMarket={targetMarket}
+            onTargetMarket={handleTargetMarketChange}
+            userRole={userRole}
+            onUserRole={setUserRole}
+            commissionPreset={commissionPreset}
+            onCommissionPreset={handleCommissionPresetChange}
+            bedrooms={bedrooms}
+            onBedrooms={setBedrooms}
+            bathrooms={bathrooms}
+            onBathrooms={setBathrooms}
+            onFillDemoDach={loadDachDemoListing}
             transactionType={transactionType}
             onTransactionType={setTransactionType}
             property={property}
@@ -1210,7 +1367,7 @@ function ListingStudioContent() {
             showCurrencySelect={uiLocale === "en"}
             hasMounted={hasMounted}
             rent={rent}
-            onRent={(patch) => setRent((r) => ({ ...r, ...patch }))}
+            onRent={handleRentPatch}
             sale={sale}
             onSale={(patch) => setSale((s) => ({ ...s, ...patch }))}
             energy={energy}

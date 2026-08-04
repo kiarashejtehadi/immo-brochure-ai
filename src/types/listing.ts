@@ -3,6 +3,12 @@ import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
 
 export type TransactionType = "rent" | "sale";
 
+export type TargetMarket = "dach" | "global";
+
+export type UserRole = "agent" | "private_seller";
+
+export type CommissionPreset = "commission_free" | "buyer_commission";
+
 export type PropertyType =
   | "apartment"
   | "house"
@@ -52,7 +58,8 @@ export type HeatingSource =
   | "gas"
   | "oil"
   | "electricity"
-  | "solar";
+  | "solar"
+  | "wood_pellets";
 
 export type RentFormData = {
   netColdRent: string;
@@ -83,8 +90,10 @@ export type EnergyFormData = {
 export type AgentFormData = {
   name: string;
   agency: string;
+  companyAddress: string;
   phone: string;
   email: string;
+  licenseId: string;
   legalDisclaimer: string;
 };
 

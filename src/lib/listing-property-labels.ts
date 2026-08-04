@@ -53,6 +53,7 @@ export function heatingSourceLabel(
     oil: copy.oil,
     electricity: copy.electricity,
     solar: copy.solar,
+    wood_pellets: copy.woodPellets,
   };
   return map[source];
 }
