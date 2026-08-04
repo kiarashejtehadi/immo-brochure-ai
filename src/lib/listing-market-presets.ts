@@ -1,3 +1,4 @@
+import type { FormCopy } from "@/lib/i18n-form";
 import type { OutputLanguage, FeatureKey } from "@/lib/i18n";
 import type { CurrencyCode } from "@/lib/currency";
 import type {
@@ -30,6 +31,59 @@ export const COMMISSION_PRESET_LABELS: Record<
   },
 };
 
+type CommissionCopy = Pick<
+  FormCopy,
+  "commissionFree" | "commissionFreeRent" | "commissionBuyerPlaceholder"
+>;
+
+export function isCommissionFreeTerms(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return true;
+  return (
+    normalized.includes("provisionsfrei") ||
+    normalized.includes("commission-free") ||
+    normalized.includes("commission free")
+  );
+}
+
+export function commissionFreeTerms(
+  transactionType: TransactionType,
+  copy: CommissionCopy,
+): string {
+  if (transactionType === "rent") {
+    return "Provisionsfrei für Mieter";
+  }
+  return copy.commissionFree;
+}
+
+export function defaultCustomCommissionTerms(
+  transactionType: TransactionType,
+  copy: CommissionCopy,
+): string {
+  if (transactionType === "rent") {
+    return "Provision trägt Vermieter";
+  }
+  return copy.commissionBuyerPlaceholder;
+}
+
+export function resolveCommissionTermsForPreset(
+  preset: CommissionPreset,
+  transactionType: TransactionType,
+  copy: CommissionCopy,
+  previousTerms: string,
+): string {
+  if (preset === "commission_free") {
+    return commissionFreeTerms(transactionType, copy);
+  }
+  if (isCommissionFreeTerms(previousTerms)) {
+    return defaultCustomCommissionTerms(transactionType, copy);
+  }
+  return previousTerms.trim()
+    ? previousTerms
+    : defaultCustomCommissionTerms(transactionType, copy);
+}
+
+/** @deprecated Prefer resolveCommissionTermsForPreset with FormCopy for locale-aware defaults. */
 export function commissionTermsFromPreset(
   preset: CommissionPreset,
   transactionType: TransactionType,

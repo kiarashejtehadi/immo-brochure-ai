@@ -84,10 +84,11 @@ import {
 import {
   buildDachDemoListingPreset,
   calculateWarmRent,
-  commissionTermsFromPreset,
   DACH_LEGAL_DISCLAIMER,
   dachMarketPresetApply,
   parseCommissionPreset,
+  commissionFreeTerms,
+  resolveCommissionTermsForPreset,
   privateLandlordRentCommissionTerms,
 } from "@/lib/listing-market-presets";
 import { cn } from "@/lib/utils";
@@ -457,10 +458,15 @@ function ListingStudioContent() {
       setCommissionPreset(preset);
       setSale((prev) => ({
         ...prev,
-        commissionTerms: commissionTermsFromPreset(preset, transactionType),
+        commissionTerms: resolveCommissionTermsForPreset(
+          preset,
+          transactionType,
+          formCopy,
+          prev.commissionTerms,
+        ),
       }));
     },
-    [transactionType],
+    [transactionType, formCopy],
   );
 
   const handleTransactionTypeChange = useCallback(
@@ -474,10 +480,10 @@ function ListingStudioContent() {
       setCommissionPreset("commission_free");
       setSale((prev) => ({
         ...prev,
-        commissionTerms: commissionTermsFromPreset("commission_free", type),
+        commissionTerms: commissionFreeTerms(type, formCopy),
       }));
     },
-    [targetMarket, userRole, applyPrivateLandlordRentCommission],
+    [targetMarket, userRole, applyPrivateLandlordRentCommission, formCopy],
   );
 
   const handleUserRoleChange = useCallback(

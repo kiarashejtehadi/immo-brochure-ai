@@ -167,6 +167,8 @@ export function buildBrochurePdfProps(input: {
         stagingDisclaimerPartially: input.form.stagingDisclaimerPartially,
       },
     ),
+    commission: input.sale.commissionTerms.trim(),
+    commissionLabel: input.form.commissionLabel,
     brandColor: input.branding?.primaryColor ?? input.branding?.brandColor,
     primaryColor: input.branding?.primaryColor ?? input.branding?.brandColor,
     accentColor: input.branding?.accentColor,

@@ -11,7 +11,7 @@ import { formatPriceAmount, type CurrencyCode } from "@/lib/currency";
 import { PDF_WATERMARK_TEXT } from "@/lib/branding/constants";
 import { resolvePdfFontFamily } from "@/lib/pdf-fonts";
 import { sanitizePdfImageSrc } from "@/lib/pdf-image-data-url";
-import { filterPdfTableRows, filterPdfListingDetailRows, isLikelyRawPdfMetadata } from "@/lib/pdf-table-rows";
+import { filterPdfTableRows, filterPdfListingDetailRows, isLikelyRawPdfMetadata, isPdfTableValueEmpty } from "@/lib/pdf-table-rows";
 import {
   formatPdfDisplayAddress,
   splitPdfParagraphs,
@@ -548,6 +548,15 @@ function filterNonFinancialListingRows(rows: { label: string; value: string }[])
   );
 }
 
+function buildCommissionPdfRow(
+  label: string | undefined,
+  value: string | undefined,
+): { label: string; value: string } | null {
+  const trimmed = value?.trim() ?? "";
+  if (isPdfTableValueEmpty(trimmed)) return null;
+  return { label: label?.trim() || "Provision", value: trimmed };
+}
+
 function pdfWordNoHyphens(word: string): string[] {
   return [word];
 }
@@ -995,7 +1004,12 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
     0,
     props.transactionType === "rent" ? PAGE4_SPECS_MAX_ROWS - 4 : PAGE4_SPECS_MAX_ROWS,
   );
-  const page4ListingRows = [...page4FinancialRows, ...page4OtherSpecs];
+  const page4CommissionRow = buildCommissionPdfRow(props.commissionLabel, props.commission);
+  const page4ListingRows = [
+    ...page4FinancialRows,
+    ...(page4CommissionRow ? [page4CommissionRow] : []),
+    ...page4OtherSpecs,
+  ];
   const coverBullets = props.summary.filter(
     (line) => line.trim() && !isLikelyRawPdfMetadata(line),
   );

@@ -18,6 +18,9 @@ export type BrochurePdfProps = {
   utilityCharges?: string;
   totalRent?: string;
   securityDeposit?: string;
+  /** DACH commission / provision text shown on page 4 (from sale.commissionTerms). */
+  commission?: string;
+  commissionLabel?: string;
   specsTable: { label: string; value: string }[];
   summary: string[];
   fullDescription: string;
