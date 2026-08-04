@@ -1116,7 +1116,7 @@ function ListingStudioContent() {
   const applyOpenImmoImportData = useCallback(
     (rawData: OpenImmoImportResult) => {
       const slice = buildOpenImmoFormStateSlice(rawData, {
-        address,
+        address: { ...DEFAULT_LISTING_ADDRESS, country: "Germany" },
         property: DEFAULT_PROPERTY,
         rent: EMPTY_RENT,
         sale: EMPTY_SALE,
@@ -1180,7 +1180,7 @@ function ListingStudioContent() {
       setGenerateError(null);
       showToast(copy.openImmoImportSuccess);
     },
-    [addPhotos, address, copy, formCopy, showToast, transactionType, userRole],
+    [addPhotos, copy, formCopy, showToast, transactionType, userRole],
   );
 
   const handleOpenImmoImport = useCallback(
@@ -1211,14 +1211,10 @@ function ListingStudioContent() {
   );
 
   const handleOpenImmoPropertySelect = useCallback(
-    (index: number) => {
-      const property = openImmoPickerProperties[index];
-      if (!property) return;
+    (property: OpenImmoImportResult) => {
       applyOpenImmoImportData(property);
-      setOpenImmoPickerOpen(false);
-      setOpenImmoPickerProperties([]);
     },
-    [applyOpenImmoImportData, openImmoPickerProperties],
+    [applyOpenImmoImportData],
   );
 
   function removePhoto(id: string) {
@@ -1852,7 +1848,7 @@ function ListingStudioContent() {
         copy={formCopy}
         open={openImmoPickerOpen}
         properties={openImmoPickerProperties}
-        onSelect={handleOpenImmoPropertySelect}
+        onSelectProperty={handleOpenImmoPropertySelect}
         onClose={() => {
           setOpenImmoPickerOpen(false);
           setOpenImmoPickerProperties([]);

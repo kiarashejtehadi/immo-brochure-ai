@@ -9,7 +9,7 @@ export type OpenImmoPropertyPickerModalProps = {
   copy: FormCopy;
   open: boolean;
   properties: OpenImmoImportResult[];
-  onSelect: (index: number) => void;
+  onSelectProperty: (property: OpenImmoImportResult) => void;
   onClose: () => void;
 };
 
@@ -17,10 +17,16 @@ export function OpenImmoPropertyPickerModal({
   copy,
   open,
   properties,
-  onSelect,
+  onSelectProperty,
   onClose,
 }: OpenImmoPropertyPickerModalProps) {
   if (!open) return null;
+
+  function handleSelectProperty(property: OpenImmoImportResult) {
+    console.log("👉 Selected OpenImmo Property Payload:", property);
+    onSelectProperty(property);
+    onClose();
+  }
 
   return (
     <div
@@ -45,7 +51,7 @@ export function OpenImmoPropertyPickerModal({
             <li key={property.importId ?? `${property.title ?? "property"}-${index}`}>
               <button
                 type="button"
-                onClick={() => onSelect(index)}
+                onClick={() => handleSelectProperty(property)}
                 className={cn(
                   "flex w-full flex-col rounded-xl px-4 py-3 text-left transition",
                   "hover:bg-indigo-50 dark:hover:bg-indigo-950/40",
