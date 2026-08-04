@@ -151,6 +151,8 @@ export type FormCopy = {
   openImmoImporting: string;
   openImmoImportSuccess: string;
   openImmoImportError: string;
+  openImmoPickPropertyTitle: string;
+  openImmoPickPropertyHint: string;
 };
 
 const en: FormCopy = {
@@ -308,6 +310,8 @@ const en: FormCopy = {
   openImmoImporting: "Importing OpenImmo file…",
   openImmoImportSuccess: "Import successful! The form has been filled automatically.",
   openImmoImportError: "Could not import OpenImmo file. Please check the file and try again.",
+  openImmoPickPropertyTitle: "Select a property to import",
+  openImmoPickPropertyHint: "This file contains multiple listings. Choose one to fill the form.",
 };
 
 const de: Partial<FormCopy> = {
@@ -464,6 +468,8 @@ const de: Partial<FormCopy> = {
   openImmoImporting: "OpenImmo-Datei wird importiert…",
   openImmoImportSuccess: "Import erfolgreich! Formular wurde automatisch ausgefüllt.",
   openImmoImportError: "OpenImmo-Import fehlgeschlagen. Bitte Datei prüfen und erneut versuchen.",
+  openImmoPickPropertyTitle: "Objekt zum Import auswählen",
+  openImmoPickPropertyHint: "Diese Datei enthält mehrere Objekte. Wählen Sie eines aus, um das Formular auszufüllen.",
 };
 
 const fr: Partial<FormCopy> = {

@@ -10,6 +10,7 @@ import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-sta
 import { hasProReelAccess } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
+import { OpenImmoPropertyPickerModal } from "@/components/listing/openimmo-property-picker-modal";
 import { useRegisterVoiceFill } from "@/components/listing/voice-fill-context";
 import { FreeTrialFormBanner } from "@/components/free-trial-form-banner";
 import { getMarketingCopy } from "@/lib/i18n-marketing";
@@ -48,7 +49,7 @@ import {
   truncateMlsCaption,
 } from "@/lib/social-copy-presets";
 import { importedImagesToFiles } from "@/lib/openimmo/apply-openimmo-import";
-import type { OpenImmoImportResult } from "@/types/openimmo-import";
+import type { OpenImmoImportApiResponse, OpenImmoImportResult } from "@/types/openimmo-import";
 import {
   outputLanguageFromLocale,
   localeFromTargetLanguage,
@@ -559,6 +560,8 @@ function ListingStudioContent() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [billingHint, setBillingHint] = useState<"auth" | "checkout" | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [openImmoPickerOpen, setOpenImmoPickerOpen] = useState(false);
+  const [openImmoPickerProperties, setOpenImmoPickerProperties] = useState<OpenImmoImportResult[]>([]);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const { status: billingStatus, loading: billingLoading, refresh: refreshBilling } = useBillingStatus();
   const [brandingProfile, setBrandingProfile] = useState<UserBrandingProfile | null>(null);
@@ -1110,115 +1113,132 @@ function ListingStudioContent() {
     });
   }, []);
 
+  const applyOpenImmoImportData = useCallback(
+    (data: OpenImmoImportResult) => {
+      const importedType = data.transactionType ?? transactionType;
+
+      setTargetMarket("dach");
+      setTargetLanguage("German");
+      setCurrency("EUR");
+
+      if (data.transactionType) {
+        setTransactionType(data.transactionType);
+      }
+
+      if (data.address) {
+        setAddress((prev) => ({
+          ...prev,
+          ...data.address,
+          streetAddress: data.address?.streetAddress ?? prev.streetAddress,
+          postalCode: data.address?.postalCode ?? prev.postalCode,
+          city: data.address?.city ?? prev.city,
+          country: data.address?.country ?? prev.country,
+        }));
+      }
+
+      if (data.size) setSize(data.size);
+      if (data.rooms) setRooms(data.rooms);
+
+      if (data.property) {
+        setProperty((prev) => ({ ...prev, ...data.property }));
+      }
+
+      if (data.rent) {
+        setRent((prev) => ({ ...prev, ...data.rent }));
+        totalRentManualRef.current = Boolean(data.rent?.totalRent?.trim());
+      }
+
+      if (data.sale) {
+        setSale((prev) => ({ ...prev, ...data.sale }));
+      }
+
+      if (data.energy) {
+        setEnergy((prev) => ({ ...prev, ...data.energy }));
+      }
+
+      if (userRole === "private_seller") {
+        setCommissionPreset("commission_free");
+        setSale((prev) => ({
+          ...prev,
+          commissionTerms: privateSellerCommissionFreeTerms(importedType, formCopy),
+        }));
+      } else {
+        setCommissionPreset("commission_free");
+        setSale((prev) => ({
+          ...prev,
+          commissionTerms: commissionFreeTerms(importedType, formCopy),
+        }));
+      }
+
+      const importedTitle = data.title?.trim() ?? "";
+      const importedDescription = data.description?.trim() ?? "";
+      const importedLocation = data.locationText?.trim() ?? "";
+      if (importedTitle || importedDescription || importedLocation) {
+        setResult({
+          title: importedTitle || "Imported listing",
+          summary: importedDescription
+            ? [importedDescription.slice(0, 120)]
+            : importedLocation
+              ? [importedLocation.slice(0, 120)]
+              : [],
+          fullDescription: importedDescription,
+          locationDescription: importedLocation || "—",
+          socialCaptions: { instagram: "", linkedin: "", facebook: "" },
+        });
+        setHasGenerated(true);
+        setPreviewTab(importedDescription ? "story" : "location");
+      }
+
+      const imageFiles = importedImagesToFiles(data);
+      if (imageFiles.length > 0) {
+        setPhotos((prev) => {
+          for (const photo of prev) URL.revokeObjectURL(photo.url);
+          return [];
+        });
+        addPhotos(imageFiles);
+      }
+
+      setIsDemoSample(false);
+      setGenerateError(null);
+      showToast(copy.openImmoImportSuccess);
+    },
+    [addPhotos, copy, formCopy, showToast, transactionType, userRole],
+  );
+
   const handleOpenImmoImport = useCallback(
     async (file: File) => {
       try {
         const body = new FormData();
         body.append("file", file);
         const res = await fetch("/api/import/openimmo", { method: "POST", body });
-        const payload = (await res.json()) as {
-          ok?: boolean;
-          data?: OpenImmoImportResult;
-          error?: string;
-        };
+        const payload = (await res.json()) as OpenImmoImportApiResponse;
 
-        if (!res.ok || !payload.data) {
+        if (!res.ok || !payload.data?.length) {
           throw new Error(payload.error || copy.openImmoImportError);
         }
 
-        const data = payload.data;
-        const importedType = data.transactionType ?? transactionType;
-
-        setTargetMarket("dach");
-        setTargetLanguage("German");
-        setCurrency("EUR");
-
-        if (data.transactionType) {
-          setTransactionType(data.transactionType);
+        if (payload.data.length === 1) {
+          applyOpenImmoImportData(payload.data[0]);
+          return;
         }
 
-        if (data.address) {
-          setAddress((prev) => ({
-            ...prev,
-            ...data.address,
-            streetAddress: data.address?.streetAddress ?? prev.streetAddress,
-            postalCode: data.address?.postalCode ?? prev.postalCode,
-            city: data.address?.city ?? prev.city,
-            country: data.address?.country ?? prev.country,
-          }));
-        }
-
-        if (data.size) setSize(data.size);
-        if (data.rooms) setRooms(data.rooms);
-
-        if (data.property) {
-          setProperty((prev) => ({ ...prev, ...data.property }));
-        }
-
-        if (data.rent) {
-          setRent((prev) => ({ ...prev, ...data.rent }));
-          totalRentManualRef.current = Boolean(data.rent?.totalRent?.trim());
-        }
-
-        if (data.sale) {
-          setSale((prev) => ({ ...prev, ...data.sale }));
-        }
-
-        if (data.energy) {
-          setEnergy((prev) => ({ ...prev, ...data.energy }));
-        }
-
-        if (userRole === "private_seller") {
-          setCommissionPreset("commission_free");
-          setSale((prev) => ({
-            ...prev,
-            commissionTerms: privateSellerCommissionFreeTerms(importedType, formCopy),
-          }));
-        } else {
-          setCommissionPreset("commission_free");
-          setSale((prev) => ({
-            ...prev,
-            commissionTerms: commissionFreeTerms(importedType, formCopy),
-          }));
-        }
-
-        const importedTitle = data.title?.trim() ?? "";
-        const importedDescription = data.description?.trim() ?? "";
-        const importedLocation = data.locationText?.trim() ?? "";
-        if (importedTitle || importedDescription || importedLocation) {
-          setResult({
-            title: importedTitle || "Imported listing",
-            summary: importedDescription
-              ? [importedDescription.slice(0, 120)]
-              : importedLocation
-                ? [importedLocation.slice(0, 120)]
-                : [],
-            fullDescription: importedDescription,
-            locationDescription: importedLocation || "—",
-            socialCaptions: { instagram: "", linkedin: "", facebook: "" },
-          });
-          setHasGenerated(true);
-          setPreviewTab(importedDescription ? "story" : "location");
-        }
-
-        const imageFiles = importedImagesToFiles(data);
-        if (imageFiles.length > 0) {
-          setPhotos((prev) => {
-            for (const photo of prev) URL.revokeObjectURL(photo.url);
-            return [];
-          });
-          addPhotos(imageFiles);
-        }
-
-        setIsDemoSample(false);
-        setGenerateError(null);
-        showToast(copy.openImmoImportSuccess);
+        setOpenImmoPickerProperties(payload.data);
+        setOpenImmoPickerOpen(true);
       } catch (err) {
         const message = err instanceof Error ? err.message : copy.openImmoImportError;
         window.alert(message);
       }
     },
-    [addPhotos, copy, formCopy, showToast, transactionType, userRole],
+    [applyOpenImmoImportData, copy.openImmoImportError],
+  );
+
+  const handleOpenImmoPropertySelect = useCallback(
+    (property: OpenImmoImportResult) => {
+      applyOpenImmoImportData(property);
+      setOpenImmoPickerOpen(false);
+      setOpenImmoPickerProperties([]);
+    },
+    [applyOpenImmoImportData],
   );
 
   function removePhoto(id: string) {
@@ -1848,6 +1868,16 @@ function ListingStudioContent() {
           </aside>
         </div>
       </main>
+      <OpenImmoPropertyPickerModal
+        copy={formCopy}
+        open={openImmoPickerOpen}
+        properties={openImmoPickerProperties}
+        onSelect={handleOpenImmoPropertySelect}
+        onClose={() => {
+          setOpenImmoPickerOpen(false);
+          setOpenImmoPickerProperties([]);
+        }}
+      />
       <AuthEmailModal open={authOpen} onClose={() => setAuthOpen(false)} onSent={() => setAuthOpen(false)} />
     </div>
   );

@@ -31,9 +31,9 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const data = await parseOpenImmoUpload(buffer, file.name);
+    const properties = await parseOpenImmoUpload(buffer, file.name);
 
-    return NextResponse.json({ ok: true, data });
+    return NextResponse.json({ ok: true, data: properties, count: properties.length });
   } catch (err) {
     console.error("[api/import/openimmo]", err);
     const message =

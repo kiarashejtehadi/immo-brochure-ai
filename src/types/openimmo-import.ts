@@ -27,3 +27,10 @@ export type OpenImmoImportResult = {
   locationText?: string;
   images?: OpenImmoImportedImage[];
 };
+
+export type OpenImmoImportApiResponse = {
+  ok: boolean;
+  data: OpenImmoImportResult[];
+  count: number;
+  error?: string;
+};

@@ -38,47 +38,155 @@ function getOpenImmoRoot(parsedXml: Record<string, unknown>): Record<string, unk
   return root as Record<string, unknown>;
 }
 
-function firstRecord(values: unknown[]): Record<string, unknown> | null {
-  for (const value of values) {
-    if (value && typeof value === "object") {
-      return value as Record<string, unknown>;
+function mapOpenImmoToAppState(
+  immobilie: Record<string, unknown>,
+  root: Record<string, unknown>,
+): OpenImmoImportResult {
+  const geo = (immobilie.geo ?? immobilie.geowesentliche ?? {}) as Record<string, unknown>;
+  const preise = (immobilie.preise ?? {}) as Record<string, unknown>;
+  const freitexte = (immobilie.freitexte ?? {}) as Record<string, unknown>;
+  const flaechen = (immobilie.flaechen ?? immobilie.flaeche ?? {}) as Record<string, unknown>;
+  const zustand = (immobilie.zustand_angaben ?? {}) as Record<string, unknown>;
+  const energiepass = (zustand.energiepass ?? {}) as Record<string, unknown>;
+  const uebertragung = root.uebertragung as Record<string, unknown> | undefined;
+  const objektart = immobilie.objektart as Record<string, unknown> | undefined;
+
+  const transactionType = mapTransactionType(
+    firstText(
+      uebertragung?.uebertragungsart,
+      objektart?.vermarktungsart,
+      pickNode(immobilie, "objektart", "vermarktungsart"),
+    ),
+  );
+
+  const street = [firstText(geo.strasse, pickNode(geo, "strasse")), firstText(geo.hausnummer)]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const energyValue = firstText(
+    energiepass.endenergiebedarf,
+    energiepass.energieverbrauchkennwert,
+    energiepass.endenergieverbrauch,
+    energiepass.energieverbrauch,
+  );
+
+  return {
+    title: firstText(freitexte.objekttitel, freitexte.objekttitle),
+    transactionType,
+    address: {
+      streetAddress: street,
+      postalCode: firstText(geo.plz, pickNode(geo, "plz")),
+      city: firstText(geo.ort, pickNode(geo, "ort")),
+      country: firstText(geo.land, pickNode(geo, "land")) || "Germany",
+    },
+    size: normalizeDecimal(firstText(flaechen.wohnflaeche, flaechen.gesamtflaeche)),
+    rooms: normalizeDecimal(firstText(geo.anzahl_zimmer, pickNode(geo, "anzahl_zimmer"))),
+    property: {
+      propertyType: mapPropertyType(
+        firstText(objektart?.wohnungtyp, objektart?.objektart, objektart?.objektart_zusatz),
+      ),
+      floorLevel: firstText(geo.etage, pickNode(geo, "etage")),
+      condition: mapCondition(firstText(zustand.zustand, zustand.zustand_art)),
+    },
+    rent: {
+      netColdRent: normalizeDecimal(firstText(preise.kaltmiete)),
+      utilityCharges: normalizeDecimal(firstText(preise.nebenkosten)),
+      totalRent: normalizeDecimal(firstText(preise.warmmiete)),
+      securityDeposit: firstText(preise.kaution, preise.kaution_text),
+    },
+    sale: {
+      purchasePrice: normalizeDecimal(firstText(preise.kaufpreis)),
+      hoaFee: normalizeDecimal(firstText(preise.hausgeld)),
+    },
+    energy: {
+      certificateType: mapCertificateType(firstText(energiepass.art, energiepass.epart)),
+      energyClass: mapEnergyClass(firstText(energiepass.energieeffizienzklasse, energiepass.wertklasse)),
+      energyValue: normalizeDecimal(energyValue),
+      heatingSource: mapHeatingSource(
+        firstText(energiepass.energietraeger, energiepass.primaerenergietraeger, zustand.energietraeger),
+      ),
+      constructionYear: firstText(zustand.baujahr, zustand.baujahr_antrag),
+    },
+    description: firstText(freitexte.objektbeschreibung),
+    locationText: firstText(freitexte.lage, freitexte.lagebeschreibung),
+  };
+}
+
+export function parseAllImmobilien(parsedXml: unknown): OpenImmoImportResult[] {
+  if (!parsedXml || typeof parsedXml !== "object") {
+    throw new Error("Invalid OpenImmo XML structure.");
+  }
+
+  const doc = parsedXml as Record<string, unknown>;
+  const root = getOpenImmoRoot(doc);
+  const immobilien = extractAllImmobilien(parsedXml);
+
+  if (immobilien.length === 0) {
+    throw new Error("No OpenImmo property (immobilie) found in XML.");
+  }
+
+  return immobilien.map((immobilie) => mapOpenImmoToAppState(immobilie, root));
+}
+
+function immobilienFromAnbieter(anbieter: Record<string, unknown>): Record<string, unknown>[] {
+  const results: Record<string, unknown>[] = [];
+  const immobilien = anbieter.immobilien as Record<string, unknown> | undefined;
+
+  if (immobilien) {
+    for (const imm of toArray(immobilien.immobilie)) {
+      if (imm && typeof imm === "object") {
+        results.push(imm as Record<string, unknown>);
+      }
     }
   }
-  return null;
-}
 
-function firstImmobilieFromAnbieter(anbieter: Record<string, unknown>): Record<string, unknown> | null {
-  const immobilien = anbieter.immobilien as Record<string, unknown> | undefined;
-  if (immobilien) {
-    const fromImmobilien = firstRecord(toArray(immobilien.immobilie));
-    if (fromImmobilien) return fromImmobilien;
+  for (const imm of toArray(anbieter.immobilie)) {
+    if (imm && typeof imm === "object") {
+      results.push(imm as Record<string, unknown>);
+    }
   }
 
-  return firstRecord(toArray(anbieter.immobilie));
+  return results;
 }
 
-/** Normalize single objects or arrays and return the first `<immobilie>` node. */
-export function extractImmobilie(parsedXml: unknown): Record<string, unknown> {
+/** Collect every `<immobilie>` node from the parsed XML document. */
+export function extractAllImmobilien(parsedXml: unknown): Record<string, unknown>[] {
   if (!parsedXml || typeof parsedXml !== "object") {
     throw new Error("Invalid XML: Root <openimmo> tag not found.");
   }
 
   const doc = parsedXml as Record<string, unknown>;
   const root = getOpenImmoRoot(doc);
+  const properties: Record<string, unknown>[] = [];
 
   for (const anbieter of toArray(root.anbieter)) {
     if (!anbieter || typeof anbieter !== "object") continue;
-    const immobilie = firstImmobilieFromAnbieter(anbieter as Record<string, unknown>);
-    if (immobilie) return immobilie;
+    properties.push(...immobilienFromAnbieter(anbieter as Record<string, unknown>));
   }
 
-  const fromRoot = firstRecord(toArray(root.immobilie));
-  if (fromRoot) return fromRoot;
+  for (const imm of toArray(root.immobilie)) {
+    if (imm && typeof imm === "object") {
+      properties.push(imm as Record<string, unknown>);
+    }
+  }
 
-  const fromDoc = firstRecord(toArray(doc.immobilie));
-  if (fromDoc) return fromDoc;
+  for (const imm of toArray(doc.immobilie)) {
+    if (imm && typeof imm === "object") {
+      properties.push(imm as Record<string, unknown>);
+    }
+  }
 
-  throw new Error("No OpenImmo property (immobilie) found in XML.");
+  return properties;
+}
+
+/** Normalize single objects or arrays and return the first `<immobilie>` node. */
+export function extractImmobilie(parsedXml: unknown): Record<string, unknown> {
+  const properties = extractAllImmobilien(parsedXml);
+  if (properties.length === 0) {
+    throw new Error("No OpenImmo property (immobilie) found in XML.");
+  }
+  return properties[0];
 }
 
 function textValue(value: unknown): string {
@@ -271,91 +379,25 @@ export function parseOpenImmoXml(xml: string): OpenImmoImportResult {
     throw new Error("Invalid OpenImmo XML.");
   }
 
-  if (!parsed || typeof parsed !== "object") {
-    throw new Error("Invalid OpenImmo XML structure.");
+  const properties = parseAllImmobilien(parsed);
+  return properties[0];
+}
+
+function parseOpenImmoXmlAll(xml: string): OpenImmoImportResult[] {
+  let parsed: unknown;
+  try {
+    parsed = xmlParser.parse(xml);
+  } catch {
+    throw new Error("Invalid OpenImmo XML.");
   }
 
-  const doc = parsed as Record<string, unknown>;
-  const root = getOpenImmoRoot(doc);
-  const immobilie = extractImmobilie(doc);
-
-  const geo = (immobilie.geo ?? immobilie.geowesentliche ?? {}) as Record<string, unknown>;
-  const preise = (immobilie.preise ?? {}) as Record<string, unknown>;
-  const freitexte = (immobilie.freitexte ?? {}) as Record<string, unknown>;
-  const flaechen = (immobilie.flaechen ?? immobilie.flaeche ?? {}) as Record<string, unknown>;
-  const zustand = (immobilie.zustand_angaben ?? {}) as Record<string, unknown>;
-  const energiepass = (zustand.energiepass ?? {}) as Record<string, unknown>;
-  const uebertragung = root.uebertragung as Record<string, unknown> | undefined;
-  const objektart = immobilie.objektart as Record<string, unknown> | undefined;
-
-  const transactionType = mapTransactionType(
-    firstText(
-      uebertragung?.uebertragungsart,
-      objektart?.vermarktungsart,
-      pickNode(immobilie, "objektart", "vermarktungsart"),
-    ),
-  );
-
-  const street = [firstText(geo.strasse, pickNode(geo, "strasse")), firstText(geo.hausnummer)]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-
-  const energyValue = firstText(
-    energiepass.endenergiebedarf,
-    energiepass.energieverbrauchkennwert,
-    energiepass.endenergieverbrauch,
-    energiepass.energieverbrauch,
-  );
-
-  const result: OpenImmoImportResult = {
-    title: firstText(freitexte.objekttitel, freitexte.objekttitle),
-    transactionType,
-    address: {
-      streetAddress: street,
-      postalCode: firstText(geo.plz, pickNode(geo, "plz")),
-      city: firstText(geo.ort, pickNode(geo, "ort")),
-      country: firstText(geo.land, pickNode(geo, "land")) || "Germany",
-    },
-    size: normalizeDecimal(firstText(flaechen.wohnflaeche, flaechen.gesamtflaeche)),
-    rooms: normalizeDecimal(firstText(geo.anzahl_zimmer, pickNode(geo, "anzahl_zimmer"))),
-    property: {
-      propertyType: mapPropertyType(
-        firstText(objektart?.wohnungtyp, objektart?.objektart, objektart?.objektart_zusatz),
-      ),
-      floorLevel: firstText(geo.etage, pickNode(geo, "etage")),
-      condition: mapCondition(firstText(zustand.zustand, zustand.zustand_art)),
-    },
-    rent: {
-      netColdRent: normalizeDecimal(firstText(preise.kaltmiete)),
-      utilityCharges: normalizeDecimal(firstText(preise.nebenkosten)),
-      totalRent: normalizeDecimal(firstText(preise.warmmiete)),
-      securityDeposit: firstText(preise.kaution, preise.kaution_text),
-    },
-    sale: {
-      purchasePrice: normalizeDecimal(firstText(preise.kaufpreis)),
-      hoaFee: normalizeDecimal(firstText(preise.hausgeld)),
-    },
-    energy: {
-      certificateType: mapCertificateType(firstText(energiepass.art, energiepass.epart)),
-      energyClass: mapEnergyClass(firstText(energiepass.energieeffizienzklasse, energiepass.wertklasse)),
-      energyValue: normalizeDecimal(energyValue),
-      heatingSource: mapHeatingSource(
-        firstText(energiepass.energietraeger, energiepass.primaerenergietraeger, zustand.energietraeger),
-      ),
-      constructionYear: firstText(zustand.baujahr, zustand.baujahr_antrag),
-    },
-    description: firstText(freitexte.objektbeschreibung),
-    locationText: firstText(freitexte.lage, freitexte.lagebeschreibung),
-  };
-
-  return result;
+  return parseAllImmobilien(parsed);
 }
 
 export async function parseOpenImmoUpload(
   buffer: Buffer,
   filename: string,
-): Promise<OpenImmoImportResult> {
+): Promise<OpenImmoImportResult[]> {
   const lower = filename.toLowerCase();
 
   if (lower.endsWith(".xml")) {
@@ -363,7 +405,7 @@ export async function parseOpenImmoUpload(
     if (!xml.includes("openimmo") && !xml.includes("immobilie")) {
       throw new Error("File does not appear to be a valid OpenImmo XML export.");
     }
-    return parseOpenImmoXml(xml);
+    return parseOpenImmoXmlAll(xml);
   }
 
   if (lower.endsWith(".zip")) {
@@ -382,14 +424,18 @@ export async function parseOpenImmoUpload(
 
     const xml = await xmlEntry.async("string");
     const parsedDoc = xmlParser.parse(xml) as Record<string, unknown>;
-    const parsed = parseOpenImmoXml(xml);
-    const immobilie = extractImmobilie(parsedDoc);
-    const referencedPaths = immobilie ? collectAnhangPaths(immobilie) : [];
-    const images = await extractImagesFromZip(zip, referencedPaths);
-    if (images.length > 0) {
-      parsed.images = images;
+    const properties = parseAllImmobilien(parsedDoc);
+    const immobilien = extractAllImmobilien(parsedDoc);
+
+    for (let i = 0; i < properties.length; i += 1) {
+      const referencedPaths = collectAnhangPaths(immobilien[i]);
+      const images = await extractImagesFromZip(zip, referencedPaths);
+      if (images.length > 0) {
+        properties[i].images = images;
+      }
     }
-    return parsed;
+
+    return properties;
   }
 
   throw new Error("Unsupported file type. Please upload .xml or .zip.");
