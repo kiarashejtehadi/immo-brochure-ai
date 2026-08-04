@@ -8,6 +8,7 @@ import type {
   EnergyFormData,
 } from "@/types/listing";
 import type { OpenImmoImportResult } from "@/types/openimmo-import";
+import { getText, getValue, textValue } from "@/lib/openimmo/xml-node-utils";
 
 const PROPERTY_TYPES = new Set<PropertyType>([
   "apartment",
@@ -37,17 +38,6 @@ const CONDITIONS = new Set<PropertyCondition>([
 const ENERGY_CLASSES = new Set<EnergyClass>(["A+", "A", "B", "C", "D", "E", "F", "G", "H"]);
 
 const CERTIFICATE_TYPES = new Set<EnergyCertificateType>(["consumption", "demand", "na"]);
-
-function textValue(value: unknown): string {
-  if (value == null) return "";
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value).trim();
-  }
-  if (typeof value === "object" && value !== null && "#text" in value) {
-    return textValue((value as { "#text": unknown })["#text"]);
-  }
-  return "";
-}
 
 function upper(value: unknown): string {
   return textValue(value).toUpperCase();
@@ -88,13 +78,15 @@ export function normalizeHeatingType(xmlValue: string | undefined): HeatingSourc
 
 /** Map OpenImmo `objektkategorie.objektart` structure to UI `PropertyType` keys. */
 export function normalizePropertyType(immobilie: Record<string, unknown>): PropertyType | "" {
-  const objKategorie = immobilie.objektkategorie as Record<string, unknown> | undefined;
-  const objArt = (objKategorie?.objektart ?? immobilie.objektart) as Record<string, unknown> | undefined;
+  const objKategorie = getValue(immobilie, "objektkategorie") as Record<string, unknown> | undefined;
+  const objArt = (getValue(objKategorie, "objektart") ?? getValue(immobilie, "objektart")) as
+    | Record<string, unknown>
+    | undefined;
 
   if (objArt && typeof objArt === "object") {
-    const wohnung = objArt.wohnung as Record<string, unknown> | undefined;
+    const wohnung = getValue(objArt, "wohnung") as Record<string, unknown> | undefined;
     if (wohnung !== undefined) {
-      const type = upper(wohnung["@_wohnungtyp"] ?? wohnung.wohnungtyp);
+      const type = upper(getValue(wohnung, "wohnungtyp"));
       if (type.includes("PENTHOUSE")) return "penthouse";
       if (type.includes("DACHGESCHOSS") || type.includes("DG")) return "penthouse";
       if (type.includes("MAISONETTE")) return "apartment";
@@ -102,21 +94,21 @@ export function normalizePropertyType(immobilie: Record<string, unknown>): Prope
       return "apartment";
     }
 
-    const haus = objArt.haus as Record<string, unknown> | undefined;
+    const haus = getValue(objArt, "haus") as Record<string, unknown> | undefined;
     if (haus !== undefined) {
-      const type = upper(haus["@_haustyp"] ?? haus.haustyp);
+      const type = upper(getValue(haus, "haustyp"));
       if (type.includes("GEWERBE") || type.includes("COMMERCIAL")) return "commercial";
       return "house";
     }
 
-    if (objArt.grundstueck !== undefined) return "land";
-    if (objArt.buero_praxen !== undefined || objArt.gewerbe !== undefined) return "commercial";
+    if (getValue(objArt, "grundstueck") !== undefined) return "land";
+    if (getValue(objArt, "buero_praxen") !== undefined || getValue(objArt, "gewerbe") !== undefined) {
+      return "commercial";
+    }
   }
 
   return normalizePropertyTypeFromText(
-    textValue(objArt?.wohnungtyp) ||
-      textValue(objArt?.objektart) ||
-      textValue(objArt?.objektart_zusatz),
+    getText(objArt, "wohnungtyp") || getText(objArt, "objektart") || getText(objArt, "objektart_zusatz"),
   );
 }
 

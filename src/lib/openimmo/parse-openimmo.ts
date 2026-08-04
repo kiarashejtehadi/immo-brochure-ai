@@ -9,6 +9,16 @@ import {
   normalizeHeatingType,
   normalizePropertyType,
 } from "@/lib/openimmo/normalize-openimmo-enums";
+import {
+  firstText,
+  firstTextFromNode,
+  getChildNode,
+  getText,
+  getValue,
+  isPresentFlag,
+  pickNode,
+  textValue,
+} from "@/lib/openimmo/xml-node-utils";
 
 const IMAGE_EXT = /\.(jpe?g|png|webp)$/i;
 
@@ -42,81 +52,90 @@ function mapOpenImmoToAppState(
   immobilie: Record<string, unknown>,
   root: Record<string, unknown>,
 ): OpenImmoImportResult {
-  const geo = (immobilie.geo ?? immobilie.geowesentliche ?? {}) as Record<string, unknown>;
-  const preise = (immobilie.preise ?? {}) as Record<string, unknown>;
-  const freitexte = (immobilie.freitexte ?? {}) as Record<string, unknown>;
-  const flaechen = (immobilie.flaechen ?? immobilie.flaeche ?? {}) as Record<string, unknown>;
-  const zustand = (immobilie.zustand_angaben ?? {}) as Record<string, unknown>;
-  const energiepass = (zustand.energiepass ?? {}) as Record<string, unknown>;
-  const uebertragung = root.uebertragung as Record<string, unknown> | undefined;
-  const objektart = immobilie.objektart as Record<string, unknown> | undefined;
+  const geo = getChildNode(immobilie, "geo", "geowesentliche") ?? {};
+  const preise = getChildNode(immobilie, "preise") ?? {};
+  const freitexte = getChildNode(immobilie, "freitexte") ?? {};
+  const flaechen = getChildNode(immobilie, "flaechen", "flaeche") ?? {};
+  const zustand = getChildNode(immobilie, "zustand_angaben") ?? {};
+  const energiepass = getChildNode(zustand, "energiepass") ?? {};
+  const uebertragung = getChildNode(root, "uebertragung");
+  const objektart = getChildNode(immobilie, "objektart");
+  const objektkategorie = getChildNode(immobilie, "objektkategorie");
+  const vermarktungsart =
+    getChildNode(objektart, "vermarktungsart") ??
+    getChildNode(objektkategorie, "vermarktungsart") ??
+    pickNode(immobilie, "objektart", "vermarktungsart");
 
-  const transactionType = mapTransactionType(
-    firstText(
-      uebertragung?.uebertragungsart,
-      objektart?.vermarktungsart,
-      pickNode(immobilie, "objektart", "vermarktungsart"),
-    ),
+  const transactionType = mapTransactionTypeFromOpenImmo(
+    uebertragung,
+    vermarktungsart,
+    getValue(uebertragung, "uebertragungsart"),
+    getValue(objektart, "vermarktungsart"),
   );
 
-  const street = [firstText(geo.strasse, pickNode(geo, "strasse")), firstText(geo.hausnummer)]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  const street = [firstTextFromNode(geo, "strasse"), getText(geo, "hausnummer")].filter(Boolean).join(" ").trim();
 
-  const energyValue = firstText(
-    energiepass.endenergiebedarf,
-    energiepass.energieverbrauchkennwert,
-    energiepass.endenergieverbrauch,
-    energiepass.energieverbrauch,
+  const energyValue = firstTextFromNode(
+    energiepass,
+    "endenergiebedarf",
+    "energieverbrauchkennwert",
+    "endenergieverbrauch",
+    "energieverbrauch",
   );
 
-  const importId = firstText(
-    pickNode(immobilie, "verwaltung_techn", "objektnr_extern"),
-    pickNode(immobilie, "verwaltung_techn", "objektnr_intern"),
-    pickNode(immobilie, "verwaltung_techn", "objektnr"),
+  const verwaltungTechn = getChildNode(immobilie, "verwaltung_techn") ?? {};
+  const importId = firstTextFromNode(
+    verwaltungTechn,
+    "objektnr_extern",
+    "objektnr_intern",
+    "objektnr",
   );
 
   return {
     importId: importId || undefined,
-    title: firstText(freitexte.objekttitel, freitexte.objekttitle),
+    title: firstTextFromNode(freitexte, "objekttitel", "objekttitle"),
     transactionType,
     address: {
       streetAddress: street,
-      postalCode: firstText(geo.plz, pickNode(geo, "plz")),
-      city: firstText(geo.ort, pickNode(geo, "ort")),
-      country: firstText(geo.land, pickNode(geo, "land")) || "Germany",
+      postalCode: getText(geo, "plz"),
+      city: getText(geo, "ort"),
+      country: firstTextFromNode(geo, "land") || "Germany",
     },
-    size: normalizeDecimal(firstText(flaechen.wohnflaeche, flaechen.gesamtflaeche)),
-    rooms: normalizeDecimal(firstText(geo.anzahl_zimmer, pickNode(geo, "anzahl_zimmer"))),
+    size: normalizeDecimal(firstTextFromNode(flaechen, "wohnflaeche", "gesamtflaeche")),
+    rooms: normalizeDecimal(getText(geo, "anzahl_zimmer")),
     property: {
       propertyType: normalizePropertyType(immobilie),
-      floorLevel: firstText(geo.etage, pickNode(geo, "etage")),
-      condition: normalizeCondition(firstText(zustand.zustand, zustand.zustand_art)),
+      floorLevel: getText(geo, "etage"),
+      condition: normalizeCondition(firstTextFromNode(zustand, "zustand", "zustand_art")),
     },
     rent: {
-      netColdRent: normalizeDecimal(firstText(preise.kaltmiete)),
-      utilityCharges: normalizeDecimal(firstText(preise.nebenkosten)),
-      totalRent: normalizeDecimal(firstText(preise.warmmiete)),
-      securityDeposit: firstText(preise.kaution, preise.kaution_text),
+      netColdRent: normalizeDecimal(getText(preise, "kaltmiete")),
+      utilityCharges: normalizeDecimal(getText(preise, "nebenkosten")),
+      totalRent: normalizeDecimal(getText(preise, "warmmiete")),
+      securityDeposit: firstTextFromNode(preise, "kaution", "kaution_text"),
     },
     sale: {
-      purchasePrice: normalizeDecimal(firstText(preise.kaufpreis)),
-      hoaFee: normalizeDecimal(firstText(preise.hausgeld)),
+      purchasePrice: normalizeDecimal(getText(preise, "kaufpreis")),
+      hoaFee: normalizeDecimal(getText(preise, "hausgeld")),
     },
     energy: {
-      certificateType: normalizeCertificateType(firstText(energiepass.art, energiepass.epart)),
+      certificateType: normalizeCertificateType(firstTextFromNode(energiepass, "art", "epart")),
       energyClass: normalizeEnergyClass(
-        firstText(energiepass.energieeffizienzklasse, energiepass.wertklasse),
+        firstTextFromNode(energiepass, "energieeffizienzklasse", "wertklasse"),
       ),
       energyValue: normalizeDecimal(energyValue),
       heatingSource: normalizeHeatingType(
-        firstText(energiepass.energietraeger, energiepass.primaerenergietraeger, zustand.energietraeger),
+        firstTextFromNode(
+          energiepass,
+          "energietraeger",
+          "primaerenergietraeger",
+          "heizungsart",
+        ) || firstTextFromNode(zustand, "energietraeger"),
       ),
-      constructionYear: firstText(zustand.baujahr, zustand.baujahr_antrag),
+      constructionYear: firstTextFromNode(zustand, "baujahr", "baujahr_antrag"),
     },
-    description: firstText(freitexte.objektbeschreibung),
-    locationText: firstText(freitexte.lage, freitexte.lagebeschreibung),
+    description: getText(freitexte, "objektbeschreibung"),
+    locationText: firstTextFromNode(freitexte, "lage", "lagebeschreibung"),
   };
 }
 
@@ -199,35 +218,6 @@ export function extractImmobilie(parsedXml: unknown): Record<string, unknown> {
   return properties[0];
 }
 
-function textValue(value: unknown): string {
-  if (value == null) return "";
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value).trim();
-  }
-  if (typeof value === "object" && value !== null && "#text" in value) {
-    return textValue((value as { "#text": unknown })["#text"]);
-  }
-  return "";
-}
-
-function firstText(...values: unknown[]): string {
-  for (const value of values) {
-    const text = textValue(value);
-    if (text) return text;
-  }
-  return "";
-}
-
-function pickNode(root: unknown, ...paths: string[]): unknown {
-  if (!root || typeof root !== "object") return undefined;
-  let current: unknown = root;
-  for (const segment of paths) {
-    if (!current || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
-}
-
 function normalizeDecimal(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -235,6 +225,37 @@ function normalizeDecimal(value: string): string {
   const num = Number(normalized);
   if (!Number.isFinite(num)) return trimmed;
   return String(num % 1 === 0 ? num : Math.round(num * 100) / 100);
+}
+
+function mapTransactionTypeFromOpenImmo(...nodes: unknown[]): TransactionType | undefined {
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    if (
+      isPresentFlag(node, "KAUF") ||
+      isPresentFlag(node, "KR_KAUF") ||
+      isPresentFlag(node, "EIGENTUM")
+    ) {
+      return "sale";
+    }
+    if (
+      isPresentFlag(node, "MIETE_PACHT") ||
+      isPresentFlag(node, "KR_MIETE") ||
+      isPresentFlag(node, "MIETE") ||
+      isPresentFlag(node, "PACHT") ||
+      isPresentFlag(node, "WAZ")
+    ) {
+      return "rent";
+    }
+  }
+
+  for (const node of nodes) {
+    const mapped = mapTransactionType(
+      firstTextFromNode(node, "uebertragungsart", "vermarktungsart") || textValue(node),
+    );
+    if (mapped) return mapped;
+  }
+
+  return undefined;
 }
 
 function mapTransactionType(value: string): TransactionType | undefined {
@@ -257,19 +278,20 @@ function collectAnhangPaths(immobilie: Record<string, unknown>): string[] {
   const paths: string[] = [];
   const anhaenge = toArray(
     pickNode(immobilie, "anhaenge", "anhang") ??
-      pickNode(immobilie, "anhang") ??
-      pickNode(immobilie, "anhaenge"),
+      getValue(immobilie, "anhang") ??
+      getValue(immobilie, "anhaenge"),
   );
 
   for (const entry of anhaenge) {
     if (!entry || typeof entry !== "object") continue;
     const node = entry as Record<string, unknown>;
+    const daten = pickNode(node, "daten");
     const pfad = firstText(
-      pickNode(node, "daten", "pfad"),
-      node.pfad,
-      pickNode(node, "pfad"),
+      daten ? getText(daten, "pfad") : "",
+      getText(node, "pfad"),
+      getValue(node, "pfad"),
     );
-    if (pfad) paths.push(pfad.replace(/\\/g, "/"));
+    if (pfad) paths.push(String(pfad).replace(/\\/g, "/"));
   }
   return paths;
 }
