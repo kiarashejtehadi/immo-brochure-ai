@@ -8,8 +8,6 @@ export const appLocales = [
   "it",
   "nl",
   "pl",
-  "fa",
-  "ar",
 ] as const;
 
 export type AppLocale = (typeof appLocales)[number];
@@ -32,8 +30,6 @@ export const routing = defineRouting({
       it: "/note-legali",
       nl: "/colofon",
       pl: "/informacje-prawne",
-      fa: "/imprint",
-      ar: "/imprint",
     },
     "/privacy": {
       en: "/privacy",
@@ -43,8 +39,6 @@ export const routing = defineRouting({
       it: "/privacy",
       nl: "/privacy",
       pl: "/polityka-prywatnosci",
-      fa: "/privacy",
-      ar: "/privacy",
     },
     "/terms": {
       en: "/terms",
@@ -54,8 +48,6 @@ export const routing = defineRouting({
       it: "/termini",
       nl: "/voorwaarden",
       pl: "/regulamin",
-      fa: "/terms",
-      ar: "/terms",
     },
     "/checkout": {
       en: "/checkout",
@@ -65,8 +57,6 @@ export const routing = defineRouting({
       it: "/checkout",
       nl: "/checkout",
       pl: "/checkout",
-      fa: "/checkout",
-      ar: "/checkout",
     },
     "/pricing": {
       en: "/pricing",
@@ -76,8 +66,6 @@ export const routing = defineRouting({
       it: "/pricing",
       nl: "/pricing",
       pl: "/pricing",
-      fa: "/pricing",
-      ar: "/pricing",
     },
     "/settings": {
       en: "/settings",
@@ -87,8 +75,6 @@ export const routing = defineRouting({
       it: "/settings",
       nl: "/settings",
       pl: "/settings",
-      fa: "/settings",
-      ar: "/settings",
     },
     "/cookie-preferences": {
       en: "/cookie-preferences",
@@ -98,8 +84,6 @@ export const routing = defineRouting({
       it: "/cookie",
       nl: "/cookie-voorkeuren",
       pl: "/ustawienia-cookie",
-      fa: "/cookie-preferences",
-      ar: "/cookie-preferences",
     },
   },
 });

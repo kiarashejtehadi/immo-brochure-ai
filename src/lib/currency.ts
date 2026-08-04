@@ -38,8 +38,6 @@ const LOCALE_DEFAULT_CURRENCY: Record<UiLocale, CurrencyCode> = {
   es: "EUR",
   it: "EUR",
   nl: "EUR",
-  fa: "IRR",
-  ar: "AED",
   pl: "PLN",
 };
 

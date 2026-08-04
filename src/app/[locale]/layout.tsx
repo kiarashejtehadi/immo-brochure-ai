@@ -8,6 +8,7 @@ import { CookieConsentBanner } from "@/components/legal/cookie-consent-banner";
 import { ChunkLoadRecovery } from "@/components/chunk-load-recovery";
 import { SiteFooter } from "@/components/legal/site-footer";
 import { VoiceFillShell } from "@/components/listing/voice-fill-shell";
+import { isRtlUiLocale, type UiLocale } from "@/lib/i18n";
 import { routing, type AppLocale } from "@/i18n/routing";
 
 export const metadata: Metadata = {
@@ -34,7 +35,7 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
   const messages = await getMessages();
-  const rtl = locale === "fa" || locale === "ar";
+  const rtl = isRtlUiLocale(locale as UiLocale);
 
   return (
     <html lang={locale} dir={rtl ? "rtl" : "ltr"} className={fontClassNames}>

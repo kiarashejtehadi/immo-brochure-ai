@@ -1,4 +1,4 @@
-import type { UiLocale } from "@/lib/i18n";
+﻿import type { UiLocale } from "@/lib/i18n";
 
 export type MarketingCopy = {
   brandName: string;
@@ -418,129 +418,6 @@ const nl: Partial<MarketingCopy> = {
     "Voorbeeldweergave — demogegevens (niet opgeslagen). Meld u aan om uw eigen exposé te maken.",
 };
 
-const fa: Partial<MarketingCopy> = {
-  navFeatures: "ویژگی‌ها",
-  navHowItWorks: "نحوه کار",
-  navPricing: "قیمت‌ها",
-  navSignIn: "ورود",
-  navTryFree: "رایگان امتحان کنید (۲ اعتبار)",
-  heroPillTag: "✨ استودیو املاک مبتنی بر هوش مصنوعی",
-  heroHeadline: "در ۶۰ ثانیه از مشخصات ملک به exposé حرفه‌ای",
-  heroSubheadline:
-    "عکس آپلود کنید، جزئیات ملک را وارد کنید — هوش مصنوعی توضیحات، کپشن شبکه‌های اجتماعی و بروشور PDF چاپ‌آماده برای مشاوران املاک تولید می‌کند.",
-  heroCta: "ساخت exposé",
-  heroCtaSample: "مشاهده نمونه exposé و ریل",
-  heroBadgePdf: "تولید فوری PDF سه‌صفحه‌ای",
-  heroBadgeBranding: "برندسازی سفارشی آژانس",
-  heroBadgeLanguages:
-    "پشتیبانی چندزبانه (بیش از ۳۰ زبان: FA، EN، DE، FR، ES و بیشتر)",
-  heroBadgeVision: "تحلیل تصویری هوش مصنوعی (استخراج جزئیات از عکس‌ها)",
-  heroBadgeVideoReels: "ریل ویدیوی HD ۱۵ ثانیه‌ای (آماده اینستاگرام / تیک‌تاک)",
-  heroBadgeVoiceFill: "🎙️ پر کردن hands-free با صدا",
-  heroBadgeGeocodedLocation: "📍 متن محله با موقعیت‌یابی جغرافیایی",
-  howItWorksTitle: "نحوه کار",
-  howItWorksSubtitle: "در سه گام ساده از داده خام ملک به exposé آماده مشتری.",
-  step1Title: "۱. اطلاعات پایه ملک",
-  step1Description:
-    "مشخصات، قیمت را وارد کنید و تا ۵ عکس یا پلان آپلود کنید.",
-  step2Title: "۲. موتور محتوای هوش مصنوعی",
-  step2Description:
-    "هوش مصنوعی متن exposé، توضیح موقعیت و کپشن شبکه‌های اجتماعی را فوراً می‌نویسد.",
-  step3Title: "۳. دانلود PDF با برند شما",
-  step3Description:
-    "خروجی PDF با کیفیت چاپ، همراه با لوگو و اطلاعات تماس مشاور.",
-  comparisonTitle: "چرا ImmoCaption AI به‌جای ChatGPT عمومی؟",
-  comparisonSubtitle:
-    "ChatGPT فقط متن ساده می‌دهد. ما بروشور املاک با برند شما، آماده چاپ را در چند ثانیه تحویل می‌دهیم.",
-  comparisonGenericTitle: "چت‌بات‌های عمومی (ChatGPT / Gemini)",
-  comparisonImmoBadge: "⚡ ساخته‌شده برای املاک",
-  comparisonGenericItems: [
-    "نوشتن prompt پیچیده به‌صورت دستی",
-    "فقط متن ساده — بدون طراحی یا چیدمان PDF",
-    "بدون لوگوی آژانس، برندسازی یا رنگ سفارشی",
-    "بدون چیدمان خودکار عکس یا پلان",
-    "نیاز به prompt دستی برای تشخیص تصویری",
-    "بدون خروجی ریل ویدیویی با برند",
-    "۱۰–۱۵ دقیقه کپی‌پیست خسته‌کننده",
-  ],
-  comparisonImmoItems: [
-    "فرم ساختاریافته برای ورود سریع",
-    "PDF سه‌صفحه‌ای با کیفیت بالا برای چاپ و پورتال‌ها",
-    "لوگوی آژانس و رنگ برند به‌صورت خودکار",
-    "چیدمان خودکار عکس و پلان",
-    "کپشن شبکه‌های اجتماعی + متن موقعیت فوری",
-    "تشخیص تصویری (GPT Vision)",
-    "خروجی ریل ویدیویی با برند",
-    "آماده در کمتر از ۶۰ ثانیه",
-  ],
-  freeTrialBannerTitle: "۲ اعتبار رایگان — بدون نیاز به کارت بانکی",
-  freeTrialBannerCta: "ثبت‌نام رایگان",
-  purchaseSuccessMessage: "خرید موفق — اکنون می‌توانید exposé خود را بسازید.",
-  demoPreviewNotice:
-    "پیش‌نمایش نمونه — داده‌های دمو (ذخیره نمی‌شود). برای ساخت exposé خود ثبت‌نام کنید.",
-};
-
-const ar: Partial<MarketingCopy> = {
-  navFeatures: "الميزات",
-  navHowItWorks: "كيف يعمل",
-  navPricing: "الأسعار",
-  navSignIn: "تسجيل الدخول",
-  navTryFree: "جرّب مجاناً (رصيدان)",
-  heroPillTag: "✨ استوديو عقاري مدعوم بالذكاء الاصطناعي",
-  heroHeadline: "حوّل بيانات العقار إلى exposé احترافي في 60 ثانية",
-  heroSubheadline:
-    "ارفع الصور وأدخل التفاصيل — يولّد الذكاء الاصطناعي أوصافاً وتعليقات للتواصل وPDF جاهز للطباعة لوسطاء العقارات.",
-  heroCta: "إنشاء exposé الآن",
-  heroCtaSample: "عرض exposé وريل تجريبي",
-  heroBadgePdf: "PDF من 3 صفحات فوراً",
-  heroBadgeBranding: "هوية وكالة مخصصة",
-  heroBadgeLanguages:
-    "دعم متعدد اللغات (30+ لغة: AR، EN، DE، FR، ES والمزيد)",
-  heroBadgeVision: "تحليل بصري بالذكاء الاصطناعي (تفاصيل من الصور)",
-  heroBadgeVideoReels: "ريلز فيديو HD لمدة 15 ثانية (Instagram / TikTok)",
-  heroBadgeVoiceFill: "🎙️ تعبئة صوتية بدون استخدام اليدين",
-  heroBadgeGeocodedLocation: "📍 نصوص الحي المرمّزة جغرافياً",
-  howItWorksTitle: "كيف يعمل",
-  howItWorksSubtitle: "من بيانات العقار الخام إلى exposé جاهز للعميل في ثلاث خطوات.",
-  step1Title: "1. إدخال البيانات الأساسية",
-  step1Description:
-    "أدخل المواصفات والسعر وارفع حتى 5 صور أو مخططات.",
-  step2Title: "2. محرك المحتوى بالذكاء الاصطناعي",
-  step2Description:
-    "يكتب الذكاء الاصطناعي نص exposé والموقع وتعليقات التواصل فوراً.",
-  step3Title: "3. تنزيل PDF بالعلامة التجارية",
-  step3Description:
-    "صدّر PDF عالي الدقة جاهز للطباعة مع شعارك وبيانات الوسيط.",
-  comparisonTitle: "لماذا ImmoCaption AI وليس ChatGPT العام؟",
-  comparisonSubtitle:
-    "ChatGPT يعطيك نصاً عادياً. نحن نقدّم brochures عقارية بعلامتك، جاهزة للطباعة في ثوانٍ.",
-  comparisonGenericTitle: "روبوتات ذكاء اصطناعي عامة (ChatGPT / Gemini)",
-  comparisonImmoBadge: "⚡ مخصص للعقارات",
-  comparisonGenericItems: [
-    "يتطلب كتابة prompts معقدة يدوياً",
-    "نص عادي فقط — بدون تصميم أو تخطيط PDF",
-    "بدون شعار وكالة أو ألوان مخصصة",
-    "بدون تنسيق تلقائي للصور أو المخططات",
-    "prompt يدوي للتعرف البصري على الصور",
-    "بدون تصدير ريلز فيديو بعلامة تجارية",
-    "10–15 دقيقة نسخ ولصق ممل",
-  ],
-  comparisonImmoItems: [
-    "نموذج منظم للإدخال السريع",
-    "PDF 3 صفحات عالي الدقة للطباعة والبوابات",
-    "شعار الوكالة وألوان العلامة تلقائياً",
-    "وضع تلقائي للصور والمخططات",
-    "تعليقات تواصل + نص الموقع فوراً",
-    "تعرف بصري (GPT Vision)",
-    "تصدير ريلز فيديو بعلامة تجارية",
-    "جاهز في أقل من 60 ثانية",
-  ],
-  freeTrialBannerTitle: "رصيدان مجانيان — بدون بطاقة ائتمان",
-  freeTrialBannerCta: "التسجيل مجاناً",
-  purchaseSuccessMessage: "تم الشراء بنجاح — يمكنك الآن إنشاء exposé الخاص بك.",
-  demoPreviewNotice:
-    "معاينة تجريبية — بيانات demo (غير محفوظة). سجّل لإنشاء exposé الخاص بك.",
-};
 
 const pl: Partial<MarketingCopy> = {
   navFeatures: "Funkcje",
@@ -611,8 +488,6 @@ const marketingByLocale: Record<UiLocale, Partial<MarketingCopy>> = {
   es,
   it,
   nl,
-  fa,
-  ar,
   pl,
 };
 

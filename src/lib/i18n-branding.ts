@@ -1,4 +1,4 @@
-import type { UiLocale } from "@/lib/i18n";
+﻿import type { UiLocale } from "@/lib/i18n";
 import { interpolate } from "@/lib/i18n-billing";
 
 export type BrandingCopy = {
@@ -267,73 +267,6 @@ const pl: Partial<BrandingCopy> = {
   saving: "Zapisywanie…",
 };
 
-const fa: Partial<BrandingCopy> = {
-  settingsTitle: "تنظیمات برندسازی",
-  settingsSubtitle:
-    "لوگو و رنگ سفارشی برای بروشور PDF در طرح‌های Pro ماهانه و سالانه.",
-  trialCreditsLeft:
-    "{count} اعتبار آزمایشی رایگان باقی مانده (PDF با واترمارک).",
-  signInToManage: "برای مدیریت برندسازی وارد شوید.",
-  loadFailed: "بارگذاری برندسازی ممکن نشد.",
-  saved: "ذخیره شد.",
-  saveFailed: "ذخیره ناموفق بود.",
-  logoUploaded: "لوگو بارگذاری شد.",
-  uploadFailed: "بارگذاری ناموفق بود.",
-  loadingBranding: "در حال بارگذاری برندسازی…",
-  agencyLogo: "لوگوی آژانس",
-  agencyLogoAlt: "لوگوی آژانس",
-  noLogo: "بدون لوگو",
-  uploadLogo: "بارگذاری لوگو",
-  uploadLogoPro: "بارگذاری لوگو (Pro)",
-  uploading: "در حال بارگذاری…",
-  brandColor: "رنگ برند",
-  agencyName: "نام آژانس",
-  brokerName: "نام مشاور",
-  phone: "تلفن",
-  contactEmail: "ایمیل تماس",
-  website: "وب‌سایت",
-  pdfWatermark: "واترمارک PDF",
-  pdfWatermarkClean: "خروجی PDF شما بدون واترمارک است.",
-  pdfWatermarkTrial:
-    "PDF آزمایشی واترمارک دارد. بسته اعتبار یا اشتراک برای بروشور تمیز.",
-  viewPlans: "مشاهده طرح‌ها",
-  saveContactBranding: "ذخیره تماس و برندسازی",
-  saving: "در حال ذخیره…",
-};
-
-const ar: Partial<BrandingCopy> = {
-  settingsTitle: "إعدادات العلامة التجارية",
-  settingsSubtitle:
-    "الشعار والألوان المخصصة لكتيبات PDF في خطط Pro الشهرية والسنوية.",
-  trialCreditsLeft:
-    "لديك {count} رصيد تجريبي مجاني متبقٍ (PDF بعلامة مائية).",
-  signInToManage: "سجّل الدخول لإدارة العلامة التجارية.",
-  loadFailed: "تعذّر تحميل العلامة التجارية.",
-  saved: "تم الحفظ.",
-  saveFailed: "فشل الحفظ.",
-  logoUploaded: "تم رفع الشعار.",
-  uploadFailed: "فشل الرفع.",
-  loadingBranding: "جارٍ تحميل العلامة التجارية…",
-  agencyLogo: "شعار الوكالة",
-  agencyLogoAlt: "شعار الوكالة",
-  noLogo: "لا يوجد شعار",
-  uploadLogo: "رفع الشعار",
-  uploadLogoPro: "رفع الشعار (Pro)",
-  uploading: "جارٍ الرفع…",
-  brandColor: "لون العلامة",
-  agencyName: "اسم الوكالة",
-  brokerName: "اسم الوسيط",
-  phone: "الهاتف",
-  contactEmail: "البريد للتواصل",
-  website: "الموقع",
-  pdfWatermark: "علامة PDF المائية",
-  pdfWatermarkClean: "تصدير PDF خالٍ من العلامة المائية.",
-  pdfWatermarkTrial:
-    "PDF التجريبي يتضمن علامة مائية. اشترِ حزمة أو اشترك لتصدير كتيبات نظيفة.",
-  viewPlans: "عرض الخطط",
-  saveContactBranding: "حفظ التواصل والعلامة التجارية",
-  saving: "جارٍ الحفظ…",
-};
 
 const brandingTranslations: Partial<Record<UiLocale, Partial<BrandingCopy>>> = {
   de,
@@ -342,8 +275,6 @@ const brandingTranslations: Partial<Record<UiLocale, Partial<BrandingCopy>>> = {
   it,
   nl,
   pl,
-  fa,
-  ar,
 };
 
 export function getBrandingCopy(locale: UiLocale): BrandingCopy {

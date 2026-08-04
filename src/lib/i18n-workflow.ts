@@ -1,4 +1,4 @@
-import type { UiLocale } from "@/lib/i18n";
+﻿import type { UiLocale } from "@/lib/i18n";
 
 export type WorkflowUiCopy = {
   complianceBadge: string;
@@ -104,31 +104,6 @@ const pl: WorkflowUiCopy = {
   copiedToClipboard: "Skopiowano do schowka!",
 };
 
-const fa: WorkflowUiCopy = {
-  complianceBadge: "✓ مطابق با ضد تبعیض و Fair Housing",
-  voiceFillButton: "🎙️ پر کردن با صدا",
-  voiceFillListening: "در حال ضبط… برای توقف ضربه بزنید",
-  voiceFillProcessing: "در حال پردازش صدا…",
-  voiceFillUnsupported: "ضبط صدا در این مرورگر پشتیبانی نمی‌شود.",
-  voiceFillButtonTrial: "🎙️ دیکته ({count} رایگان باقی‌مانده)",
-  copyMlsShort: "کپی نسخه کوتاه MLS",
-  copyInstagramHashtags: "کپی اینستاگرام و هشتگ‌ها",
-  copyPlainText: "کپی متن ساده",
-  copiedToClipboard: "در کلیپ‌بورد کپی شد!",
-};
-
-const ar: WorkflowUiCopy = {
-  complianceBadge: "✓ متوافق مع مكافحة التمييز وFair Housing",
-  voiceFillButton: "🎙️ تعبئة بالصوت",
-  voiceFillListening: "جارٍ التسجيل… اضغط للإيقاف",
-  voiceFillProcessing: "جارٍ معالجة الصوت…",
-  voiceFillUnsupported: "تسجيل الصوت غير مدعوم في هذا المتصفح.",
-  voiceFillButtonTrial: "🎙️ إملاء ({count} مجانية متبقية)",
-  copyMlsShort: "نسخ نسخة MLS قصيرة",
-  copyInstagramHashtags: "نسخ Instagram والهاشتags",
-  copyPlainText: "نسخ نص عادي",
-  copiedToClipboard: "تم النسخ إلى الحافظة!",
-};
 
 const byLocale: Record<UiLocale, WorkflowUiCopy> = {
   en,
@@ -138,8 +113,6 @@ const byLocale: Record<UiLocale, WorkflowUiCopy> = {
   it,
   nl,
   pl,
-  fa,
-  ar,
 };
 
 export function getWorkflowUiCopy(locale: UiLocale): WorkflowUiCopy {

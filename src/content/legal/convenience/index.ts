@@ -1,9 +1,7 @@
 import type { LegalBusinessConfig } from "@/config/legal-business";
 import type { LegalDocument, LegalPageKind } from "@/types/legal-content";
 import type { ConvenienceLocale } from "@/content/legal/convenience/types";
-import { buildImprintAr, buildPrivacyAr, buildTermsAr } from "@/content/legal/convenience/locales/ar";
 import { buildImprintEs, buildPrivacyEs, buildTermsEs } from "@/content/legal/convenience/locales/es";
-import { buildImprintFa, buildPrivacyFa, buildTermsFa } from "@/content/legal/convenience/locales/fa";
 import { buildImprintFr, buildPrivacyFr, buildTermsFr } from "@/content/legal/convenience/locales/fr";
 import { buildImprintIt, buildPrivacyIt, buildTermsIt } from "@/content/legal/convenience/locales/it";
 import { buildImprintNl, buildPrivacyNl, buildTermsNl } from "@/content/legal/convenience/locales/nl";
@@ -39,16 +37,6 @@ const registry: Record<
     imprint: buildImprintPl,
     privacy: buildPrivacyPl,
     terms: buildTermsPl,
-  },
-  fa: {
-    imprint: buildImprintFa,
-    privacy: buildPrivacyFa,
-    terms: buildTermsFa,
-  },
-  ar: {
-    imprint: buildImprintAr,
-    privacy: buildPrivacyAr,
-    terms: buildTermsAr,
   },
 };
 

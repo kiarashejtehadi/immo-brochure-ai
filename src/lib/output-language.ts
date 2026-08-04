@@ -7,8 +7,6 @@ const CAPTION_HASHTAGS: Record<OutputLanguage, string[]> = {
   Spanish: ["#Inmobiliaria", "#Vivienda"],
   Italian: ["#Immobiliare", "#Casa"],
   Dutch: ["#Vastgoed", "#Woning"],
-  Persian: ["#املاک", "#مسکن"],
-  Arabic: ["#عقارات", "#شقة_للبيع"],
   Polish: ["#Nieruchomosci", "#Mieszkanie"],
 };
 

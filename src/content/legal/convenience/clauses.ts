@@ -7,8 +7,6 @@ const choiceOfLaw: Record<ConvenienceLocale, string> = {
   it: "Il servizio è gestito dalla Germania ed è soggetto al diritto tedesco, fatti salvi i diritti obbligatori dei consumatori nella vostra giurisdizione.",
   nl: "Deze dienst wordt vanuit Duitsland aangeboden onder Duits recht, onverminderd dwingende consumentenrechten in uw rechtsgebied.",
   pl: "Usługa jest prowadzona z Niemiec i podlega prawu niemieckiemu, z zastrzeżeniem bezwzględnie obowiązujących praw konsumenta w Twojej jurysdykcji.",
-  fa: "این سرویس از آلمان و تحت قانون آلمان اداره می‌شود، بدون نقض حقوق اجباری مصرف‌کننده در حوزه قضایی شما.",
-  ar: "تُشغَّل هذه الخدمة من ألمانيا وتخضع للقانون الألماني، دون الإخلال بالحقوق الإلزامية للمستهلكين في ولايتك القضائية.",
 };
 
 const privacyContact: Record<ConvenienceLocale, (cfg: LegalBusinessConfig) => string> = {
@@ -22,10 +20,6 @@ const privacyContact: Record<ConvenienceLocale, (cfg: LegalBusinessConfig) => st
     `Privacyverzoeken (§ 25 TDDDG, AVG art. 13/14): ${cfg.email}`,
   pl: (cfg) =>
     `Zapytania o prywatność (§ 25 TDDDG, RODO art. 13/14): ${cfg.email}`,
-  fa: (cfg) =>
-    `تماس حریم خصوصی (§ 25 TDDDG، GDPR مواد ۱۳/۱۴): ${cfg.email}`,
-  ar: (cfg) =>
-    `استفسارات الخصوصية (§ 25 TDDDG، GDPR المادتان 13/14): ${cfg.email}`,
 };
 
 const contactLabels: Record<
@@ -37,8 +31,6 @@ const contactLabels: Record<
   it: { email: "E-mail", phone: "Telefono" },
   nl: { email: "E-mail", phone: "Telefoon" },
   pl: { email: "E-mail", phone: "Telefon" },
-  fa: { email: "ایمیل", phone: "تلفن" },
-  ar: { email: "البريد الإلكتروني", phone: "الهاتف" },
 };
 
 export function choiceOfLawClauseConvenience(locale: ConvenienceLocale): string {

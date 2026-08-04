@@ -80,14 +80,6 @@ const convenienceNoticeCopy: Partial<
     title: "Tłumaczenie pomocnicze",
     body: "Ten tekst jest tłumaczeniem pomocniczym. Wersje prawnie wiążące to angielski (en) i niemiecki (de).",
   },
-  fa: {
-    title: "ترجمه راهنما (غیرالزام‌آور)",
-    body: "این متن ترجمه راهنماست. نسخه‌های حقوقی لازم‌الاجرا انگلیسی (en) و آلمانی (de) هستند.",
-  },
-  ar: {
-    title: "ترجمة للتسهيل",
-    body: "هذا النص ترجمة للتسهيل. النسخ الملزمة قانوناً هي الإنجليزية (en) والألمانية (de).",
-  },
 };
 
 export function getConvenienceNotice(

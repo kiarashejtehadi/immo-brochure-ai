@@ -7,7 +7,7 @@ export const inter = Inter({
   display: "swap",
 });
 
-/** RTL locales (ar, fa); also self-hosted by Next.js. */
+/** RTL locales; also self-hosted by Next.js when needed. */
 export const notoSansArabic = Noto_Sans_Arabic({
   subsets: ["arabic"],
   variable: "--font-noto-arabic",
