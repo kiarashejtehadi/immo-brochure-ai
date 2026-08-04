@@ -71,7 +71,14 @@ function mapOpenImmoToAppState(
     energiepass.energieverbrauch,
   );
 
+  const importId = firstText(
+    pickNode(immobilie, "verwaltung_techn", "objektnr_extern"),
+    pickNode(immobilie, "verwaltung_techn", "objektnr_intern"),
+    pickNode(immobilie, "verwaltung_techn", "objektnr"),
+  );
+
   return {
+    importId: importId || undefined,
     title: firstText(freitexte.objekttitel, freitexte.objekttitle),
     transactionType,
     address: {
@@ -113,44 +120,17 @@ function mapOpenImmoToAppState(
   };
 }
 
-export function parseAllImmobilien(parsedXml: unknown): OpenImmoImportResult[] {
-  if (!parsedXml || typeof parsedXml !== "object") {
-    throw new Error("Invalid OpenImmo XML structure.");
-  }
-
-  const doc = parsedXml as Record<string, unknown>;
-  const root = getOpenImmoRoot(doc);
-  const immobilien = extractAllImmobilien(parsedXml);
-
-  if (immobilien.length === 0) {
-    throw new Error("No OpenImmo property (immobilie) found in XML.");
-  }
-
-  return immobilien.map((immobilie) => mapOpenImmoToAppState(immobilie, root));
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object";
 }
 
-function immobilienFromAnbieter(anbieter: Record<string, unknown>): Record<string, unknown>[] {
-  const results: Record<string, unknown>[] = [];
-  const immobilien = anbieter.immobilien as Record<string, unknown> | undefined;
-
-  if (immobilien) {
-    for (const imm of toArray(immobilien.immobilie)) {
-      if (imm && typeof imm === "object") {
-        results.push(imm as Record<string, unknown>);
-      }
-    }
+function pushImmobilieNodes(target: Record<string, unknown>[], items: unknown) {
+  for (const item of toArray(items)) {
+    if (isRecord(item)) target.push(item);
   }
-
-  for (const imm of toArray(anbieter.immobilie)) {
-    if (imm && typeof imm === "object") {
-      results.push(imm as Record<string, unknown>);
-    }
-  }
-
-  return results;
 }
 
-/** Collect every `<immobilie>` node from the parsed XML document. */
+/** Collect every `<immobilie>` node, with or without an `<immobilien>` wrapper. */
 export function extractAllImmobilien(parsedXml: unknown): Record<string, unknown>[] {
   if (!parsedXml || typeof parsedXml !== "object") {
     throw new Error("Invalid XML: Root <openimmo> tag not found.");
@@ -158,26 +138,56 @@ export function extractAllImmobilien(parsedXml: unknown): Record<string, unknown
 
   const doc = parsedXml as Record<string, unknown>;
   const root = getOpenImmoRoot(doc);
-  const properties: Record<string, unknown>[] = [];
+  const rawProperties: Record<string, unknown>[] = [];
 
   for (const anbieter of toArray(root.anbieter)) {
-    if (!anbieter || typeof anbieter !== "object") continue;
-    properties.push(...immobilienFromAnbieter(anbieter as Record<string, unknown>));
-  }
+    if (!isRecord(anbieter)) continue;
 
-  for (const imm of toArray(root.immobilie)) {
-    if (imm && typeof imm === "object") {
-      properties.push(imm as Record<string, unknown>);
+    // Direct <immobilie> children under <anbieter>
+    if (anbieter.immobilie !== undefined) {
+      pushImmobilieNodes(rawProperties, anbieter.immobilie);
+    }
+
+    // Wrapped inside <immobilien><immobilie> (single wrapper or array of wrappers)
+    const immobilienNode = anbieter.immobilien;
+    if (immobilienNode !== undefined) {
+      if (isRecord(immobilienNode) && immobilienNode.immobilie !== undefined) {
+        pushImmobilieNodes(rawProperties, immobilienNode.immobilie);
+      } else {
+        for (const block of toArray(immobilienNode)) {
+          if (isRecord(block) && block.immobilie !== undefined) {
+            pushImmobilieNodes(rawProperties, block.immobilie);
+          }
+        }
+      }
     }
   }
 
-  for (const imm of toArray(doc.immobilie)) {
-    if (imm && typeof imm === "object") {
-      properties.push(imm as Record<string, unknown>);
-    }
+  // Fallbacks for exports that place <immobilie> directly under <openimmo> or document root
+  pushImmobilieNodes(rawProperties, root.immobilie);
+  pushImmobilieNodes(rawProperties, doc.immobilie);
+
+  return rawProperties;
+}
+
+export function parseAllImmobilien(parsedXml: unknown): OpenImmoImportResult[] {
+  if (!parsedXml || typeof parsedXml !== "object") {
+    throw new Error("Invalid OpenImmo XML structure.");
   }
 
-  return properties;
+  const doc = parsedXml as Record<string, unknown>;
+  const root = getOpenImmoRoot(doc);
+  const rawProperties = extractAllImmobilien(parsedXml);
+
+  if (rawProperties.length === 0) {
+    throw new Error("No OpenImmo property (immobilie) found in XML.");
+  }
+
+  return rawProperties.map((rawImm, index) => {
+    const mapped = mapOpenImmoToAppState(rawImm, root);
+    mapped.importIndex = index;
+    return mapped;
+  });
 }
 
 /** Normalize single objects or arrays and return the first `<immobilie>` node. */

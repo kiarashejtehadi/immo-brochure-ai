@@ -48,7 +48,7 @@ import {
   stripPlainSocialText,
   truncateMlsCaption,
 } from "@/lib/social-copy-presets";
-import { importedImagesToFiles, prepareOpenImmoImportForForm } from "@/lib/openimmo/apply-openimmo-import";
+import { buildOpenImmoFormStateSlice, importedImagesToFiles } from "@/lib/openimmo/apply-openimmo-import";
 import type { OpenImmoImportApiResponse, OpenImmoImportResult } from "@/types/openimmo-import";
 import {
   outputLanguageFromLocale,
@@ -1115,87 +1115,64 @@ function ListingStudioContent() {
 
   const applyOpenImmoImportData = useCallback(
     (rawData: OpenImmoImportResult) => {
-      const data = prepareOpenImmoImportForForm(rawData);
-      const importedType = data.transactionType ?? transactionType;
+      const slice = buildOpenImmoFormStateSlice(rawData, {
+        address,
+        property: DEFAULT_PROPERTY,
+        rent: EMPTY_RENT,
+        sale: EMPTY_SALE,
+        energy: DEFAULT_ENERGY,
+      });
+      const importedType = slice.transactionType ?? transactionType;
 
       setTargetMarket("dach");
       setTargetLanguage("German");
       setCurrency("EUR");
 
-      if (data.transactionType) {
-        setTransactionType(data.transactionType);
+      if (slice.transactionType) {
+        setTransactionType(slice.transactionType);
       }
 
-      if (data.address) {
-        setAddress((prev) => ({
-          ...prev,
-          ...data.address,
-          streetAddress: data.address?.streetAddress ?? prev.streetAddress,
-          postalCode: data.address?.postalCode ?? prev.postalCode,
-          city: data.address?.city ?? prev.city,
-          country: data.address?.country ?? prev.country,
-        }));
-      }
+      setAddress(slice.address);
+      setSize(slice.size);
+      setRooms(slice.rooms);
+      setProperty(slice.property);
+      setRent(slice.rent);
+      totalRentManualRef.current = Boolean(slice.rent.totalRent.trim());
 
-      if (data.size) setSize(data.size);
-      if (data.rooms) setRooms(data.rooms);
+      const commissionTerms =
+        userRole === "private_seller"
+          ? privateSellerCommissionFreeTerms(importedType, formCopy)
+          : commissionFreeTerms(importedType, formCopy);
 
-      if (data.property) {
-        setProperty((prev) => ({ ...prev, ...data.property }));
-      }
+      setCommissionPreset("commission_free");
+      setSale({ ...slice.sale, commissionTerms });
+      setEnergy(slice.energy);
 
-      if (data.rent) {
-        setRent((prev) => ({ ...prev, ...data.rent }));
-        totalRentManualRef.current = Boolean(data.rent?.totalRent?.trim());
-      }
-
-      if (data.sale) {
-        setSale((prev) => ({ ...prev, ...data.sale }));
-      }
-
-      if (data.energy) {
-        setEnergy((prev) => ({ ...prev, ...data.energy }));
-      }
-
-      if (userRole === "private_seller") {
-        setCommissionPreset("commission_free");
-        setSale((prev) => ({
-          ...prev,
-          commissionTerms: privateSellerCommissionFreeTerms(importedType, formCopy),
-        }));
-      } else {
-        setCommissionPreset("commission_free");
-        setSale((prev) => ({
-          ...prev,
-          commissionTerms: commissionFreeTerms(importedType, formCopy),
-        }));
-      }
-
-      const importedTitle = data.title?.trim() ?? "";
-      const importedDescription = data.description?.trim() ?? "";
-      const importedLocation = data.locationText?.trim() ?? "";
-      if (importedTitle || importedDescription || importedLocation) {
+      if (slice.title || slice.description || slice.locationText) {
         setResult({
-          title: importedTitle || "Imported listing",
-          summary: importedDescription
-            ? [importedDescription.slice(0, 120)]
-            : importedLocation
-              ? [importedLocation.slice(0, 120)]
+          title: slice.title || "Imported listing",
+          summary: slice.description
+            ? [slice.description.slice(0, 120)]
+            : slice.locationText
+              ? [slice.locationText.slice(0, 120)]
               : [],
-          fullDescription: importedDescription,
-          locationDescription: importedLocation || "—",
+          fullDescription: slice.description,
+          locationDescription: slice.locationText || "—",
           socialCaptions: { instagram: "", linkedin: "", facebook: "" },
         });
         setHasGenerated(true);
-        setPreviewTab(importedDescription ? "story" : "location");
+        setPreviewTab(slice.description ? "story" : "location");
+      } else {
+        setResult(null);
+        setHasGenerated(false);
       }
 
-      const imageFiles = importedImagesToFiles(data);
+      setPhotos((prev) => {
+        for (const photo of prev) URL.revokeObjectURL(photo.url);
+        return [];
+      });
+      const imageFiles = importedImagesToFiles(rawData);
       if (imageFiles.length > 0) {
-        setPhotos((prev) => {
-          for (const photo of prev) URL.revokeObjectURL(photo.url);
-          return [];
-        });
         addPhotos(imageFiles);
       }
 
@@ -1203,7 +1180,7 @@ function ListingStudioContent() {
       setGenerateError(null);
       showToast(copy.openImmoImportSuccess);
     },
-    [addPhotos, copy, formCopy, showToast, transactionType, userRole],
+    [addPhotos, address, copy, formCopy, showToast, transactionType, userRole],
   );
 
   const handleOpenImmoImport = useCallback(
@@ -1234,12 +1211,14 @@ function ListingStudioContent() {
   );
 
   const handleOpenImmoPropertySelect = useCallback(
-    (property: OpenImmoImportResult) => {
+    (index: number) => {
+      const property = openImmoPickerProperties[index];
+      if (!property) return;
       applyOpenImmoImportData(property);
       setOpenImmoPickerOpen(false);
       setOpenImmoPickerProperties([]);
     },
-    [applyOpenImmoImportData],
+    [applyOpenImmoImportData, openImmoPickerProperties],
   );
 
   function removePhoto(id: string) {

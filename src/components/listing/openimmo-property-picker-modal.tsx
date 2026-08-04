@@ -9,7 +9,7 @@ export type OpenImmoPropertyPickerModalProps = {
   copy: FormCopy;
   open: boolean;
   properties: OpenImmoImportResult[];
-  onSelect: (property: OpenImmoImportResult) => void;
+  onSelect: (index: number) => void;
   onClose: () => void;
 };
 
@@ -42,10 +42,10 @@ export function OpenImmoPropertyPickerModal({
         </div>
         <ul className="max-h-[min(60vh,24rem)] overflow-y-auto p-2">
           {properties.map((property, index) => (
-            <li key={`${property.title ?? "property"}-${index}`}>
+            <li key={property.importId ?? `${property.title ?? "property"}-${index}`}>
               <button
                 type="button"
-                onClick={() => onSelect(property)}
+                onClick={() => onSelect(index)}
                 className={cn(
                   "flex w-full flex-col rounded-xl px-4 py-3 text-left transition",
                   "hover:bg-indigo-50 dark:hover:bg-indigo-950/40",

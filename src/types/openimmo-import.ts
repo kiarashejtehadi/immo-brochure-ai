@@ -14,6 +14,8 @@ export type OpenImmoImportedImage = {
 };
 
 export type OpenImmoImportResult = {
+  importIndex?: number;
+  importId?: string;
   title?: string;
   transactionType?: TransactionType;
   address?: Partial<ListingAddress>;
