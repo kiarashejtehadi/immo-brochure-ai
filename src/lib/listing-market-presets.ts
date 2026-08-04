@@ -33,8 +33,38 @@ export const COMMISSION_PRESET_LABELS: Record<
 
 type CommissionCopy = Pick<
   FormCopy,
-  "commissionFree" | "commissionFreeRent" | "commissionBuyerPlaceholder"
+  | "commissionFree"
+  | "commissionFreeRent"
+  | "commissionRentPlaceholder"
+  | "commissionSalePlaceholder"
 >;
+
+export function commissionFreeLabel(
+  transactionType: TransactionType,
+  userRole: UserRole,
+  copy: Pick<FormCopy, "commissionFree" | "commissionFreeRent" | "commissionPrivateSellerNote">,
+): string {
+  if (userRole === "private_seller") {
+    return copy.commissionPrivateSellerNote;
+  }
+  return transactionType === "rent" ? copy.commissionFreeRent : copy.commissionFree;
+}
+
+export function commissionCustomLabel(
+  transactionType: TransactionType,
+  copy: Pick<FormCopy, "commissionRentCustom" | "commissionSaleCustom">,
+): string {
+  return transactionType === "rent" ? copy.commissionRentCustom : copy.commissionSaleCustom;
+}
+
+export function commissionPlaceholder(
+  transactionType: TransactionType,
+  copy: Pick<FormCopy, "commissionRentPlaceholder" | "commissionSalePlaceholder">,
+): string {
+  return transactionType === "rent"
+    ? copy.commissionRentPlaceholder
+    : copy.commissionSalePlaceholder;
+}
 
 export function isCommissionFreeTerms(value: string): boolean {
   const normalized = value.trim().toLowerCase();
@@ -50,20 +80,14 @@ export function commissionFreeTerms(
   transactionType: TransactionType,
   copy: CommissionCopy,
 ): string {
-  if (transactionType === "rent") {
-    return "Provisionsfrei für Mieter";
-  }
-  return copy.commissionFree;
+  return transactionType === "rent" ? copy.commissionFreeRent : copy.commissionFree;
 }
 
 export function defaultCustomCommissionTerms(
   transactionType: TransactionType,
   copy: CommissionCopy,
 ): string {
-  if (transactionType === "rent") {
-    return "Provision trägt Vermieter";
-  }
-  return copy.commissionBuyerPlaceholder;
+  return commissionPlaceholder(transactionType, copy);
 }
 
 export function resolveCommissionTermsForPreset(
@@ -117,14 +141,18 @@ export function parseCommissionPreset(
   return "buyer_commission";
 }
 
-export function shouldShowDachCommissionControls(
-  transactionType: TransactionType,
-  userRole: UserRole,
-): boolean {
-  if (transactionType === "sale") return true;
-  return userRole === "agent";
+export function shouldShowCommissionControls(): boolean {
+  return true;
 }
 
+export function privateSellerCommissionFreeTerms(
+  transactionType: TransactionType,
+  copy: CommissionCopy,
+): string {
+  return commissionFreeTerms(transactionType, copy);
+}
+
+/** @deprecated Use privateSellerCommissionFreeTerms(transactionType, copy) */
 export function privateLandlordRentCommissionTerms(): string {
   return commissionTermsFromPreset("commission_free", "rent");
 }

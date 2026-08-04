@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
 import { FormAccordionCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
+import { CommissionField } from "@/components/listing/commission-field";
 import { MarketConfigBar } from "@/components/listing/market-config-bar";
 import type { BillingStatusResponse } from "@/types/billing";
 import type { FormCopy } from "@/lib/i18n-form";
@@ -26,7 +27,6 @@ import { blockNonNumericKey, sanitizeNumericInput } from "@/lib/numeric-input";
 import { LISTING_COUNTRY_OPTIONS } from "@/lib/location/format-address";
 import { btnPrimaryCompact, chipActive, chipInactive, segmentActive } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
-import { shouldShowDachCommissionControls } from "@/lib/listing-market-presets";
 import type {
   AgentFormData,
   EnergyCertificateType,
@@ -302,8 +302,6 @@ export function ListingForm(props: ListingFormProps) {
 
   const epcDetailsVisible = energy.certificateType !== "na";
   const isDach = targetMarket === "dach";
-  const showDachCommission =
-    isDach && shouldShowDachCommissionControls(transactionType, userRole);
   const [globalEnergyOpen, setGlobalEnergyOpen] = useState(false);
 
   const transactionToggle = (
@@ -678,89 +676,15 @@ export function ListingForm(props: ListingFormProps) {
             />
           )}
 
-          {showDachCommission ? (
-            <div className="sm:col-span-2 lg:col-span-3">
-              <p className={labelClassName()}>{copy.commissionLabel}</p>
-              {transactionType === "sale" ? (
-                <div className="mt-2 flex flex-col gap-2">
-                  <label
-                    className={cn(
-                      "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm",
-                      commissionPreset === "commission_free"
-                        ? "border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-950/40"
-                        : "border-zinc-200 dark:border-zinc-700",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="commissionPreset-sale"
-                      checked={commissionPreset === "commission_free"}
-                      onChange={() => onCommissionPreset("commission_free")}
-                      className="text-indigo-600"
-                    />
-                    {copy.commissionFree}
-                  </label>
-                  <div
-                    className={cn(
-                      "rounded-lg border px-3 py-2.5",
-                      commissionPreset === "buyer_commission"
-                        ? "border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-950/40"
-                        : "border-zinc-200 dark:border-zinc-700",
-                    )}
-                  >
-                    <label className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="radio"
-                        name="commissionPreset-sale"
-                        checked={commissionPreset === "buyer_commission"}
-                        onChange={() => onCommissionPreset("buyer_commission")}
-                        className="text-indigo-600"
-                      />
-                      {copy.commissionBuyer}
-                    </label>
-                    {commissionPreset === "buyer_commission" ? (
-                      <input
-                        type="text"
-                        value={sale.commissionTerms}
-                        placeholder={copy.commissionBuyerPlaceholder}
-                        onChange={(e) => onSale({ commissionTerms: e.target.value })}
-                        className={cn(inputClassName(), "mt-2")}
-                      />
-                    ) : null}
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                  {(["commission_free", "buyer_commission"] as CommissionPreset[]).map((preset) => {
-                    const freeLabel = copy.commissionFreeRent;
-                    const paidLabel = copy.commissionLandlordPaid;
-                    const label = preset === "commission_free" ? freeLabel : paidLabel;
-
-                    return (
-                      <label
-                        key={`${transactionType}-${preset}`}
-                        className={cn(
-                          "flex flex-1 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm",
-                          commissionPreset === preset
-                            ? "border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-950/40"
-                            : "border-zinc-200 dark:border-zinc-700",
-                        )}
-                      >
-                        <input
-                          type="radio"
-                          name={`commissionPreset-${transactionType}`}
-                          checked={commissionPreset === preset}
-                          onChange={() => onCommissionPreset(preset)}
-                          className="text-indigo-600"
-                        />
-                        {label}
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ) : null}
+          <CommissionField
+            copy={copy}
+            userRole={userRole}
+            transactionType={transactionType}
+            commissionPreset={commissionPreset}
+            commissionTerms={sale.commissionTerms}
+            onCommissionPreset={onCommissionPreset}
+            onCommissionTerms={(value) => onSale({ commissionTerms: value })}
+          />
 
           {!isDach && showCurrencySelect ? (
             <div>

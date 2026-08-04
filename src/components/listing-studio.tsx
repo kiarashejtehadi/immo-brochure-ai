@@ -89,7 +89,7 @@ import {
   parseCommissionPreset,
   commissionFreeTerms,
   resolveCommissionTermsForPreset,
-  privateLandlordRentCommissionTerms,
+  privateSellerCommissionFreeTerms,
 } from "@/lib/listing-market-presets";
 import { cn } from "@/lib/utils";
 import type {
@@ -445,13 +445,13 @@ function ListingStudioContent() {
     [routeLocale],
   );
 
-  const applyPrivateLandlordRentCommission = useCallback(() => {
+  const applyPrivateSellerCommission = useCallback(() => {
     setCommissionPreset("commission_free");
     setSale((prev) => ({
       ...prev,
-      commissionTerms: privateLandlordRentCommissionTerms(),
+      commissionTerms: privateSellerCommissionFreeTerms(transactionType, formCopy),
     }));
-  }, []);
+  }, [transactionType, formCopy]);
 
   const handleCommissionPresetChange = useCallback(
     (preset: CommissionPreset) => {
@@ -472,9 +472,12 @@ function ListingStudioContent() {
   const handleTransactionTypeChange = useCallback(
     (type: TransactionType) => {
       setTransactionType(type);
-      if (targetMarket !== "dach") return;
-      if (type === "rent" && userRole === "private_seller") {
-        applyPrivateLandlordRentCommission();
+      if (userRole === "private_seller") {
+        setCommissionPreset("commission_free");
+        setSale((prev) => ({
+          ...prev,
+          commissionTerms: privateSellerCommissionFreeTerms(type, formCopy),
+        }));
         return;
       }
       setCommissionPreset("commission_free");
@@ -483,18 +486,23 @@ function ListingStudioContent() {
         commissionTerms: commissionFreeTerms(type, formCopy),
       }));
     },
-    [targetMarket, userRole, applyPrivateLandlordRentCommission, formCopy],
+    [userRole, formCopy],
   );
 
   const handleUserRoleChange = useCallback(
     (role: UserRole) => {
       setUserRole(role);
-      if (targetMarket !== "dach" || transactionType !== "rent") return;
       if (role === "private_seller") {
-        applyPrivateLandlordRentCommission();
+        applyPrivateSellerCommission();
+        return;
       }
+      setCommissionPreset("commission_free");
+      setSale((prev) => ({
+        ...prev,
+        commissionTerms: commissionFreeTerms(transactionType, formCopy),
+      }));
     },
-    [targetMarket, transactionType, applyPrivateLandlordRentCommission],
+    [applyPrivateSellerCommission, transactionType, formCopy],
   );
 
   const loadDachDemoListing = useCallback(() => {
@@ -671,15 +679,14 @@ function ListingStudioContent() {
     setTargetLanguage(draft.targetLanguage);
     setTargetMarket(draft.targetMarket ?? "dach");
     setUserRole(draft.userRole ?? "agent");
-    const isPrivateLandlordRent =
-      (draft.targetMarket ?? "dach") === "dach" &&
-      draft.transactionType === "rent" &&
-      (draft.userRole ?? "agent") === "private_seller";
+    const isPrivateSeller = (draft.userRole ?? "agent") === "private_seller";
+    const restoredPreset =
+      draft.commissionPreset ??
+      parseCommissionPreset(draft.sale.commissionTerms, draft.transactionType);
     setCommissionPreset(
-      isPrivateLandlordRent
+      isPrivateSeller && restoredPreset === "commission_free"
         ? "commission_free"
-        : draft.commissionPreset ??
-            parseCommissionPreset(draft.sale.commissionTerms, draft.transactionType),
+        : restoredPreset,
     );
     setBedrooms(draft.bedrooms ?? "");
     setBathrooms(draft.bathrooms ?? "");
@@ -694,9 +701,13 @@ function ListingStudioContent() {
     setRent(draft.rent);
     setSale({
       ...draft.sale,
-      commissionTerms: isPrivateLandlordRent
-        ? privateLandlordRentCommissionTerms()
-        : draft.sale.commissionTerms,
+      commissionTerms:
+        isPrivateSeller && restoredPreset === "commission_free"
+          ? privateSellerCommissionFreeTerms(
+              draft.transactionType,
+              getFormCopy(uiLocale),
+            )
+          : draft.sale.commissionTerms,
     });
     setEnergy(draft.energy);
     setAgent(draft.agent);
@@ -719,7 +730,7 @@ function ListingStudioContent() {
     setPreviewTab(draft.previewTab);
     pdfReadyImagesRef.current = null;
     pdfImagesFingerprintRef.current = "";
-  }, []);
+  }, [uiLocale]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

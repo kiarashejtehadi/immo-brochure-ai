@@ -113,10 +113,19 @@ export type FormCopy = {
   userRoleAgent: string;
   userRolePrivateSeller: string;
   commissionLabel: string;
+  commissionPrivateSellerNote: string;
   commissionFreeRent: string;
-  commissionLandlordPaid: string;
+  commissionRentCustom: string;
+  commissionRentPlaceholder: string;
   commissionFree: string;
+  commissionSaleCustom: string;
+  commissionSalePlaceholder: string;
+  commissionAddCustomFee: string;
+  /** @deprecated Use commissionRentCustom / commissionSaleCustom */
+  commissionLandlordPaid: string;
+  /** @deprecated Use commissionSaleCustom */
   commissionBuyer: string;
+  /** @deprecated Use commissionSalePlaceholder */
   commissionBuyerPlaceholder: string;
   globalPrice: string;
   bedrooms: string;
@@ -259,9 +268,15 @@ const en: FormCopy = {
   userRoleAgent: "Real estate agent / broker",
   userRolePrivateSeller: "Private seller / landlord",
   commissionLabel: "Commission / agent fee (Provision)",
-  commissionFreeRent: "Commission-free for tenant (Provisionsfrei für Mieter)",
-  commissionLandlordPaid: "Commission paid by landlord (Provision trägt Vermieter)",
+  commissionPrivateSellerNote: "Commission-free (Direct from owner)",
+  commissionFreeRent: "Commission-free for tenant",
+  commissionRentCustom: "Custom tenant commission / note",
+  commissionRentPlaceholder: "e.g. 2 cold rents + VAT",
   commissionFree: "Commission-free",
+  commissionSaleCustom: "Buyer commission / note",
+  commissionSalePlaceholder: "e.g. 3.57% incl. VAT",
+  commissionAddCustomFee: "+ Add custom fee / note",
+  commissionLandlordPaid: "Commission paid by landlord (Provision trägt Vermieter)",
   commissionBuyer: "Buyer commission",
   commissionBuyerPlaceholder: "e.g. 3.57% incl. VAT",
   globalPrice: "Price",
@@ -403,10 +418,16 @@ const de: Partial<FormCopy> = {
   userRoleLabel: "Ihre Rolle",
   userRoleAgent: "Immobilienmakler / Broker",
   userRolePrivateSeller: "Privatverkäufer / Vermieter",
-  commissionLabel: "Provision",
+  commissionLabel: "Provision / Agenturgebühr",
+  commissionPrivateSellerNote: "Provisionsfrei (Direkt vom Eigentümer)",
   commissionFreeRent: "Provisionsfrei für Mieter",
-  commissionLandlordPaid: "Provision trägt Vermieter",
+  commissionRentCustom: "Individuelle Mieterprovision / Hinweis",
+  commissionRentPlaceholder: "z. B. 2 Nettokaltmieten zzgl. MwSt.",
   commissionFree: "Provisionsfrei",
+  commissionSaleCustom: "Käuferprovision / Hinweis",
+  commissionSalePlaceholder: "z. B. 3,57 % inkl. MwSt.",
+  commissionAddCustomFee: "+ Individuelle Provision / Hinweis hinzufügen",
+  commissionLandlordPaid: "Provision trägt Vermieter",
   commissionBuyer: "Käuferprovision",
   commissionBuyerPlaceholder: "z. B. 3,57 % inkl. MwSt.",
   globalPrice: "Preis",
