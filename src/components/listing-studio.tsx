@@ -88,6 +88,7 @@ import {
   DACH_LEGAL_DISCLAIMER,
   dachMarketPresetApply,
   parseCommissionPreset,
+  privateLandlordRentCommissionTerms,
 } from "@/lib/listing-market-presets";
 import { cn } from "@/lib/utils";
 import type {
@@ -443,6 +444,14 @@ function ListingStudioContent() {
     [routeLocale],
   );
 
+  const applyPrivateLandlordRentCommission = useCallback(() => {
+    setCommissionPreset("commission_free");
+    setSale((prev) => ({
+      ...prev,
+      commissionTerms: privateLandlordRentCommissionTerms(),
+    }));
+  }, []);
+
   const handleCommissionPresetChange = useCallback(
     (preset: CommissionPreset) => {
       setCommissionPreset(preset);
@@ -458,13 +467,28 @@ function ListingStudioContent() {
     (type: TransactionType) => {
       setTransactionType(type);
       if (targetMarket !== "dach") return;
+      if (type === "rent" && userRole === "private_seller") {
+        applyPrivateLandlordRentCommission();
+        return;
+      }
       setCommissionPreset("commission_free");
       setSale((prev) => ({
         ...prev,
         commissionTerms: commissionTermsFromPreset("commission_free", type),
       }));
     },
-    [targetMarket],
+    [targetMarket, userRole, applyPrivateLandlordRentCommission],
+  );
+
+  const handleUserRoleChange = useCallback(
+    (role: UserRole) => {
+      setUserRole(role);
+      if (targetMarket !== "dach" || transactionType !== "rent") return;
+      if (role === "private_seller") {
+        applyPrivateLandlordRentCommission();
+      }
+    },
+    [targetMarket, transactionType, applyPrivateLandlordRentCommission],
   );
 
   const loadDachDemoListing = useCallback(() => {
@@ -641,9 +665,15 @@ function ListingStudioContent() {
     setTargetLanguage(draft.targetLanguage);
     setTargetMarket(draft.targetMarket ?? "dach");
     setUserRole(draft.userRole ?? "agent");
+    const isPrivateLandlordRent =
+      (draft.targetMarket ?? "dach") === "dach" &&
+      draft.transactionType === "rent" &&
+      (draft.userRole ?? "agent") === "private_seller";
     setCommissionPreset(
-      draft.commissionPreset ??
-        parseCommissionPreset(draft.sale.commissionTerms, draft.transactionType),
+      isPrivateLandlordRent
+        ? "commission_free"
+        : draft.commissionPreset ??
+            parseCommissionPreset(draft.sale.commissionTerms, draft.transactionType),
     );
     setBedrooms(draft.bedrooms ?? "");
     setBathrooms(draft.bathrooms ?? "");
@@ -656,7 +686,12 @@ function ListingStudioContent() {
     setFeatures(draft.features);
     setTone(draft.tone);
     setRent(draft.rent);
-    setSale(draft.sale);
+    setSale({
+      ...draft.sale,
+      commissionTerms: isPrivateLandlordRent
+        ? privateLandlordRentCommissionTerms()
+        : draft.sale.commissionTerms,
+    });
     setEnergy(draft.energy);
     setAgent(draft.agent);
     setPhotos((prev) => {
@@ -1361,7 +1396,7 @@ function ListingStudioContent() {
             targetMarket={targetMarket}
             onTargetMarket={handleTargetMarketChange}
             userRole={userRole}
-            onUserRole={setUserRole}
+            onUserRole={handleUserRoleChange}
             commissionPreset={commissionPreset}
             onCommissionPreset={handleCommissionPresetChange}
             bedrooms={bedrooms}

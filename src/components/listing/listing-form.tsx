@@ -26,6 +26,7 @@ import { blockNonNumericKey, sanitizeNumericInput } from "@/lib/numeric-input";
 import { LISTING_COUNTRY_OPTIONS } from "@/lib/location/format-address";
 import { btnPrimaryCompact, chipActive, chipInactive, segmentActive } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
+import { shouldShowDachCommissionControls } from "@/lib/listing-market-presets";
 import type {
   AgentFormData,
   EnergyCertificateType,
@@ -301,6 +302,8 @@ export function ListingForm(props: ListingFormProps) {
 
   const epcDetailsVisible = energy.certificateType !== "na";
   const isDach = targetMarket === "dach";
+  const showDachCommission =
+    isDach && shouldShowDachCommissionControls(transactionType, userRole);
   const [globalEnergyOpen, setGlobalEnergyOpen] = useState(false);
 
   const transactionToggle = (
@@ -675,7 +678,7 @@ export function ListingForm(props: ListingFormProps) {
             />
           )}
 
-          {!isDach ? null : (
+          {showDachCommission ? (
             <div className="sm:col-span-2 lg:col-span-3">
               <p className={labelClassName()}>{copy.commissionLabel}</p>
               <div className="mt-2 flex flex-col gap-2 sm:flex-row">
@@ -683,7 +686,9 @@ export function ListingForm(props: ListingFormProps) {
                   const freeLabel =
                     transactionType === "rent" ? copy.commissionFreeRent : copy.commissionFree;
                   const paidLabel =
-                    transactionType === "rent" ? copy.commissionTenant : copy.commissionBuyer;
+                    transactionType === "rent"
+                      ? copy.commissionLandlordPaid
+                      : copy.commissionBuyer;
                   const label = preset === "commission_free" ? freeLabel : paidLabel;
 
                   return (
@@ -709,7 +714,7 @@ export function ListingForm(props: ListingFormProps) {
                 })}
               </div>
             </div>
-          )}
+          ) : null}
 
           {!isDach && showCurrencySelect ? (
             <div>

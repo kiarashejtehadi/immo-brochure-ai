@@ -40,7 +40,7 @@ export function commissionTermsFromPreset(
       : "Provisionsfrei";
   }
   return transactionType === "rent"
-    ? "Mieterprovision 2 Kaltmieten zzgl. MwSt."
+    ? "Provision trägt Vermieter"
     : "Käuferprovision 3,57 % inkl. MwSt.";
 }
 
@@ -54,13 +54,25 @@ export function parseCommissionPreset(
   }
   if (
     transactionType === "rent" &&
-    (normalized.includes("mieterprovision") ||
-      normalized.includes("tenant commission") ||
-      normalized.includes("kaltmieten"))
+    (normalized.includes("vermieter") ||
+      normalized.includes("landlord") ||
+      normalized.includes("provision trägt"))
   ) {
     return "buyer_commission";
   }
   return "buyer_commission";
+}
+
+export function shouldShowDachCommissionControls(
+  transactionType: TransactionType,
+  userRole: UserRole,
+): boolean {
+  if (transactionType === "sale") return true;
+  return userRole === "agent";
+}
+
+export function privateLandlordRentCommissionTerms(): string {
+  return commissionTermsFromPreset("commission_free", "rent");
 }
 
 /** Sum net cold rent + utilities; empty parts treated as zero when the other is set. */
