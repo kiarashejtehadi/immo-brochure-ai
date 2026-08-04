@@ -20,9 +20,65 @@ const xmlParser = new XMLParser({
   removeNSPrefix: true,
 });
 
-function asArray<T>(value: T | T[] | null | undefined): T[] {
-  if (value == null) return [];
-  return Array.isArray(value) ? value : [value];
+function toArray<T>(val: T | T[] | null | undefined): T[] {
+  if (val == null) return [];
+  return Array.isArray(val) ? val : [val];
+}
+
+function getOpenImmoRoot(parsedXml: Record<string, unknown>): Record<string, unknown> {
+  const root =
+    parsedXml.openimmo ??
+    parsedXml["openimmo:openimmo"] ??
+    (parsedXml.immobilie || parsedXml.anbieter ? parsedXml : undefined);
+
+  if (!root || typeof root !== "object") {
+    throw new Error("Invalid XML: Root <openimmo> tag not found.");
+  }
+
+  return root as Record<string, unknown>;
+}
+
+function firstRecord(values: unknown[]): Record<string, unknown> | null {
+  for (const value of values) {
+    if (value && typeof value === "object") {
+      return value as Record<string, unknown>;
+    }
+  }
+  return null;
+}
+
+function firstImmobilieFromAnbieter(anbieter: Record<string, unknown>): Record<string, unknown> | null {
+  const immobilien = anbieter.immobilien as Record<string, unknown> | undefined;
+  if (immobilien) {
+    const fromImmobilien = firstRecord(toArray(immobilien.immobilie));
+    if (fromImmobilien) return fromImmobilien;
+  }
+
+  return firstRecord(toArray(anbieter.immobilie));
+}
+
+/** Normalize single objects or arrays and return the first `<immobilie>` node. */
+export function extractImmobilie(parsedXml: unknown): Record<string, unknown> {
+  if (!parsedXml || typeof parsedXml !== "object") {
+    throw new Error("Invalid XML: Root <openimmo> tag not found.");
+  }
+
+  const doc = parsedXml as Record<string, unknown>;
+  const root = getOpenImmoRoot(doc);
+
+  for (const anbieter of toArray(root.anbieter)) {
+    if (!anbieter || typeof anbieter !== "object") continue;
+    const immobilie = firstImmobilieFromAnbieter(anbieter as Record<string, unknown>);
+    if (immobilie) return immobilie;
+  }
+
+  const fromRoot = firstRecord(toArray(root.immobilie));
+  if (fromRoot) return fromRoot;
+
+  const fromDoc = firstRecord(toArray(doc.immobilie));
+  if (fromDoc) return fromDoc;
+
+  throw new Error("No OpenImmo property (immobilie) found in XML.");
 }
 
 function textValue(value: unknown): string {
@@ -52,22 +108,6 @@ function pickNode(root: unknown, ...paths: string[]): unknown {
     current = (current as Record<string, unknown>)[segment];
   }
   return current;
-}
-
-function findImmobilie(doc: Record<string, unknown>): Record<string, unknown> | null {
-  const candidates = [
-    pickNode(doc, "openimmo", "anbieter", "immobilie"),
-    pickNode(doc, "openimmo", "immobilie"),
-    pickNode(doc, "immobilie"),
-  ];
-
-  for (const candidate of candidates) {
-    const first = asArray(candidate)[0];
-    if (first && typeof first === "object") {
-      return first as Record<string, unknown>;
-    }
-  }
-  return null;
 }
 
 function normalizeDecimal(value: string): string {
@@ -151,7 +191,7 @@ function mapHeatingSource(value: string): HeatingSource | "" {
 
 function collectAnhangPaths(immobilie: Record<string, unknown>): string[] {
   const paths: string[] = [];
-  const anhaenge = asArray(
+  const anhaenge = toArray(
     pickNode(immobilie, "anhaenge", "anhang") ??
       pickNode(immobilie, "anhang") ??
       pickNode(immobilie, "anhaenge"),
@@ -236,10 +276,8 @@ export function parseOpenImmoXml(xml: string): OpenImmoImportResult {
   }
 
   const doc = parsed as Record<string, unknown>;
-  const immobilie = findImmobilie(doc);
-  if (!immobilie) {
-    throw new Error("No OpenImmo property (immobilie) found in XML.");
-  }
+  const root = getOpenImmoRoot(doc);
+  const immobilie = extractImmobilie(doc);
 
   const geo = (immobilie.geo ?? immobilie.geowesentliche ?? {}) as Record<string, unknown>;
   const preise = (immobilie.preise ?? {}) as Record<string, unknown>;
@@ -247,9 +285,7 @@ export function parseOpenImmoXml(xml: string): OpenImmoImportResult {
   const flaechen = (immobilie.flaechen ?? immobilie.flaeche ?? {}) as Record<string, unknown>;
   const zustand = (immobilie.zustand_angaben ?? {}) as Record<string, unknown>;
   const energiepass = (zustand.energiepass ?? {}) as Record<string, unknown>;
-  const uebertragung = (doc.openimmo as Record<string, unknown> | undefined)?.uebertragung as
-    | Record<string, unknown>
-    | undefined;
+  const uebertragung = root.uebertragung as Record<string, unknown> | undefined;
   const objektart = immobilie.objektart as Record<string, unknown> | undefined;
 
   const transactionType = mapTransactionType(
@@ -345,8 +381,9 @@ export async function parseOpenImmoUpload(
     }
 
     const xml = await xmlEntry.async("string");
+    const parsedDoc = xmlParser.parse(xml) as Record<string, unknown>;
     const parsed = parseOpenImmoXml(xml);
-    const immobilie = findImmobilie(xmlParser.parse(xml) as Record<string, unknown>);
+    const immobilie = extractImmobilie(parsedDoc);
     const referencedPaths = immobilie ? collectAnhangPaths(immobilie) : [];
     const images = await extractImagesFromZip(zip, referencedPaths);
     if (images.length > 0) {
