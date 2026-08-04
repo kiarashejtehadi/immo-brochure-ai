@@ -49,6 +49,16 @@ function getOpenImmoRoot(parsedXml: Record<string, unknown>): Record<string, unk
   return root as Record<string, unknown>;
 }
 
+const MEDIA_ARTIFACT = /^(jpe?g|png|webp|gif|pdf|xml|zip)$/i;
+
+function cleanImportedText(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || MEDIA_ARTIFACT.test(trimmed) || /\.(jpe?g|png|webp|gif|pdf)$/i.test(trimmed)) {
+    return "";
+  }
+  return trimmed;
+}
+
 function mapOpenImmoToAppState(
   immobilie: Record<string, unknown>,
   root: Record<string, unknown>,
@@ -75,9 +85,11 @@ function mapOpenImmoToAppState(
     getValue(objektart, "vermarktungsart"),
   );
 
-  const street = firstText(
-    [firstTextFromNode(geo, "strasse"), getText(geo, "hausnummer")].filter(Boolean).join(" ").trim(),
-    deepFindText(immobilie, ["strasse"]),
+  const street = cleanImportedText(
+    firstText(
+      [firstTextFromNode(geo, "strasse"), getText(geo, "hausnummer")].filter(Boolean).join(" ").trim(),
+      deepFindText(immobilie, ["strasse"]),
+    ),
   );
 
   const energyValue = firstTextFromNode(
@@ -97,36 +109,39 @@ function mapOpenImmoToAppState(
     "openimmo_obid",
   );
 
-  const rooms = firstTextFromNode(
-    flaechen,
-    "anzahl_zimmer",
-    "anzahl_schlafzimmer",
-    "zimmer",
-  ) || getText(geo, "anzahl_zimmer") || deepFindText(immobilie, ["anzahl_zimmer"]);
+  const rooms =
+    firstTextFromNode(flaechen, "anzahl_zimmer", "anzahl_schlafzimmer") ||
+    getText(geo, "anzahl_zimmer") ||
+    deepFindText(immobilie, ["anzahl_zimmer"]);
 
   const size = normalizeDecimal(
     firstTextFromNode(flaechen, "wohnflaeche", "gesamtflaeche", "nutzflaeche", "grundstuecksflaeche") ||
       deepFindText(immobilie, ["wohnflaeche", "gesamtflaeche"]),
   );
 
-  const title = firstTextFromNode(
-    freitexte,
-    "objekttitel",
-    "objekttitle",
-    "dreizeiler",
-    "ueberschrift",
-  ) || deepFindText(immobilie, ["objekttitel", "objekttitle", "dreizeiler"]);
+  const title = cleanImportedText(
+    firstTextFromNode(
+      freitexte,
+      "objekttitel",
+      "objekttitle",
+      "dreizeiler",
+      "ueberschrift",
+    ) || deepFindText(immobilie, ["objekttitel", "objekttitle", "dreizeiler"]),
+  );
 
-  const description =
+  const description = cleanImportedText(
     getText(freitexte, "objektbeschreibung") ||
-    deepFindText(immobilie, ["objektbeschreibung", "beschreibung"]);
+      deepFindText(immobilie, ["objektbeschreibung", "beschreibung"]),
+  );
 
-  const locationText = firstTextFromNode(
-    freitexte,
-    "lage",
-    "lagebeschreibung",
-    "ausstatt_beschr",
-  ) || deepFindText(immobilie, ["lage", "lagebeschreibung"]);
+  const locationText = cleanImportedText(
+    firstTextFromNode(
+      freitexte,
+      "lage",
+      "lagebeschreibung",
+      "ausstatt_beschr",
+    ) || deepFindText(immobilie, ["lage", "lagebeschreibung"]),
+  );
 
   const landNode = getValue(geo, "land");
   const country =
@@ -141,15 +156,15 @@ function mapOpenImmoToAppState(
     transactionType,
     address: {
       streetAddress: street,
-      postalCode: getText(geo, "plz") || deepFindText(immobilie, ["plz"]),
-      city: getText(geo, "ort") || deepFindText(immobilie, ["ort"]),
+      postalCode: cleanImportedText(getText(geo, "plz") || deepFindText(immobilie, ["plz"])),
+      city: cleanImportedText(getText(geo, "ort") || deepFindText(immobilie, ["ort"])),
       country,
     },
     size,
     rooms: normalizeDecimal(rooms),
     property: {
       propertyType: normalizePropertyType(immobilie),
-      floorLevel: getText(geo, "etage") || deepFindText(immobilie, ["etage"]),
+      floorLevel: cleanImportedText(getText(geo, "etage") || deepFindText(immobilie, ["etage"])),
       condition: normalizeCondition(firstTextFromNode(zustand, "zustand", "zustand_art")),
     },
     rent: {
@@ -279,9 +294,12 @@ export function extractImmobilie(parsedXml: unknown): Record<string, unknown> {
 function normalizeDecimal(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return "";
+  if (/\.(jpe?g|png|webp|gif|pdf|xml|zip)$/i.test(trimmed) || /^[a-zA-Z]+$/.test(trimmed)) {
+    return "";
+  }
   const normalized = trimmed.replace(/\s/g, "").replace(",", ".");
   const num = Number(normalized);
-  if (!Number.isFinite(num)) return trimmed;
+  if (!Number.isFinite(num)) return "";
   return String(num % 1 === 0 ? num : Math.round(num * 100) / 100);
 }
 

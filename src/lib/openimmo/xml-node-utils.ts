@@ -80,22 +80,21 @@ export function getChildNode(node: unknown, ...keys: string[]): Record<string, u
   return undefined;
 }
 
-function childNodes(node: unknown): unknown[] {
-  if (!node || typeof node !== "object") return [];
-  const record = node as Record<string, unknown>;
-  const items: unknown[] = [];
-  for (const [key, value] of Object.entries(record)) {
-    if (key.startsWith("@_") || key === "#text") continue;
-    if (Array.isArray(value)) items.push(...value);
-    else items.push(value);
-  }
-  return items;
-}
+const DEEP_FIND_SKIP_KEYS = new Set([
+  "anhaenge",
+  "anhang",
+  "bild",
+  "bilder",
+  "video",
+  "link",
+  "links",
+  "daten",
+  "datei",
+]);
 
 /** Walk the subtree and return the first non-empty text for any of the given tag names. */
 export function deepFindText(node: unknown, keys: readonly string[], maxDepth = 10): string {
-  if (maxDepth <= 0 || node == null) return "";
-  if (typeof node !== "object") return textValue(node);
+  if (maxDepth <= 0 || node == null || typeof node !== "object") return "";
 
   const record = node as Record<string, unknown>;
   for (const key of keys) {
@@ -103,9 +102,16 @@ export function deepFindText(node: unknown, keys: readonly string[], maxDepth = 
     if (text) return text;
   }
 
-  for (const child of childNodes(record)) {
-    const found = deepFindText(child, keys, maxDepth - 1);
-    if (found) return found;
+  for (const [childKey, value] of Object.entries(record)) {
+    if (childKey.startsWith("@_") || childKey === "#text") continue;
+    if (DEEP_FIND_SKIP_KEYS.has(childKey.toLowerCase())) continue;
+
+    const children = Array.isArray(value) ? value : [value];
+    for (const child of children) {
+      if (child == null || typeof child !== "object") continue;
+      const found = deepFindText(child, keys, maxDepth - 1);
+      if (found) return found;
+    }
   }
 
   return "";
