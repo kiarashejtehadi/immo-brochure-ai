@@ -27,6 +27,23 @@ export type OpenImmoFormStateSlice = {
   locationText: string;
 };
 
+export function hasMeaningfulOpenImmoImport(slice: OpenImmoFormStateSlice): boolean {
+  return Boolean(
+    slice.title ||
+      slice.description ||
+      slice.locationText ||
+      slice.address.streetAddress ||
+      slice.address.city ||
+      slice.address.postalCode ||
+      slice.size ||
+      slice.rooms ||
+      slice.rent.netColdRent ||
+      slice.rent.totalRent ||
+      slice.sale.purchasePrice ||
+      slice.property.propertyType,
+  );
+}
+
 export function buildOpenImmoFormStateSlice(
   rawData: OpenImmoImportResult,
   defaults: {

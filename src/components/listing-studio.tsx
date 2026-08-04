@@ -48,7 +48,7 @@ import {
   stripPlainSocialText,
   truncateMlsCaption,
 } from "@/lib/social-copy-presets";
-import { buildOpenImmoFormStateSlice, importedImagesToFiles } from "@/lib/openimmo/apply-openimmo-import";
+import { buildOpenImmoFormStateSlice, hasMeaningfulOpenImmoImport, importedImagesToFiles } from "@/lib/openimmo/apply-openimmo-import";
 import type { OpenImmoImportApiResponse, OpenImmoImportResult } from "@/types/openimmo-import";
 import {
   outputLanguageFromLocale,
@@ -576,6 +576,7 @@ function ListingStudioContent() {
   const draftLifecycleRef = useRef<{ ownerKey?: string; hydrated: boolean }>({
     hydrated: false,
   });
+  const openImmoImportGuardRef = useRef(false);
 
   useEffect(() => {
     brandingAutoFillDone.current = false;
@@ -758,9 +759,13 @@ function ListingStudioContent() {
     if (!draftLifecycleRef.current.hydrated) {
       draftLifecycleRef.current.hydrated = true;
       draftLifecycleRef.current.ownerKey = ownerKey;
-      const draft = readListingStudioDraft();
-      if (draft && draft.ownerKey === ownerKey) {
-        applyListingDraft(draft);
+      if (!openImmoImportGuardRef.current) {
+        const draft = readListingStudioDraft();
+        if (draft && draft.ownerKey === ownerKey) {
+          applyListingDraft(draft);
+        }
+      } else {
+        openImmoImportGuardRef.current = false;
       }
       setDraftHydrated(true);
       return;
@@ -768,6 +773,10 @@ function ListingStudioContent() {
 
     if (draftLifecycleRef.current.ownerKey !== ownerKey) {
       draftLifecycleRef.current.ownerKey = ownerKey;
+      if (openImmoImportGuardRef.current) {
+        openImmoImportGuardRef.current = false;
+        return;
+      }
       clearListingStudioDraft();
       resetFormToDefaults();
     }
@@ -1117,7 +1126,12 @@ function ListingStudioContent() {
 
   const applyOpenImmoImportData = useCallback(
     (rawData: OpenImmoImportResult) => {
+      const ownerKey = draftOwnerKey(billingStatus?.email ?? authEmail ?? null);
+      openImmoImportGuardRef.current = true;
+      draftLifecycleRef.current.hydrated = true;
+      draftLifecycleRef.current.ownerKey = ownerKey;
       clearListingStudioDraft();
+      setDraftHydrated(true);
 
       const slice = buildOpenImmoFormStateSlice(rawData, {
         address: { ...DEFAULT_LISTING_ADDRESS, country: "Germany" },
@@ -1126,6 +1140,12 @@ function ListingStudioContent() {
         sale: EMPTY_SALE,
         energy: DEFAULT_ENERGY,
       });
+
+      if (!hasMeaningfulOpenImmoImport(slice)) {
+        console.warn("[openimmo] Import payload contained no mappable fields:", rawData);
+        throw new Error(copy.openImmoImportError);
+      }
+
       const importedType = slice.transactionType ?? transactionType;
 
       setTargetMarket("dach");
@@ -1192,7 +1212,7 @@ function ListingStudioContent() {
       setOpenImmoImportAppliedTick((tick) => tick + 1);
       showToast(copy.openImmoImportSuccess);
     },
-    [copy, formCopy, showToast, transactionType, userRole],
+    [authEmail, billingStatus?.email, copy, formCopy, showToast, transactionType, userRole],
   );
 
   const handleOpenImmoImport = useCallback(
@@ -1235,7 +1255,6 @@ function ListingStudioContent() {
           ? (openImmoPickerPropertiesRef.current[property.importIndex] ?? property)
           : property;
 
-      console.log("[openimmo] Applying selected property:", resolved);
       setOpenImmoPickerOpen(false);
       setOpenImmoPickerProperties([]);
       openImmoPickerPropertiesRef.current = [];

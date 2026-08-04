@@ -23,7 +23,6 @@ export function OpenImmoPropertyPickerModal({
   if (!open) return null;
 
   function handleSelectProperty(property: OpenImmoImportResult) {
-    console.log("👉 Selected OpenImmo Property Payload:", property);
     onSelectProperty(property);
   }
 
