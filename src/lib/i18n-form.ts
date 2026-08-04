@@ -146,6 +146,11 @@ export type FormCopy = {
   dachConditionRenovated: string;
   dachConditionMaintained: string;
   dachConditionNeedsRenovation: string;
+  openImmoImportLabel: string;
+  openImmoImportHint: string;
+  openImmoImporting: string;
+  openImmoImportSuccess: string;
+  openImmoImportError: string;
 };
 
 const en: FormCopy = {
@@ -298,6 +303,11 @@ const en: FormCopy = {
   dachConditionRenovated: "Renovated (Saniert)",
   dachConditionMaintained: "Well maintained (Gepflegt)",
   dachConditionNeedsRenovation: "Needs renovation (Renovierungsbedürftig)",
+  openImmoImportLabel: "📁 Import OpenImmo XML / ZIP (1-Click)",
+  openImmoImportHint: "Drop an OpenImmo export (.xml or .zip) to auto-fill the form.",
+  openImmoImporting: "Importing OpenImmo file…",
+  openImmoImportSuccess: "Import successful! The form has been filled automatically.",
+  openImmoImportError: "Could not import OpenImmo file. Please check the file and try again.",
 };
 
 const de: Partial<FormCopy> = {
@@ -449,6 +459,11 @@ const de: Partial<FormCopy> = {
   dachConditionRenovated: "Saniert",
   dachConditionMaintained: "Gepflegt",
   dachConditionNeedsRenovation: "Renovierungsbedürftig",
+  openImmoImportLabel: "📁 OpenImmo XML / ZIP importieren (1-Klick)",
+  openImmoImportHint: "OpenImmo-Export (.xml oder .zip) ablegen, um das Formular automatisch auszufüllen.",
+  openImmoImporting: "OpenImmo-Datei wird importiert…",
+  openImmoImportSuccess: "Import erfolgreich! Formular wurde automatisch ausgefüllt.",
+  openImmoImportError: "OpenImmo-Import fehlgeschlagen. Bitte Datei prüfen und erneut versuchen.",
 };
 
 const fr: Partial<FormCopy> = {

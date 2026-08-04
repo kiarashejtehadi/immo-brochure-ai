@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
 import { FormAccordionCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
 import { CommissionField } from "@/components/listing/commission-field";
+import { OpenImmoImportDropzone } from "@/components/listing/openimmo-import-dropzone";
 import { MarketConfigBar } from "@/components/listing/market-config-bar";
 import type { BillingStatusResponse } from "@/types/billing";
 import type { FormCopy } from "@/lib/i18n-form";
@@ -184,6 +185,7 @@ export type ListingFormProps = {
   bathrooms: string;
   onBathrooms: (value: string) => void;
   onFillDemoDach?: () => void;
+  onOpenImmoImport?: (file: File) => Promise<void>;
   transactionType: TransactionType;
   onTransactionType: (type: TransactionType) => void;
   property: PropertyDetails;
@@ -249,6 +251,7 @@ export function ListingForm(props: ListingFormProps) {
     bathrooms,
     onBathrooms,
     onFillDemoDach,
+    onOpenImmoImport,
     transactionType,
     onTransactionType,
     property,
@@ -402,6 +405,15 @@ export function ListingForm(props: ListingFormProps) {
 
   const [openStep, setOpenStep] = useState(1);
 
+  const handleOpenImmoImport = useCallback(
+    async (file: File) => {
+      if (!onOpenImmoImport) return;
+      await onOpenImmoImport(file);
+      setOpenStep(1);
+    },
+    [onOpenImmoImport],
+  );
+
   return (
     <div className="space-y-3 pb-8">
       <MarketConfigBar
@@ -411,6 +423,10 @@ export function ListingForm(props: ListingFormProps) {
         userRole={userRole}
         onUserRole={onUserRole}
       />
+
+      {onOpenImmoImport ? (
+        <OpenImmoImportDropzone copy={copy} onImport={handleOpenImmoImport} />
+      ) : null}
 
       <FormAccordionCard
         step={1}

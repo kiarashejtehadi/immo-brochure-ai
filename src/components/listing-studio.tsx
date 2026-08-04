@@ -47,7 +47,8 @@ import {
   stripPlainSocialText,
   truncateMlsCaption,
 } from "@/lib/social-copy-presets";
-import { CopyToastProvider, useCopyToast } from "@/components/ui/copy-toast";
+import { importedImagesToFiles } from "@/lib/openimmo/apply-openimmo-import";
+import type { OpenImmoImportResult } from "@/types/openimmo-import";
 import {
   outputLanguageFromLocale,
   localeFromTargetLanguage,
@@ -70,6 +71,7 @@ import { getFurnishingDisclaimerText } from "@/lib/furnishing-guardrail";
 import { applyVoiceParseResult } from "@/lib/voice/apply-voice-parse";
 import type { VoiceParseResult } from "@/types/voice-parse";
 import { StagingDisclaimerFooter } from "@/components/listing/staging-disclaimer";
+import { CopyToastProvider, useCopyToast } from "@/components/ui/copy-toast";
 import type { UserBrandingProfile } from "@/types/branding";
 import { importWithChunkRetry } from "@/lib/import-with-chunk-retry";
 import {
@@ -1108,6 +1110,117 @@ function ListingStudioContent() {
     });
   }, []);
 
+  const handleOpenImmoImport = useCallback(
+    async (file: File) => {
+      try {
+        const body = new FormData();
+        body.append("file", file);
+        const res = await fetch("/api/import/openimmo", { method: "POST", body });
+        const payload = (await res.json()) as {
+          ok?: boolean;
+          data?: OpenImmoImportResult;
+          error?: string;
+        };
+
+        if (!res.ok || !payload.data) {
+          throw new Error(payload.error || copy.openImmoImportError);
+        }
+
+        const data = payload.data;
+        const importedType = data.transactionType ?? transactionType;
+
+        setTargetMarket("dach");
+        setTargetLanguage("German");
+        setCurrency("EUR");
+
+        if (data.transactionType) {
+          setTransactionType(data.transactionType);
+        }
+
+        if (data.address) {
+          setAddress((prev) => ({
+            ...prev,
+            ...data.address,
+            streetAddress: data.address?.streetAddress ?? prev.streetAddress,
+            postalCode: data.address?.postalCode ?? prev.postalCode,
+            city: data.address?.city ?? prev.city,
+            country: data.address?.country ?? prev.country,
+          }));
+        }
+
+        if (data.size) setSize(data.size);
+        if (data.rooms) setRooms(data.rooms);
+
+        if (data.property) {
+          setProperty((prev) => ({ ...prev, ...data.property }));
+        }
+
+        if (data.rent) {
+          setRent((prev) => ({ ...prev, ...data.rent }));
+          totalRentManualRef.current = Boolean(data.rent?.totalRent?.trim());
+        }
+
+        if (data.sale) {
+          setSale((prev) => ({ ...prev, ...data.sale }));
+        }
+
+        if (data.energy) {
+          setEnergy((prev) => ({ ...prev, ...data.energy }));
+        }
+
+        if (userRole === "private_seller") {
+          setCommissionPreset("commission_free");
+          setSale((prev) => ({
+            ...prev,
+            commissionTerms: privateSellerCommissionFreeTerms(importedType, formCopy),
+          }));
+        } else {
+          setCommissionPreset("commission_free");
+          setSale((prev) => ({
+            ...prev,
+            commissionTerms: commissionFreeTerms(importedType, formCopy),
+          }));
+        }
+
+        const importedTitle = data.title?.trim() ?? "";
+        const importedDescription = data.description?.trim() ?? "";
+        const importedLocation = data.locationText?.trim() ?? "";
+        if (importedTitle || importedDescription || importedLocation) {
+          setResult({
+            title: importedTitle || "Imported listing",
+            summary: importedDescription
+              ? [importedDescription.slice(0, 120)]
+              : importedLocation
+                ? [importedLocation.slice(0, 120)]
+                : [],
+            fullDescription: importedDescription,
+            locationDescription: importedLocation || "—",
+            socialCaptions: { instagram: "", linkedin: "", facebook: "" },
+          });
+          setHasGenerated(true);
+          setPreviewTab(importedDescription ? "story" : "location");
+        }
+
+        const imageFiles = importedImagesToFiles(data);
+        if (imageFiles.length > 0) {
+          setPhotos((prev) => {
+            for (const photo of prev) URL.revokeObjectURL(photo.url);
+            return [];
+          });
+          addPhotos(imageFiles);
+        }
+
+        setIsDemoSample(false);
+        setGenerateError(null);
+        showToast(copy.openImmoImportSuccess);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : copy.openImmoImportError;
+        window.alert(message);
+      }
+    },
+    [addPhotos, copy, formCopy, showToast, transactionType, userRole],
+  );
+
   function removePhoto(id: string) {
     setPhotos((prev) => {
       const target = prev.find((p) => p.id === id);
@@ -1421,6 +1534,7 @@ function ListingStudioContent() {
             bathrooms={bathrooms}
             onBathrooms={setBathrooms}
             onFillDemoDach={loadDachDemoListing}
+            onOpenImmoImport={handleOpenImmoImport}
             transactionType={transactionType}
             onTransactionType={handleTransactionTypeChange}
             property={property}
