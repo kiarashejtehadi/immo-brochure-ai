@@ -1141,7 +1141,7 @@ function ListingStudioContent() {
         energy: DEFAULT_ENERGY,
       });
 
-      if (!hasMeaningfulOpenImmoImport(slice)) {
+      if (!hasMeaningfulOpenImmoImport(slice, rawData)) {
         console.warn("[openimmo] Import payload contained no mappable fields:", rawData);
         throw new Error(copy.openImmoImportError);
       }

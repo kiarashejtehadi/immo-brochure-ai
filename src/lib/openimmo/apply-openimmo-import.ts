@@ -27,20 +27,45 @@ export type OpenImmoFormStateSlice = {
   locationText: string;
 };
 
-export function hasMeaningfulOpenImmoImport(slice: OpenImmoFormStateSlice): boolean {
-  return Boolean(
+export function hasMeaningfulOpenImmoImport(
+  slice: OpenImmoFormStateSlice,
+  raw?: OpenImmoImportResult,
+): boolean {
+  if (
     slice.title ||
-      slice.description ||
-      slice.locationText ||
-      slice.address.streetAddress ||
-      slice.address.city ||
-      slice.address.postalCode ||
-      slice.size ||
-      slice.rooms ||
-      slice.rent.netColdRent ||
-      slice.rent.totalRent ||
-      slice.sale.purchasePrice ||
-      slice.property.propertyType,
+    slice.description ||
+    slice.locationText ||
+    slice.address.streetAddress ||
+    slice.address.city ||
+    slice.address.postalCode ||
+    slice.size ||
+    slice.rooms ||
+    slice.rent.netColdRent ||
+    slice.rent.totalRent ||
+    slice.sale.purchasePrice ||
+    slice.property.propertyType ||
+    slice.transactionType
+  ) {
+    return true;
+  }
+
+  if (!raw) return false;
+
+  return Boolean(
+    raw.title ||
+      raw.description ||
+      raw.locationText ||
+      raw.address?.streetAddress ||
+      raw.address?.city ||
+      raw.address?.postalCode ||
+      raw.size ||
+      raw.rooms ||
+      raw.rent?.netColdRent ||
+      raw.rent?.totalRent ||
+      raw.sale?.purchasePrice ||
+      raw.property?.propertyType ||
+      raw.transactionType ||
+      (raw.images?.length ?? 0) > 0,
   );
 }
 

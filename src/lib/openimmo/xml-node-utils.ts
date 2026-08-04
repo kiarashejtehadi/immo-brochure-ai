@@ -79,3 +79,34 @@ export function getChildNode(node: unknown, ...keys: string[]): Record<string, u
   }
   return undefined;
 }
+
+function childNodes(node: unknown): unknown[] {
+  if (!node || typeof node !== "object") return [];
+  const record = node as Record<string, unknown>;
+  const items: unknown[] = [];
+  for (const [key, value] of Object.entries(record)) {
+    if (key.startsWith("@_") || key === "#text") continue;
+    if (Array.isArray(value)) items.push(...value);
+    else items.push(value);
+  }
+  return items;
+}
+
+/** Walk the subtree and return the first non-empty text for any of the given tag names. */
+export function deepFindText(node: unknown, keys: readonly string[], maxDepth = 10): string {
+  if (maxDepth <= 0 || node == null) return "";
+  if (typeof node !== "object") return textValue(node);
+
+  const record = node as Record<string, unknown>;
+  for (const key of keys) {
+    const text = getText(record, key);
+    if (text) return text;
+  }
+
+  for (const child of childNodes(record)) {
+    const found = deepFindText(child, keys, maxDepth - 1);
+    if (found) return found;
+  }
+
+  return "";
+}

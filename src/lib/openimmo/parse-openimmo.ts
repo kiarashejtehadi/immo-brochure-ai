@@ -10,6 +10,7 @@ import {
   normalizePropertyType,
 } from "@/lib/openimmo/normalize-openimmo-enums";
 import {
+  deepFindText,
   firstText,
   firstTextFromNode,
   getChildNode,
@@ -52,12 +53,13 @@ function mapOpenImmoToAppState(
   immobilie: Record<string, unknown>,
   root: Record<string, unknown>,
 ): OpenImmoImportResult {
-  const geo = getChildNode(immobilie, "geo", "geowesentliche") ?? {};
-  const preise = getChildNode(immobilie, "preise") ?? {};
+  const geo = getChildNode(immobilie, "geo", "geographie", "adresse", "geowesentliche") ?? {};
+  const preise = getChildNode(immobilie, "preise", "preis") ?? {};
   const freitexte = getChildNode(immobilie, "freitexte") ?? {};
   const flaechen = getChildNode(immobilie, "flaechen", "flaeche") ?? {};
-  const zustand = getChildNode(immobilie, "zustand_angaben") ?? {};
+  const zustand = getChildNode(immobilie, "zustand_angaben", "zustand") ?? {};
   const energiepass = getChildNode(zustand, "energiepass") ?? {};
+  const ausstattung = getChildNode(immobilie, "ausstattung") ?? {};
   const uebertragung = getChildNode(root, "uebertragung");
   const objektart = getChildNode(immobilie, "objektart");
   const objektkategorie = getChildNode(immobilie, "objektkategorie");
@@ -73,7 +75,10 @@ function mapOpenImmoToAppState(
     getValue(objektart, "vermarktungsart"),
   );
 
-  const street = [firstTextFromNode(geo, "strasse"), getText(geo, "hausnummer")].filter(Boolean).join(" ").trim();
+  const street = firstText(
+    [firstTextFromNode(geo, "strasse"), getText(geo, "hausnummer")].filter(Boolean).join(" ").trim(),
+    deepFindText(immobilie, ["strasse"]),
+  );
 
   const energyValue = firstTextFromNode(
     energiepass,
@@ -89,34 +94,85 @@ function mapOpenImmoToAppState(
     "objektnr_extern",
     "objektnr_intern",
     "objektnr",
+    "openimmo_obid",
   );
+
+  const rooms = firstTextFromNode(
+    flaechen,
+    "anzahl_zimmer",
+    "anzahl_schlafzimmer",
+    "zimmer",
+  ) || getText(geo, "anzahl_zimmer") || deepFindText(immobilie, ["anzahl_zimmer"]);
+
+  const size = normalizeDecimal(
+    firstTextFromNode(flaechen, "wohnflaeche", "gesamtflaeche", "nutzflaeche", "grundstuecksflaeche") ||
+      deepFindText(immobilie, ["wohnflaeche", "gesamtflaeche"]),
+  );
+
+  const title = firstTextFromNode(
+    freitexte,
+    "objekttitel",
+    "objekttitle",
+    "dreizeiler",
+    "ueberschrift",
+  ) || deepFindText(immobilie, ["objekttitel", "objekttitle", "dreizeiler"]);
+
+  const description =
+    getText(freitexte, "objektbeschreibung") ||
+    deepFindText(immobilie, ["objektbeschreibung", "beschreibung"]);
+
+  const locationText = firstTextFromNode(
+    freitexte,
+    "lage",
+    "lagebeschreibung",
+    "ausstatt_beschr",
+  ) || deepFindText(immobilie, ["lage", "lagebeschreibung"]);
+
+  const landNode = getValue(geo, "land");
+  const country =
+    firstTextFromNode(geo, "land") ||
+    textValue(getValue(landNode, "iso_land")) ||
+    deepFindText(geo, ["land", "iso_land"]) ||
+    "Germany";
 
   return {
     importId: importId || undefined,
-    title: firstTextFromNode(freitexte, "objekttitel", "objekttitle"),
+    title,
     transactionType,
     address: {
       streetAddress: street,
-      postalCode: getText(geo, "plz"),
-      city: getText(geo, "ort"),
-      country: firstTextFromNode(geo, "land") || "Germany",
+      postalCode: getText(geo, "plz") || deepFindText(immobilie, ["plz"]),
+      city: getText(geo, "ort") || deepFindText(immobilie, ["ort"]),
+      country,
     },
-    size: normalizeDecimal(firstTextFromNode(flaechen, "wohnflaeche", "gesamtflaeche")),
-    rooms: normalizeDecimal(getText(geo, "anzahl_zimmer")),
+    size,
+    rooms: normalizeDecimal(rooms),
     property: {
       propertyType: normalizePropertyType(immobilie),
-      floorLevel: getText(geo, "etage"),
+      floorLevel: getText(geo, "etage") || deepFindText(immobilie, ["etage"]),
       condition: normalizeCondition(firstTextFromNode(zustand, "zustand", "zustand_art")),
     },
     rent: {
-      netColdRent: normalizeDecimal(getText(preise, "kaltmiete")),
-      utilityCharges: normalizeDecimal(getText(preise, "nebenkosten")),
-      totalRent: normalizeDecimal(getText(preise, "warmmiete")),
+      netColdRent: normalizeDecimal(
+        firstTextFromNode(preise, "kaltmiete", "nettokaltmiete", "netto_kaltmiete") ||
+          deepFindText(immobilie, ["kaltmiete", "nettokaltmiete"]),
+      ),
+      utilityCharges: normalizeDecimal(
+        firstTextFromNode(preise, "nebenkosten", "betriebskosten", "nebenkostenpauschale") ||
+          deepFindText(immobilie, ["nebenkosten"]),
+      ),
+      totalRent: normalizeDecimal(
+        firstTextFromNode(preise, "warmmiete", "gesamtmiete") ||
+          deepFindText(immobilie, ["warmmiete", "gesamtmiete"]),
+      ),
       securityDeposit: firstTextFromNode(preise, "kaution", "kaution_text"),
     },
     sale: {
-      purchasePrice: normalizeDecimal(getText(preise, "kaufpreis")),
-      hoaFee: normalizeDecimal(getText(preise, "hausgeld")),
+      purchasePrice: normalizeDecimal(
+        firstTextFromNode(preise, "kaufpreis", "kaufpreisnetto", "verkehrswert") ||
+          deepFindText(immobilie, ["kaufpreis", "kaufpreisnetto"]),
+      ),
+      hoaFee: normalizeDecimal(firstTextFromNode(preise, "hausgeld", "monatliche_kosten")),
     },
     energy: {
       certificateType: normalizeCertificateType(firstTextFromNode(energiepass, "art", "epart")),
@@ -130,12 +186,14 @@ function mapOpenImmoToAppState(
           "energietraeger",
           "primaerenergietraeger",
           "heizungsart",
-        ) || firstTextFromNode(zustand, "energietraeger"),
+        ) ||
+          firstTextFromNode(ausstattung, "heizungsart", "befeuerung", "energietraeger") ||
+          firstTextFromNode(zustand, "energietraeger"),
       ),
       constructionYear: firstTextFromNode(zustand, "baujahr", "baujahr_antrag"),
     },
-    description: getText(freitexte, "objektbeschreibung"),
-    locationText: firstTextFromNode(freitexte, "lage", "lagebeschreibung"),
+    description,
+    locationText,
   };
 }
 

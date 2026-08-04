@@ -102,6 +102,7 @@ export function normalizePropertyType(immobilie: Record<string, unknown>): Prope
     }
 
     if (getValue(objArt, "grundstueck") !== undefined) return "land";
+    if (getValue(objArt, "zimmer") !== undefined) return "apartment";
     if (getValue(objArt, "buero_praxen") !== undefined || getValue(objArt, "gewerbe") !== undefined) {
       return "commercial";
     }
