@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
 import { FormAccordionCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
@@ -186,6 +186,7 @@ export type ListingFormProps = {
   onBathrooms: (value: string) => void;
   onFillDemoDach?: () => void;
   onOpenImmoImport?: (file: File) => Promise<void>;
+  openImmoImportAppliedTick?: number;
   transactionType: TransactionType;
   onTransactionType: (type: TransactionType) => void;
   property: PropertyDetails;
@@ -252,6 +253,7 @@ export function ListingForm(props: ListingFormProps) {
     onBathrooms,
     onFillDemoDach,
     onOpenImmoImport,
+    openImmoImportAppliedTick,
     transactionType,
     onTransactionType,
     property,
@@ -404,6 +406,12 @@ export function ListingForm(props: ListingFormProps) {
   );
 
   const [openStep, setOpenStep] = useState(1);
+
+  useEffect(() => {
+    if (openImmoImportAppliedTick && openImmoImportAppliedTick > 0) {
+      setOpenStep(1);
+    }
+  }, [openImmoImportAppliedTick]);
 
   const handleOpenImmoImport = useCallback(
     async (file: File) => {

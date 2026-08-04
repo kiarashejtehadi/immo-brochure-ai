@@ -562,6 +562,8 @@ function ListingStudioContent() {
   const [authOpen, setAuthOpen] = useState(false);
   const [openImmoPickerOpen, setOpenImmoPickerOpen] = useState(false);
   const [openImmoPickerProperties, setOpenImmoPickerProperties] = useState<OpenImmoImportResult[]>([]);
+  const [openImmoImportAppliedTick, setOpenImmoImportAppliedTick] = useState(0);
+  const openImmoPickerPropertiesRef = useRef<OpenImmoImportResult[]>([]);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const { status: billingStatus, loading: billingLoading, refresh: refreshBilling } = useBillingStatus();
   const [brandingProfile, setBrandingProfile] = useState<UserBrandingProfile | null>(null);
@@ -1115,6 +1117,8 @@ function ListingStudioContent() {
 
   const applyOpenImmoImportData = useCallback(
     (rawData: OpenImmoImportResult) => {
+      clearListingStudioDraft();
+
       const slice = buildOpenImmoFormStateSlice(rawData, {
         address: { ...DEFAULT_LISTING_ADDRESS, country: "Germany" },
         property: DEFAULT_PROPERTY,
@@ -1127,10 +1131,7 @@ function ListingStudioContent() {
       setTargetMarket("dach");
       setTargetLanguage("German");
       setCurrency("EUR");
-
-      if (slice.transactionType) {
-        setTransactionType(slice.transactionType);
-      }
+      setTransactionType(slice.transactionType ?? "rent");
 
       setAddress(slice.address);
       setSize(slice.size);
@@ -1167,20 +1168,31 @@ function ListingStudioContent() {
         setHasGenerated(false);
       }
 
-      setPhotos((prev) => {
-        for (const photo of prev) URL.revokeObjectURL(photo.url);
-        return [];
-      });
-      const imageFiles = importedImagesToFiles(rawData);
-      if (imageFiles.length > 0) {
-        addPhotos(imageFiles);
+      try {
+        const imageFiles = importedImagesToFiles(rawData);
+        setPhotos((prev) => {
+          for (const photo of prev) URL.revokeObjectURL(photo.url);
+          const toAdd = imageFiles.slice(0, MAX_PHOTOS).map((file) => ({
+            id: `${file.name}-${file.size}-${crypto.randomUUID()}`,
+            file,
+            url: URL.createObjectURL(file),
+          }));
+          return toAdd;
+        });
+      } catch (err) {
+        console.error("[openimmo] Failed to import images:", err);
+        setPhotos((prev) => {
+          for (const photo of prev) URL.revokeObjectURL(photo.url);
+          return [];
+        });
       }
 
       setIsDemoSample(false);
       setGenerateError(null);
+      setOpenImmoImportAppliedTick((tick) => tick + 1);
       showToast(copy.openImmoImportSuccess);
     },
-    [addPhotos, copy, formCopy, showToast, transactionType, userRole],
+    [copy, formCopy, showToast, transactionType, userRole],
   );
 
   const handleOpenImmoImport = useCallback(
@@ -1190,17 +1202,23 @@ function ListingStudioContent() {
         body.append("file", file);
         const res = await fetch("/api/import/openimmo", { method: "POST", body });
         const payload = (await res.json()) as OpenImmoImportApiResponse;
+        const properties = Array.isArray(payload.data)
+          ? payload.data
+          : payload.data
+            ? [payload.data]
+            : [];
 
-        if (!res.ok || !payload.data?.length) {
+        if (!res.ok || properties.length === 0) {
           throw new Error(payload.error || copy.openImmoImportError);
         }
 
-        if (payload.data.length === 1) {
-          applyOpenImmoImportData(payload.data[0]);
+        if (properties.length === 1) {
+          applyOpenImmoImportData(properties[0]);
           return;
         }
 
-        setOpenImmoPickerProperties(payload.data);
+        openImmoPickerPropertiesRef.current = properties;
+        setOpenImmoPickerProperties(properties);
         setOpenImmoPickerOpen(true);
       } catch (err) {
         const message = err instanceof Error ? err.message : copy.openImmoImportError;
@@ -1212,9 +1230,25 @@ function ListingStudioContent() {
 
   const handleOpenImmoPropertySelect = useCallback(
     (property: OpenImmoImportResult) => {
-      applyOpenImmoImportData(property);
+      const resolved =
+        property.importIndex != null
+          ? (openImmoPickerPropertiesRef.current[property.importIndex] ?? property)
+          : property;
+
+      console.log("[openimmo] Applying selected property:", resolved);
+      setOpenImmoPickerOpen(false);
+      setOpenImmoPickerProperties([]);
+      openImmoPickerPropertiesRef.current = [];
+
+      try {
+        applyOpenImmoImportData(resolved);
+      } catch (err) {
+        console.error("[openimmo] Failed to apply selected property:", err);
+        const message = err instanceof Error ? err.message : copy.openImmoImportError;
+        window.alert(message);
+      }
     },
-    [applyOpenImmoImportData],
+    [applyOpenImmoImportData, copy.openImmoImportError],
   );
 
   function removePhoto(id: string) {
@@ -1531,6 +1565,7 @@ function ListingStudioContent() {
             onBathrooms={setBathrooms}
             onFillDemoDach={loadDachDemoListing}
             onOpenImmoImport={handleOpenImmoImport}
+            openImmoImportAppliedTick={openImmoImportAppliedTick}
             transactionType={transactionType}
             onTransactionType={handleTransactionTypeChange}
             property={property}
@@ -1852,6 +1887,7 @@ function ListingStudioContent() {
         onClose={() => {
           setOpenImmoPickerOpen(false);
           setOpenImmoPickerProperties([]);
+          openImmoPickerPropertiesRef.current = [];
         }}
       />
       <AuthEmailModal open={authOpen} onClose={() => setAuthOpen(false)} onSent={() => setAuthOpen(false)} />

@@ -25,12 +25,11 @@ export function OpenImmoPropertyPickerModal({
   function handleSelectProperty(property: OpenImmoImportResult) {
     console.log("👉 Selected OpenImmo Property Payload:", property);
     onSelectProperty(property);
-    onClose();
   }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="openimmo-picker-title"
@@ -51,7 +50,11 @@ export function OpenImmoPropertyPickerModal({
             <li key={property.importId ?? `${property.title ?? "property"}-${index}`}>
               <button
                 type="button"
-                onClick={() => handleSelectProperty(property)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSelectProperty(property);
+                }}
                 className={cn(
                   "flex w-full flex-col rounded-xl px-4 py-3 text-left transition",
                   "hover:bg-indigo-50 dark:hover:bg-indigo-950/40",
