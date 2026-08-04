@@ -48,7 +48,7 @@ import {
   stripPlainSocialText,
   truncateMlsCaption,
 } from "@/lib/social-copy-presets";
-import { importedImagesToFiles } from "@/lib/openimmo/apply-openimmo-import";
+import { importedImagesToFiles, prepareOpenImmoImportForForm } from "@/lib/openimmo/apply-openimmo-import";
 import type { OpenImmoImportApiResponse, OpenImmoImportResult } from "@/types/openimmo-import";
 import {
   outputLanguageFromLocale,
@@ -1114,7 +1114,8 @@ function ListingStudioContent() {
   }, []);
 
   const applyOpenImmoImportData = useCallback(
-    (data: OpenImmoImportResult) => {
+    (rawData: OpenImmoImportResult) => {
+      const data = prepareOpenImmoImportForForm(rawData);
       const importedType = data.transactionType ?? transactionType;
 
       setTargetMarket("dach");

@@ -1,4 +1,9 @@
 import type { OpenImmoImportResult } from "@/types/openimmo-import";
+import { sanitizeOpenImmoImportResult } from "@/lib/openimmo/normalize-openimmo-enums";
+
+export function prepareOpenImmoImportForForm(data: OpenImmoImportResult): OpenImmoImportResult {
+  return sanitizeOpenImmoImportResult(data);
+}
 
 export function openImmoPropertyLabel(property: OpenImmoImportResult, index: number): string {
   const title = property.title?.trim();

@@ -1,14 +1,14 @@
 import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
-import type {
-  EnergyCertificateType,
-  EnergyClass,
-  HeatingSource,
-  PropertyCondition,
-  PropertyType,
-  TransactionType,
-} from "@/types/listing";
+import type { TransactionType } from "@/types/listing";
 import type { OpenImmoImportResult, OpenImmoImportedImage } from "@/types/openimmo-import";
+import {
+  normalizeCertificateType,
+  normalizeCondition,
+  normalizeEnergyClass,
+  normalizeHeatingType,
+  normalizePropertyType,
+} from "@/lib/openimmo/normalize-openimmo-enums";
 
 const IMAGE_EXT = /\.(jpe?g|png|webp)$/i;
 
@@ -83,11 +83,9 @@ function mapOpenImmoToAppState(
     size: normalizeDecimal(firstText(flaechen.wohnflaeche, flaechen.gesamtflaeche)),
     rooms: normalizeDecimal(firstText(geo.anzahl_zimmer, pickNode(geo, "anzahl_zimmer"))),
     property: {
-      propertyType: mapPropertyType(
-        firstText(objektart?.wohnungtyp, objektart?.objektart, objektart?.objektart_zusatz),
-      ),
+      propertyType: normalizePropertyType(immobilie),
       floorLevel: firstText(geo.etage, pickNode(geo, "etage")),
-      condition: mapCondition(firstText(zustand.zustand, zustand.zustand_art)),
+      condition: normalizeCondition(firstText(zustand.zustand, zustand.zustand_art)),
     },
     rent: {
       netColdRent: normalizeDecimal(firstText(preise.kaltmiete)),
@@ -100,10 +98,12 @@ function mapOpenImmoToAppState(
       hoaFee: normalizeDecimal(firstText(preise.hausgeld)),
     },
     energy: {
-      certificateType: mapCertificateType(firstText(energiepass.art, energiepass.epart)),
-      energyClass: mapEnergyClass(firstText(energiepass.energieeffizienzklasse, energiepass.wertklasse)),
+      certificateType: normalizeCertificateType(firstText(energiepass.art, energiepass.epart)),
+      energyClass: normalizeEnergyClass(
+        firstText(energiepass.energieeffizienzklasse, energiepass.wertklasse),
+      ),
       energyValue: normalizeDecimal(energyValue),
-      heatingSource: mapHeatingSource(
+      heatingSource: normalizeHeatingType(
         firstText(energiepass.energietraeger, energiepass.primaerenergietraeger, zustand.energietraeger),
       ),
       constructionYear: firstText(zustand.baujahr, zustand.baujahr_antrag),
@@ -241,60 +241,6 @@ function mapTransactionType(value: string): TransactionType | undefined {
     return "sale";
   }
   return undefined;
-}
-
-function mapPropertyType(value: string): PropertyType | "" {
-  const upper = value.trim().toUpperCase();
-  if (upper.includes("WOHNUNG") || upper.includes("APARTMENT")) return "apartment";
-  if (upper.includes("HAUS") || upper.includes("EINFAMILIEN")) return "house";
-  if (upper.includes("PENTHOUSE") || upper.includes("DACHGESCHOSS")) return "penthouse";
-  if (upper.includes("GEWERBE") || upper.includes("COMMERCIAL")) return "commercial";
-  if (upper.includes("GRUNDST") || upper.includes("LAND")) return "land";
-  return "";
-}
-
-function mapCondition(value: string): PropertyCondition | "" {
-  const upper = value.trim().toUpperCase();
-  if (upper.includes("ERSTBEZUG") || upper.includes("NEUBAU") || upper.includes("FIRST")) {
-    return "first_occupancy";
-  }
-  if (upper.includes("SANIERT") || upper.includes("MODERN") || upper.includes("RENOV")) {
-    return upper.includes("BEDARF") || upper.includes("NEED")
-      ? "needs_renovation"
-      : "modernized";
-  }
-  if (upper.includes("GEPFLEG") || upper.includes("MAINTAIN")) return "well_maintained";
-  if (upper.includes("BEDARF") || upper.includes("NEED")) return "needs_renovation";
-  return "";
-}
-
-function mapCertificateType(value: string): EnergyCertificateType {
-  const upper = value.trim().toUpperCase();
-  if (upper.includes("VERBRAUCH") || upper.includes("CONSUMPTION")) return "consumption";
-  if (upper.includes("BEDARF") || upper.includes("DEMAND")) return "demand";
-  return "na";
-}
-
-function mapEnergyClass(value: string): EnergyClass | "" {
-  const normalized = value.trim().toUpperCase().replace(/\s+/g, "");
-  const allowed: EnergyClass[] = ["A+", "A", "B", "C", "D", "E", "F", "G", "H"];
-  return allowed.includes(normalized as EnergyClass) ? (normalized as EnergyClass) : "";
-}
-
-function mapHeatingSource(value: string): HeatingSource | "" {
-  const upper = value.trim().toUpperCase();
-  if (upper.includes("WAERMEPUMPE") || upper.includes("WARMEPUMPE") || upper.includes("HEAT_PUMP")) {
-    return "heat_pump";
-  }
-  if (upper.includes("FERN") || upper.includes("DISTRICT")) return "district_heating";
-  if (upper.includes("GAS")) return "gas";
-  if (upper.includes("OEL") || upper.includes("ÖL") || upper.includes("OIL")) return "oil";
-  if (upper.includes("PELLET") || upper.includes("HOLZ")) return "wood_pellets";
-  if (upper.includes("SOLAR")) return "solar";
-  if (upper.includes("STROM") || upper.includes("ELEKTRO") || upper.includes("ELECTRIC")) {
-    return "electricity";
-  }
-  return "";
 }
 
 function collectAnhangPaths(immobilie: Record<string, unknown>): string[] {
