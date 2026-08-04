@@ -113,6 +113,8 @@ export type FormCopy = {
   userRoleAgent: string;
   userRolePrivateSeller: string;
   commissionLabel: string;
+  commissionFreeRent: string;
+  commissionTenant: string;
   commissionFree: string;
   commissionBuyer: string;
   globalPrice: string;
@@ -256,7 +258,9 @@ const en: FormCopy = {
   userRoleAgent: "Real estate agent / broker",
   userRolePrivateSeller: "Private seller / landlord",
   commissionLabel: "Commission / agent fee (Provision)",
-  commissionFree: "Commission free (Provisionsfrei)",
+  commissionFreeRent: "Commission-free for tenant (Provisionsfrei für Mieter)",
+  commissionTenant: "Tenant commission (e.g. 2 cold rents + VAT)",
+  commissionFree: "Commission-free (Provisionsfrei)",
   commissionBuyer: "Buyer commission (e.g. 3.57% incl. VAT)",
   globalPrice: "Price",
   bedrooms: "Bedrooms",
@@ -398,6 +402,8 @@ const de: Partial<FormCopy> = {
   userRoleAgent: "Immobilienmakler / Broker",
   userRolePrivateSeller: "Privatverkäufer / Vermieter",
   commissionLabel: "Provision",
+  commissionFreeRent: "Provisionsfrei für Mieter",
+  commissionTenant: "Mieterprovision (z. B. 2 Kaltmieten zzgl. MwSt.)",
   commissionFree: "Provisionsfrei",
   commissionBuyer: "Käuferprovision (z. B. 3,57 % inkl. MwSt.)",
   globalPrice: "Preis",

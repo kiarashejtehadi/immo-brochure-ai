@@ -30,16 +30,35 @@ export const COMMISSION_PRESET_LABELS: Record<
   },
 };
 
-export function commissionTermsFromPreset(preset: CommissionPreset): string {
-  return preset === "commission_free"
-    ? "Provisionsfrei"
+export function commissionTermsFromPreset(
+  preset: CommissionPreset,
+  transactionType: TransactionType,
+): string {
+  if (preset === "commission_free") {
+    return transactionType === "rent"
+      ? "Provisionsfrei für Mieter"
+      : "Provisionsfrei";
+  }
+  return transactionType === "rent"
+    ? "Mieterprovision 2 Kaltmieten zzgl. MwSt."
     : "Käuferprovision 3,57 % inkl. MwSt.";
 }
 
-export function parseCommissionPreset(value: string): CommissionPreset {
+export function parseCommissionPreset(
+  value: string,
+  transactionType: TransactionType = "sale",
+): CommissionPreset {
   const normalized = value.trim().toLowerCase();
   if (normalized.includes("provisionsfrei") || normalized.includes("commission free")) {
     return "commission_free";
+  }
+  if (
+    transactionType === "rent" &&
+    (normalized.includes("mieterprovision") ||
+      normalized.includes("tenant commission") ||
+      normalized.includes("kaltmieten"))
+  ) {
+    return "buyer_commission";
   }
   return "buyer_commission";
 }
@@ -126,7 +145,7 @@ export function buildDachDemoListingPreset(): DachDemoListingPreset {
       purchasePrice: "",
       hoaFee: "",
       rentalYield: "",
-      commissionTerms: commissionTermsFromPreset("commission_free"),
+      commissionTerms: commissionTermsFromPreset("commission_free", "rent"),
     },
     energy: {
       certificateType: "demand",

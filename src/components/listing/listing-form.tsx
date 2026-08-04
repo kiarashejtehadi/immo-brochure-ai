@@ -679,9 +679,16 @@ export function ListingForm(props: ListingFormProps) {
             <div className="sm:col-span-2 lg:col-span-3">
               <p className={labelClassName()}>{copy.commissionLabel}</p>
               <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                {(["commission_free", "buyer_commission"] as CommissionPreset[]).map((preset) => (
+                {(["commission_free", "buyer_commission"] as CommissionPreset[]).map((preset) => {
+                  const freeLabel =
+                    transactionType === "rent" ? copy.commissionFreeRent : copy.commissionFree;
+                  const paidLabel =
+                    transactionType === "rent" ? copy.commissionTenant : copy.commissionBuyer;
+                  const label = preset === "commission_free" ? freeLabel : paidLabel;
+
+                  return (
                   <label
-                    key={preset}
+                    key={`${transactionType}-${preset}`}
                     className={cn(
                       "flex flex-1 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm",
                       commissionPreset === preset
@@ -691,14 +698,15 @@ export function ListingForm(props: ListingFormProps) {
                   >
                     <input
                       type="radio"
-                      name="commissionPreset"
+                      name={`commissionPreset-${transactionType}`}
                       checked={commissionPreset === preset}
                       onChange={() => onCommissionPreset(preset)}
                       className="text-indigo-600"
                     />
-                    {preset === "commission_free" ? copy.commissionFree : copy.commissionBuyer}
+                    {label}
                   </label>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

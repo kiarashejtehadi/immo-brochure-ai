@@ -156,7 +156,7 @@ const EMPTY_SALE: SaleFormData = {
   purchasePrice: "",
   hoaFee: "",
   rentalYield: "",
-  commissionTerms: "Provisionsfrei",
+  commissionTerms: "Provisionsfrei für Mieter",
 };
 
 const DEFAULT_PROPERTY: PropertyDetails = {
@@ -443,13 +443,29 @@ function ListingStudioContent() {
     [routeLocale],
   );
 
-  const handleCommissionPresetChange = useCallback((preset: CommissionPreset) => {
-    setCommissionPreset(preset);
-    setSale((prev) => ({
-      ...prev,
-      commissionTerms: commissionTermsFromPreset(preset),
-    }));
-  }, []);
+  const handleCommissionPresetChange = useCallback(
+    (preset: CommissionPreset) => {
+      setCommissionPreset(preset);
+      setSale((prev) => ({
+        ...prev,
+        commissionTerms: commissionTermsFromPreset(preset, transactionType),
+      }));
+    },
+    [transactionType],
+  );
+
+  const handleTransactionTypeChange = useCallback(
+    (type: TransactionType) => {
+      setTransactionType(type);
+      if (targetMarket !== "dach") return;
+      setCommissionPreset("commission_free");
+      setSale((prev) => ({
+        ...prev,
+        commissionTerms: commissionTermsFromPreset("commission_free", type),
+      }));
+    },
+    [targetMarket],
+  );
 
   const loadDachDemoListing = useCallback(() => {
     const demo = buildDachDemoListingPreset();
@@ -626,7 +642,8 @@ function ListingStudioContent() {
     setTargetMarket(draft.targetMarket ?? "dach");
     setUserRole(draft.userRole ?? "agent");
     setCommissionPreset(
-      draft.commissionPreset ?? parseCommissionPreset(draft.sale.commissionTerms),
+      draft.commissionPreset ??
+        parseCommissionPreset(draft.sale.commissionTerms, draft.transactionType),
     );
     setBedrooms(draft.bedrooms ?? "");
     setBathrooms(draft.bathrooms ?? "");
@@ -1353,7 +1370,7 @@ function ListingStudioContent() {
             onBathrooms={setBathrooms}
             onFillDemoDach={loadDachDemoListing}
             transactionType={transactionType}
-            onTransactionType={setTransactionType}
+            onTransactionType={handleTransactionTypeChange}
             property={property}
             onProperty={(patch) => setProperty((p) => ({ ...p, ...patch }))}
             address={address}
