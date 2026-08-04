@@ -285,7 +285,11 @@ export async function POST(request: Request) {
   }
 
   const enrichment = await withTimeout(enrichmentTask, LOCATION_ENRICHMENT_BUDGET_MS, null);
-  const locationContext = buildLocationContextPayload(listingAddress, enrichment);
+  const locationContext = buildLocationContextPayload(
+    listingAddress,
+    enrichment,
+    outputLanguage,
+  );
   if (enrichment) {
     locationRules = buildLocationPromptInstructions(
       listingAddress,

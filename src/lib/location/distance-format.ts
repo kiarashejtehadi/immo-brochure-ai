@@ -1,30 +1,73 @@
-/** Humanize POI distance for AI prompt context (avoids raw exact meter figures). */
-export function humanizeDistanceForPrompt(meters: number): string {
+import type { OutputLanguage } from "@/lib/i18n";
+
+export type FormattedDistance = {
+  text: string;
+  minutes: number;
+};
+
+/** Normalize raw meters into German real-estate-friendly walking-time phrasing. */
+export function formatDistance(meters: number): FormattedDistance {
   const m = Math.max(0, Math.round(meters));
+  const minutes = Math.max(1, Math.round(m / 80));
 
-  if (m < 50) {
-    return "just steps away / directly outside";
+  if (minutes <= 1) {
+    return { text: "direkt vor der Haustür", minutes };
+  }
+  if (minutes <= 12) {
+    return { text: `ca. ${minutes} Gehminuten`, minutes };
   }
 
-  if (m <= 500) {
-    const rounded = Math.round(m / 50) * 50;
-    const walkMin = Math.max(1, Math.round(m / 80));
-    return `short ~${walkMin}-minute walk (~${rounded} m)`;
-  }
-
-  if (m <= 1500) {
-    const rounded = Math.round(m / 100) * 100;
-    const walkMin = Math.max(2, Math.round(m / 80));
-    return `approx. ${rounded} m / under a ${walkMin}-minute walk`;
-  }
-
-  const km = (m / 1000).toFixed(1).replace(/\.0$/, "");
-  return `approx. ${km} km`;
+  const roundedMeters = Math.round(m / 50) * 50;
+  return { text: `ca. ${roundedMeters} m`, minutes };
 }
 
-export const DISTANCE_FORMATTING_RULES = `DISTANCE FORMATTING RULES:
-- NEVER write raw, exact meters like '298 meters', '564 meters', or '25 meters'.
-- Convert distances into humanized walking times or rounded figures:
-  * Under 50m: Use phrases like 'just steps away' or 'directly outside'.
-  * 50m to 500m: Round to the nearest 50m OR express as a short walk (e.g., 'a short 4-minute walk (~300m)').
-  * 500m to 1500m: Round to the nearest 100m or 5-minute interval (e.g., 'approx. 600m away' or 'under a 10-minute walk').`;
+function formatDistanceEnglish(meters: number): FormattedDistance {
+  const m = Math.max(0, Math.round(meters));
+  const minutes = Math.max(1, Math.round(m / 80));
+
+  if (minutes <= 1) {
+    return { text: "directly at your doorstep", minutes };
+  }
+  if (minutes <= 12) {
+    return { text: `approx. ${minutes}-minute walk`, minutes };
+  }
+
+  const roundedMeters = Math.round(m / 50) * 50;
+  return { text: `approx. ${roundedMeters} m`, minutes };
+}
+
+export function formatDistanceForLanguage(
+  meters: number,
+  language: OutputLanguage,
+): FormattedDistance {
+  if (language === "German") {
+    return formatDistance(meters);
+  }
+  return formatDistanceEnglish(meters);
+}
+
+/** Humanize POI distance for AI prompt context (locale-aware). */
+export function humanizeDistanceForPrompt(
+  meters: number,
+  language: OutputLanguage = "English",
+): string {
+  return formatDistanceForLanguage(meters, language).text;
+}
+
+export function distanceFormattingRules(language: OutputLanguage): string {
+  const example =
+    language === "German"
+      ? "Schlosspark Charlottenburg (ca. 5 Gehminuten)"
+      : "Charlottenburg Palace Park (approx. 5-minute walk)";
+
+  return `DISTANCE FORMATTING RULES (MANDATORY):
+- All POI and landmark distances are pre-normalized in locationContext as proximityText and walkingMinutes.
+- You MUST use these exact proximityText phrases when mentioning distances in locationDescription.
+- You MUST pair each named landmark with its proximityText at least once (e.g. "${example}").
+- NEVER write raw, exact meters like "298 meters", "564 meters", or "25 meters".
+- NEVER invent walking times or meter values that differ from the provided proximityText / walkingMinutes fields.
+- Average walking speed assumed: ~80 m per minute (~4.8 km/h).`;
+}
+
+/** @deprecated Use distanceFormattingRules(language) for locale-aware copy. */
+export const DISTANCE_FORMATTING_RULES = distanceFormattingRules("English");
