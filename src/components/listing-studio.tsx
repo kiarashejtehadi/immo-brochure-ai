@@ -49,12 +49,12 @@ import {
   truncateMlsCaption,
 } from "@/lib/social-copy-presets";
 import {
-  applyOpenImmoImportSync,
+  appendImportedPhotos,
+  buildImportedFormState,
   buildOpenImmoFormStateSlice,
   hasMeaningfulOpenImmoImport,
-  loadImportedPhotos,
-  mergeImportedAgent,
-  mergeOpenImmoFeatures,
+  loadImportedPhotosInBackground,
+  type ListingImportCurrentState,
 } from "@/lib/openimmo/apply-openimmo-import";
 import type { OpenImmoImportApiResponse, OpenImmoImportResult } from "@/types/openimmo-import";
 import {
@@ -1140,64 +1140,77 @@ function ListingStudioContent() {
       clearListingStudioDraft();
       setDraftHydrated(true);
 
-      const slice = buildOpenImmoFormStateSlice(rawData, {
+      const importDefaults = {
         address: { ...DEFAULT_LISTING_ADDRESS, country: "Germany" },
         property: DEFAULT_PROPERTY,
         rent: EMPTY_RENT,
         sale: EMPTY_SALE,
         energy: DEFAULT_ENERGY,
-      });
+      };
 
-      if (!hasMeaningfulOpenImmoImport(slice, rawData)) {
+      const validationSlice = buildOpenImmoFormStateSlice(rawData, importDefaults);
+      if (!hasMeaningfulOpenImmoImport(validationSlice, rawData)) {
         console.warn("[openimmo] Import payload contained no mappable fields:", rawData);
         throw new Error(copy.openImmoImportError);
       }
 
-      const importedType = slice.transactionType ?? transactionType;
+      const currentState: ListingImportCurrentState = {
+        transactionType,
+        address,
+        size,
+        rooms,
+        property,
+        rent,
+        sale,
+        energy,
+        features,
+        agent,
+        title: result?.title ?? "",
+        description: result?.fullDescription ?? "",
+        locationText: result?.locationDescription ?? "",
+      };
 
-      setTargetMarket("dach");
-      setTargetLanguage("German");
-      setCurrency("EUR");
-      setTransactionType(slice.transactionType ?? "rent");
-
-      setAddress(slice.address);
-      setSize(slice.size);
-      setRooms(slice.rooms);
-      setProperty(slice.property);
-      setRent(slice.rent);
-      totalRentManualRef.current = Boolean(slice.rent.totalRent.trim());
+      const merged = buildImportedFormState(currentState, rawData, importDefaults);
+      const importedType = merged.transactionType ?? transactionType;
 
       const commissionTerms =
         userRole === "private_seller"
           ? privateSellerCommissionFreeTerms(importedType, formCopy)
           : commissionFreeTerms(importedType, formCopy);
 
+      console.log("👉 Applying OpenImmo Import Payload:", rawData);
+
+      // Single atomic sync batch — React 18 batches these setter calls together.
+      setTargetMarket("dach");
+      setTargetLanguage("German");
+      setCurrency("EUR");
+      setTransactionType(merged.transactionType ?? "rent");
+      setAddress(merged.address);
+      setSize(merged.size);
+      setRooms(merged.rooms);
+      setProperty(merged.property);
+      setFeatures(merged.features);
+      setAgent(merged.agent);
+      setRent(merged.rent);
+      totalRentManualRef.current = Boolean(merged.rent.totalRent.trim());
       setCommissionPreset("commission_free");
-      setSale({ ...slice.sale, commissionTerms });
-      setEnergy(slice.energy);
+      setSale({ ...merged.sale, commissionTerms });
+      setEnergy(merged.energy);
 
-      applyOpenImmoImportSync(rawData, ({ features, agent, parking }) => {
-        setFeatures((prev) => mergeOpenImmoFeatures(prev, features, "replace"));
-        setAgent((prev) => mergeImportedAgent(prev, agent));
-        if (parking) {
-          setProperty((prev) => ({ ...prev, parking }));
-        }
-      });
-
-      if (slice.title || slice.description || slice.locationText) {
+      if (merged.title || merged.description || merged.locationText) {
         setResult({
-          title: slice.title || "Imported listing",
-          summary: slice.description
-            ? [slice.description.slice(0, 120)]
-            : slice.locationText
-              ? [slice.locationText.slice(0, 120)]
+          title: merged.title || "Imported listing",
+          summary: merged.description
+            ? [merged.description.slice(0, 120)]
+            : merged.locationText
+              ? [merged.locationText.slice(0, 120)]
               : [],
-          fullDescription: slice.description,
-          locationDescription: slice.locationText || "—",
+          fullDescription: merged.description,
+          locationDescription: merged.locationText || "—",
           socialCaptions: { instagram: "", linkedin: "", facebook: "" },
         });
         setHasGenerated(true);
-        setPreviewTab(slice.description ? "story" : "location");
+        setPreviewTab(merged.description ? "story" : "location");
       } else {
         setResult(null);
         setHasGenerated(false);
@@ -1208,21 +1221,35 @@ function ListingStudioContent() {
       setOpenImmoImportAppliedTick((tick) => tick + 1);
       showToast(copy.openImmoImportSuccess);
 
-      void loadImportedPhotos(rawData, MAX_PHOTOS)
-        .then((loaded) => {
-          if (loaded.length === 0) return;
-          setPhotos((prev) => {
-            for (const photo of prev) {
-              if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
-            }
-            return loaded;
-          });
-        })
-        .catch((err) => {
-          console.error("[openimmo] Failed to load imported photos:", err);
-        });
+      void loadImportedPhotosInBackground(
+        rawData,
+        (loaded) => {
+          setPhotos((prev) => appendImportedPhotos(prev, loaded, MAX_PHOTOS));
+        },
+        MAX_PHOTOS,
+      ).catch((err) => {
+        console.error("[openimmo] Failed to load imported photos:", err);
+      });
     },
-    [authEmail, billingStatus?.email, copy, formCopy, showToast, transactionType, userRole],
+    [
+      address,
+      agent,
+      authEmail,
+      billingStatus?.email,
+      copy,
+      energy,
+      features,
+      formCopy,
+      property,
+      rent,
+      result,
+      rooms,
+      sale,
+      showToast,
+      size,
+      transactionType,
+      userRole,
+    ],
   );
 
   const handleOpenImmoImport = useCallback(
