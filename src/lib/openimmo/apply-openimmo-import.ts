@@ -8,7 +8,8 @@ import type {
   TransactionType,
 } from "@/types/listing";
 import type { FeatureKey } from "@/lib/i18n";
-import type { OpenImmoImportResult } from "@/types/openimmo-import";
+import type { OpenImmoImportResult, OpenImmoImportedImage } from "@/types/openimmo-import";
+import { mergeOpenImmoFeatures } from "@/lib/openimmo/extract-openimmo-features";
 import { sanitizeOpenImmoImportResult } from "@/lib/openimmo/normalize-openimmo-enums";
 
 export function prepareOpenImmoImportForForm(data: OpenImmoImportResult): OpenImmoImportResult {
@@ -30,6 +31,52 @@ export type OpenImmoFormStateSlice = {
   description: string;
   locationText: string;
 };
+
+export type OpenImmoImportPhoto = {
+  id: string;
+  file: File;
+  url: string;
+};
+
+export type OpenImmoImportSyncPatch = {
+  features: FeatureKey[];
+  agent: Partial<AgentFormData>;
+  parking?: PropertyDetails["parking"];
+};
+
+export type OpenImmoImportApplyCallbacks = {
+  /** Apply features, agent, and parking without waiting on images. */
+  updateSync: (patch: OpenImmoImportSyncPatch) => void;
+  /** Replace photo previews once async loading completes. */
+  updatePhotos: (photos: OpenImmoImportPhoto[]) => void;
+};
+
+export function mergeImportedAgent(
+  prev: AgentFormData,
+  imported: Partial<AgentFormData> | undefined,
+): AgentFormData {
+  if (!imported) return prev;
+
+  return {
+    ...prev,
+    name: imported.name?.trim() || prev.name,
+    agency: imported.agency?.trim() || prev.agency,
+    companyAddress: imported.companyAddress?.trim() || prev.companyAddress,
+    phone: imported.phone?.trim() || prev.phone,
+    email: imported.email?.trim() || prev.email,
+    licenseId: imported.licenseId?.trim() || prev.licenseId,
+    legalDisclaimer: prev.legalDisclaimer,
+  };
+}
+
+export function extractOpenImmoSyncPatch(rawData: OpenImmoImportResult): OpenImmoImportSyncPatch {
+  const data = prepareOpenImmoImportForForm(rawData);
+  return {
+    features: data.features ?? [],
+    agent: data.agent ?? {},
+    parking: data.property?.parking,
+  };
+}
 
 export function hasMeaningfulOpenImmoImport(
   slice: OpenImmoFormStateSlice,
@@ -139,6 +186,33 @@ export function buildOpenImmoFormStateSlice(
   };
 }
 
+/**
+ * Apply features, agent, and parking immediately — never awaits images.
+ */
+export function applyOpenImmoImportSync(
+  importedData: OpenImmoImportResult,
+  updateSync: OpenImmoImportApplyCallbacks["updateSync"],
+): void {
+  console.log("👉 Applying OpenImmo Import Payload:", importedData);
+  updateSync(extractOpenImmoSyncPatch(importedData));
+}
+
+/**
+ * Apply synchronous import fields immediately, then load photos in the background.
+ * Sync updates never wait on or fail because of image fetches.
+ */
+export async function applyOpenImmoImport(
+  importedData: OpenImmoImportResult,
+  callbacks: OpenImmoImportApplyCallbacks,
+  options?: { maxPhotos?: number },
+): Promise<void> {
+  applyOpenImmoImportSync(importedData, callbacks.updateSync);
+  const photos = await loadImportedPhotos(importedData, options?.maxPhotos ?? 5);
+  if (photos.length > 0) {
+    callbacks.updatePhotos(photos);
+  }
+}
+
 export function openImmoPropertyLabel(property: OpenImmoImportResult, index: number): string {
   const title = property.title?.trim();
   const city = property.address?.city?.trim();
@@ -161,31 +235,144 @@ export function base64ToFile(base64: string, filename: string, mimeType: string)
   return new File([bytes], filename, { type: mimeType });
 }
 
-export async function importedImagesToFiles(data: OpenImmoImportResult): Promise<File[]> {
-  if (!data.images?.length) return [];
+function mimeFromFilename(filename: string): string {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  return "image/jpeg";
+}
 
-  const files: File[] = [];
-  for (const img of data.images) {
+function photoFromBase64(img: OpenImmoImportedImage): OpenImmoImportPhoto {
+  const file = base64ToFile(img.base64!, img.filename, img.mimeType);
+  return {
+    id: `${img.filename}-${file.size}-${crypto.randomUUID()}`,
+    file,
+    url: URL.createObjectURL(file),
+  };
+}
+
+function photoFromDataUrl(url: string, filename: string): OpenImmoImportPhoto {
+  const file = new File([], filename, { type: "image/jpeg" });
+  return {
+    id: `${filename}-${crypto.randomUUID()}`,
+    file,
+    url,
+  };
+}
+
+async function photoFromRemoteUrl(
+  url: string,
+  filename: string,
+  mimeType: string,
+): Promise<OpenImmoImportPhoto> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (res.ok) {
+      const blob = await res.blob();
+      const file = new File([blob], filename, {
+        type: mimeType || blob.type || "image/jpeg",
+      });
+      return {
+        id: `${filename}-${file.size}-${crypto.randomUUID()}`,
+        file,
+        url: URL.createObjectURL(blob),
+      };
+    }
+  } catch (err) {
+    console.warn(
+      `[OpenImmo Import] CORS error fetching image ${url}, falling back to direct URL:`,
+      err,
+    );
+  }
+
+  const file = new File([], filename, { type: mimeType });
+  return {
+    id: `${filename}-${crypto.randomUUID()}`,
+    file,
+    url,
+  };
+}
+
+function collectImageCandidates(data: OpenImmoImportResult): Array<{
+  url: string;
+  filename: string;
+  mimeType: string;
+  base64?: string;
+}> {
+  const seen = new Set<string>();
+  const candidates: Array<{ url: string; filename: string; mimeType: string; base64?: string }> =
+    [];
+
+  const addCandidate = (entry: {
+    url?: string;
+    filename: string;
+    mimeType: string;
+    base64?: string;
+  }) => {
+    const key = (entry.base64 ? `b64:${entry.filename}` : entry.url)?.toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    candidates.push({
+      url: entry.url ?? "",
+      filename: entry.filename,
+      mimeType: entry.mimeType,
+      base64: entry.base64,
+    });
+  };
+
+  for (const img of data.images ?? []) {
     if (img.base64) {
-      files.push(base64ToFile(img.base64, img.filename, img.mimeType));
+      addCandidate({ filename: img.filename, mimeType: img.mimeType, base64: img.base64 });
       continue;
     }
-
     if (img.url) {
-      try {
-        const res = await fetch(img.url);
-        if (!res.ok) continue;
-        const blob = await res.blob();
-        files.push(
-          new File([blob], img.filename, {
-            type: img.mimeType || blob.type || "image/jpeg",
-          }),
-        );
-      } catch {
-        // CORS or network failure — skip remote image
-      }
+      addCandidate({ url: img.url, filename: img.filename, mimeType: img.mimeType });
     }
   }
 
-  return files;
+  for (const url of data.imageUrls ?? []) {
+    const filename = url.split("/").pop()?.split("?")[0]?.split("#")[0] ?? "image.jpg";
+    addCandidate({ url, filename, mimeType: mimeFromFilename(filename) });
+  }
+
+  return candidates;
 }
+
+export async function loadImportedPhotos(
+  data: OpenImmoImportResult,
+  maxPhotos = 5,
+): Promise<OpenImmoImportPhoto[]> {
+  const candidates = collectImageCandidates(data);
+  if (candidates.length === 0) return [];
+
+  const loaded = await Promise.all(
+    candidates.slice(0, maxPhotos).map(async (candidate) => {
+      if (candidate.base64) {
+        return photoFromBase64({
+          filename: candidate.filename,
+          mimeType: candidate.mimeType,
+          base64: candidate.base64,
+        });
+      }
+
+      const url = candidate.url.trim();
+      if (!url) return null;
+
+      if (url.startsWith("data:image/") || url.startsWith("blob:")) {
+        return photoFromDataUrl(url, candidate.filename);
+      }
+
+      return photoFromRemoteUrl(url, candidate.filename, candidate.mimeType);
+    }),
+  );
+
+  return loaded.filter((photo): photo is OpenImmoImportPhoto => photo != null);
+}
+
+/** @deprecated Use loadImportedPhotos via applyOpenImmoImport instead. */
+export async function importedImagesToFiles(data: OpenImmoImportResult): Promise<File[]> {
+  const photos = await loadImportedPhotos(data);
+  return photos.map((photo) => photo.file);
+}
+
+export { mergeOpenImmoFeatures };

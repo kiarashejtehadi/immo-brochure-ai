@@ -58,6 +58,18 @@ export function extractOpenImmoFeatures(
   return [...features];
 }
 
+/** Merge imported feature chips with existing selections. */
+export function mergeOpenImmoFeatures(
+  existing: FeatureKey[],
+  imported: FeatureKey[],
+  mode: "merge" | "replace" = "replace",
+): FeatureKey[] {
+  if (mode === "replace" || existing.length === 0) {
+    return [...new Set(imported)];
+  }
+  return Array.from(new Set([...existing, ...imported]));
+}
+
 /** Map OpenImmo `<stellplatzart>` to parking dropdown values. */
 export function extractOpenImmoParking(
   ausstattung: Record<string, unknown> | undefined,

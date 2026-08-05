@@ -48,7 +48,14 @@ import {
   stripPlainSocialText,
   truncateMlsCaption,
 } from "@/lib/social-copy-presets";
-import { buildOpenImmoFormStateSlice, hasMeaningfulOpenImmoImport, importedImagesToFiles } from "@/lib/openimmo/apply-openimmo-import";
+import {
+  applyOpenImmoImportSync,
+  buildOpenImmoFormStateSlice,
+  hasMeaningfulOpenImmoImport,
+  loadImportedPhotos,
+  mergeImportedAgent,
+  mergeOpenImmoFeatures,
+} from "@/lib/openimmo/apply-openimmo-import";
 import type { OpenImmoImportApiResponse, OpenImmoImportResult } from "@/types/openimmo-import";
 import {
   outputLanguageFromLocale,
@@ -1157,13 +1164,6 @@ function ListingStudioContent() {
       setSize(slice.size);
       setRooms(slice.rooms);
       setProperty(slice.property);
-      setFeatures(slice.features);
-      setAgent((prev) => ({
-        ...prev,
-        ...Object.fromEntries(
-          Object.entries(slice.agent).filter(([, value]) => typeof value === "string" && value.trim()),
-        ),
-      }));
       setRent(slice.rent);
       totalRentManualRef.current = Boolean(slice.rent.totalRent.trim());
 
@@ -1175,6 +1175,14 @@ function ListingStudioContent() {
       setCommissionPreset("commission_free");
       setSale({ ...slice.sale, commissionTerms });
       setEnergy(slice.energy);
+
+      applyOpenImmoImportSync(rawData, ({ features, agent, parking }) => {
+        setFeatures((prev) => mergeOpenImmoFeatures(prev, features, "replace"));
+        setAgent((prev) => mergeImportedAgent(prev, agent));
+        if (parking) {
+          setProperty((prev) => ({ ...prev, parking }));
+        }
+      });
 
       if (slice.title || slice.description || slice.locationText) {
         setResult({
@@ -1195,29 +1203,24 @@ function ListingStudioContent() {
         setHasGenerated(false);
       }
 
-      try {
-        const imageFiles = await importedImagesToFiles(rawData);
-        setPhotos((prev) => {
-          for (const photo of prev) URL.revokeObjectURL(photo.url);
-          const toAdd = imageFiles.slice(0, MAX_PHOTOS).map((file) => ({
-            id: `${file.name}-${file.size}-${crypto.randomUUID()}`,
-            file,
-            url: URL.createObjectURL(file),
-          }));
-          return toAdd;
-        });
-      } catch (err) {
-        console.error("[openimmo] Failed to import images:", err);
-        setPhotos((prev) => {
-          for (const photo of prev) URL.revokeObjectURL(photo.url);
-          return [];
-        });
-      }
-
       setIsDemoSample(false);
       setGenerateError(null);
       setOpenImmoImportAppliedTick((tick) => tick + 1);
       showToast(copy.openImmoImportSuccess);
+
+      void loadImportedPhotos(rawData, MAX_PHOTOS)
+        .then((loaded) => {
+          if (loaded.length === 0) return;
+          setPhotos((prev) => {
+            for (const photo of prev) {
+              if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+            }
+            return loaded;
+          });
+        })
+        .catch((err) => {
+          console.error("[openimmo] Failed to load imported photos:", err);
+        });
     },
     [authEmail, billingStatus?.email, copy, formCopy, showToast, transactionType, userRole],
   );
