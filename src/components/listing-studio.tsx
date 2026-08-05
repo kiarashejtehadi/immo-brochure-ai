@@ -1125,7 +1125,7 @@ function ListingStudioContent() {
   }, []);
 
   const applyOpenImmoImportData = useCallback(
-    (rawData: OpenImmoImportResult) => {
+    async (rawData: OpenImmoImportResult) => {
       const ownerKey = draftOwnerKey(billingStatus?.email ?? authEmail ?? null);
       openImmoImportGuardRef.current = true;
       draftLifecycleRef.current.hydrated = true;
@@ -1157,6 +1157,13 @@ function ListingStudioContent() {
       setSize(slice.size);
       setRooms(slice.rooms);
       setProperty(slice.property);
+      setFeatures(slice.features);
+      setAgent((prev) => ({
+        ...prev,
+        ...Object.fromEntries(
+          Object.entries(slice.agent).filter(([, value]) => typeof value === "string" && value.trim()),
+        ),
+      }));
       setRent(slice.rent);
       totalRentManualRef.current = Boolean(slice.rent.totalRent.trim());
 
@@ -1189,7 +1196,7 @@ function ListingStudioContent() {
       }
 
       try {
-        const imageFiles = importedImagesToFiles(rawData);
+        const imageFiles = await importedImagesToFiles(rawData);
         setPhotos((prev) => {
           for (const photo of prev) URL.revokeObjectURL(photo.url);
           const toAdd = imageFiles.slice(0, MAX_PHOTOS).map((file) => ({
@@ -1233,7 +1240,7 @@ function ListingStudioContent() {
         }
 
         if (properties.length === 1) {
-          applyOpenImmoImportData(properties[0]);
+          await applyOpenImmoImportData(properties[0]);
           return;
         }
 
@@ -1249,7 +1256,7 @@ function ListingStudioContent() {
   );
 
   const handleOpenImmoPropertySelect = useCallback(
-    (property: OpenImmoImportResult) => {
+    async (property: OpenImmoImportResult) => {
       const resolved =
         property.importIndex != null
           ? (openImmoPickerPropertiesRef.current[property.importIndex] ?? property)
@@ -1260,7 +1267,7 @@ function ListingStudioContent() {
       openImmoPickerPropertiesRef.current = [];
 
       try {
-        applyOpenImmoImportData(resolved);
+        await applyOpenImmoImportData(resolved);
       } catch (err) {
         console.error("[openimmo] Failed to apply selected property:", err);
         const message = err instanceof Error ? err.message : copy.openImmoImportError;

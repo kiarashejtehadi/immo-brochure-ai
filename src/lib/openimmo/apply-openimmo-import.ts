@@ -1,4 +1,5 @@
 import type {
+  AgentFormData,
   EnergyFormData,
   ListingAddress,
   PropertyDetails,
@@ -6,6 +7,7 @@ import type {
   SaleFormData,
   TransactionType,
 } from "@/types/listing";
+import type { FeatureKey } from "@/lib/i18n";
 import type { OpenImmoImportResult } from "@/types/openimmo-import";
 import { sanitizeOpenImmoImportResult } from "@/lib/openimmo/normalize-openimmo-enums";
 
@@ -22,6 +24,8 @@ export type OpenImmoFormStateSlice = {
   rent: RentFormData;
   sale: SaleFormData;
   energy: EnergyFormData;
+  features: FeatureKey[];
+  agent: Partial<AgentFormData>;
   title: string;
   description: string;
   locationText: string;
@@ -44,7 +48,8 @@ export function hasMeaningfulOpenImmoImport(
     slice.rent.totalRent ||
     slice.sale.purchasePrice ||
     slice.property.propertyType ||
-    slice.transactionType
+    slice.transactionType ||
+    slice.features.length > 0
   ) {
     return true;
   }
@@ -65,6 +70,11 @@ export function hasMeaningfulOpenImmoImport(
       raw.sale?.purchasePrice ||
       raw.property?.propertyType ||
       raw.transactionType ||
+      (raw.features?.length ?? 0) > 0 ||
+      raw.agent?.name ||
+      raw.agent?.email ||
+      raw.agent?.phone ||
+      (raw.imageUrls?.length ?? 0) > 0 ||
       (raw.images?.length ?? 0) > 0,
   );
 }
@@ -97,6 +107,7 @@ export function buildOpenImmoFormStateSlice(
       propertyType: data.property?.propertyType ?? "",
       floorLevel: data.property?.floorLevel ?? "",
       condition: data.property?.condition ?? "",
+      parking: data.property?.parking ?? defaults.property.parking,
     },
     rent: {
       ...defaults.rent,
@@ -123,6 +134,8 @@ export function buildOpenImmoFormStateSlice(
     title: data.title?.trim() ?? "",
     description: data.description?.trim() ?? "",
     locationText: data.locationText?.trim() ?? "",
+    features: data.features ?? [],
+    agent: data.agent ?? {},
   };
 }
 
@@ -148,7 +161,31 @@ export function base64ToFile(base64: string, filename: string, mimeType: string)
   return new File([bytes], filename, { type: mimeType });
 }
 
-export function importedImagesToFiles(data: OpenImmoImportResult): File[] {
+export async function importedImagesToFiles(data: OpenImmoImportResult): Promise<File[]> {
   if (!data.images?.length) return [];
-  return data.images.map((img) => base64ToFile(img.base64, img.filename, img.mimeType));
+
+  const files: File[] = [];
+  for (const img of data.images) {
+    if (img.base64) {
+      files.push(base64ToFile(img.base64, img.filename, img.mimeType));
+      continue;
+    }
+
+    if (img.url) {
+      try {
+        const res = await fetch(img.url);
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        files.push(
+          new File([blob], img.filename, {
+            type: img.mimeType || blob.type || "image/jpeg",
+          }),
+        );
+      } catch {
+        // CORS or network failure — skip remote image
+      }
+    }
+  }
+
+  return files;
 }

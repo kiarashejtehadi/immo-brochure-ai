@@ -1,4 +1,6 @@
+import type { FeatureKey } from "@/lib/i18n";
 import type {
+  AgentFormData,
   EnergyFormData,
   ListingAddress,
   PropertyDetails,
@@ -10,7 +12,9 @@ import type {
 export type OpenImmoImportedImage = {
   filename: string;
   mimeType: string;
-  base64: string;
+  base64?: string;
+  url?: string;
+  path?: string;
 };
 
 export type OpenImmoImportResult = {
@@ -25,9 +29,12 @@ export type OpenImmoImportResult = {
   rent?: Partial<RentFormData>;
   sale?: Partial<SaleFormData>;
   energy?: Partial<EnergyFormData>;
+  features?: FeatureKey[];
+  agent?: Partial<AgentFormData>;
   description?: string;
   locationText?: string;
   images?: OpenImmoImportedImage[];
+  imageUrls?: string[];
 };
 
 export type OpenImmoImportApiResponse = {

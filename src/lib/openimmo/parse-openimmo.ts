@@ -9,6 +9,11 @@ import {
   normalizeHeatingType,
   normalizePropertyType,
 } from "@/lib/openimmo/normalize-openimmo-enums";
+import { extractOpenImmoAgent } from "@/lib/openimmo/extract-openimmo-agent";
+import {
+  extractOpenImmoFeatures,
+  extractOpenImmoParking,
+} from "@/lib/openimmo/extract-openimmo-features";
 import {
   deepFindText,
   firstText,
@@ -62,6 +67,7 @@ function cleanImportedText(value: string): string {
 function mapOpenImmoToAppState(
   immobilie: Record<string, unknown>,
   root: Record<string, unknown>,
+  anbieter?: Record<string, unknown>,
 ): OpenImmoImportResult {
   const geo = getChildNode(immobilie, "geo", "geographie", "adresse", "geowesentliche") ?? {};
   const preise = getChildNode(immobilie, "preise", "preis") ?? {};
@@ -150,6 +156,11 @@ function mapOpenImmoToAppState(
     deepFindText(geo, ["land", "iso_land"]) ||
     "Germany";
 
+  const features = extractOpenImmoFeatures(ausstattung, flaechen);
+  const agent = extractOpenImmoAgent(immobilie, anbieter);
+  const parking = extractOpenImmoParking(ausstattung);
+  const imageRefs = collectAnhangImages(immobilie);
+
   return {
     importId: importId || undefined,
     title,
@@ -166,7 +177,12 @@ function mapOpenImmoToAppState(
       propertyType: normalizePropertyType(immobilie),
       floorLevel: cleanImportedText(getText(geo, "etage") || deepFindText(immobilie, ["etage"])),
       condition: normalizeCondition(firstTextFromNode(zustand, "zustand", "zustand_art")),
+      ...(parking ? { parking } : {}),
     },
+    features,
+    agent,
+    imageUrls: imageRefs.map((img) => img.url).filter((url): url is string => Boolean(url)),
+    images: imageRefs.length > 0 ? imageRefs : undefined,
     rent: {
       netColdRent: normalizeDecimal(
         firstTextFromNode(preise, "kaltmiete", "nettokaltmiete", "netto_kaltmiete") ||
@@ -276,10 +292,42 @@ export function parseAllImmobilien(parsedXml: unknown): OpenImmoImportResult[] {
   }
 
   return rawProperties.map((rawImm, index) => {
-    const mapped = mapOpenImmoToAppState(rawImm, root);
+    const anbieter = findAnbieterForImmobilie(root, rawImm);
+    const mapped = mapOpenImmoToAppState(rawImm, root, anbieter);
     mapped.importIndex = index;
     return mapped;
   });
+}
+
+function findAnbieterForImmobilie(
+  root: Record<string, unknown>,
+  immobilie: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  for (const anbieter of toArray(root.anbieter)) {
+    if (!isRecord(anbieter)) continue;
+
+    const nested: Record<string, unknown>[] = [];
+    if (anbieter.immobilie !== undefined) {
+      pushImmobilieNodes(nested, anbieter.immobilie);
+    }
+    const immobilienNode = anbieter.immobilien;
+    if (immobilienNode !== undefined) {
+      if (isRecord(immobilienNode) && immobilienNode.immobilie !== undefined) {
+        pushImmobilieNodes(nested, immobilienNode.immobilie);
+      } else {
+        for (const block of toArray(immobilienNode)) {
+          if (isRecord(block) && block.immobilie !== undefined) {
+            pushImmobilieNodes(nested, block.immobilie);
+          }
+        }
+      }
+    }
+
+    if (nested.includes(immobilie)) return anbieter;
+  }
+
+  const firstAnbieter = toArray(root.anbieter).find(isRecord);
+  return firstAnbieter as Record<string, unknown> | undefined;
 }
 
 /** Normalize single objects or arrays and return the first `<immobilie>` node. */
@@ -350,8 +398,9 @@ function mapTransactionType(value: string): TransactionType | undefined {
   return undefined;
 }
 
-function collectAnhangPaths(immobilie: Record<string, unknown>): string[] {
-  const paths: string[] = [];
+function collectAnhangImages(immobilie: Record<string, unknown>): OpenImmoImportedImage[] {
+  const images: OpenImmoImportedImage[] = [];
+  const seen = new Set<string>();
   const anhaenge = toArray(
     pickNode(immobilie, "anhaenge", "anhang") ??
       getValue(immobilie, "anhang") ??
@@ -365,11 +414,41 @@ function collectAnhangPaths(immobilie: Record<string, unknown>): string[] {
     const pfad = firstText(
       daten ? getText(daten, "pfad") : "",
       getText(node, "pfad"),
-      getValue(node, "pfad"),
+      textValue(getValue(node, "pfad")),
+      textValue(getValue(daten, "pfad")),
     );
-    if (pfad) paths.push(String(pfad).replace(/\\/g, "/"));
+    if (!pfad) continue;
+
+    const normalized = String(pfad).replace(/\\/g, "/").trim();
+    const lowerKey = normalized.toLowerCase();
+    if (seen.has(lowerKey)) continue;
+
+    const filename =
+      normalized.split("/").pop()?.split("?")[0]?.split("#")[0] ?? "image.jpg";
+    const mimeType =
+      mimeFromFilename(filename) ||
+      mimeFromFilename(getText(node, "format")) ||
+      "image/jpeg";
+
+    if (/^https?:\/\//i.test(normalized)) {
+      seen.add(lowerKey);
+      images.push({ filename, mimeType, url: normalized });
+      continue;
+    }
+
+    if (IMAGE_EXT.test(normalized) || IMAGE_EXT.test(filename)) {
+      seen.add(lowerKey);
+      images.push({ filename, mimeType, path: normalized });
+    }
   }
-  return paths;
+
+  return images.slice(0, 10);
+}
+
+function collectAnhangPaths(immobilie: Record<string, unknown>): string[] {
+  return collectAnhangImages(immobilie)
+    .map((img) => img.path ?? img.filename)
+    .filter(Boolean);
 }
 
 function mimeFromFilename(filename: string): string {
@@ -482,10 +561,24 @@ export async function parseOpenImmoUpload(
     const immobilien = extractAllImmobilien(parsedDoc);
 
     for (let i = 0; i < properties.length; i += 1) {
+      const urlImages = properties[i].images?.filter((img) => img.url) ?? [];
       const referencedPaths = collectAnhangPaths(immobilien[i]);
-      const images = await extractImagesFromZip(zip, referencedPaths);
-      if (images.length > 0) {
-        properties[i].images = images;
+      const zipImages = await extractImagesFromZip(zip, referencedPaths);
+
+      const merged = [...zipImages];
+      const seen = new Set(merged.map((img) => img.filename.toLowerCase()));
+      for (const img of urlImages) {
+        const key = (img.url ?? img.filename).toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(img);
+      }
+
+      if (merged.length > 0) {
+        properties[i].images = merged.slice(0, 10);
+        properties[i].imageUrls = merged
+          .map((img) => img.url)
+          .filter((url): url is string => Boolean(url));
       }
     }
 
