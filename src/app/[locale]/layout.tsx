@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AuthSessionProvider } from "@/components/providers/auth-session-provider";
 import { CookieConsentBanner } from "@/components/legal/cookie-consent-banner";
 import { ChunkLoadRecovery } from "@/components/chunk-load-recovery";
 import { SiteFooter } from "@/components/legal/site-footer";
@@ -41,12 +42,14 @@ export default async function LocaleLayout({
     <html lang={locale} dir={rtl ? "rtl" : "ltr"} className={fontClassNames}>
       <body className="flex min-h-screen flex-col bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-50">
         <NextIntlClientProvider messages={messages}>
-          <ChunkLoadRecovery />
-          <VoiceFillShell>
-            <div className="flex flex-1 flex-col">{children}</div>
-            <SiteFooter />
-            <CookieConsentBanner />
-          </VoiceFillShell>
+          <AuthSessionProvider>
+            <ChunkLoadRecovery />
+            <VoiceFillShell>
+              <div className="flex flex-1 flex-col">{children}</div>
+              <SiteFooter />
+              <CookieConsentBanner />
+            </VoiceFillShell>
+          </AuthSessionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

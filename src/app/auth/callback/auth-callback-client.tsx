@@ -8,7 +8,7 @@ import {
   consumePostAuthRedirect,
   resolvePathAfterSignIn,
 } from "@/lib/supabase/auth-redirect";
-import { refreshBrowserAuthSession } from "@/lib/supabase/client-session";
+import { refreshBrowserAuthSession, syncServerAuthSession } from "@/lib/supabase/client-session";
 
 function normalizeOtpType(raw: string | null): EmailOtpType | null {
   if (!raw) return null;
@@ -56,6 +56,7 @@ export function AuthCallbackClient() {
 
     async function goAfterAuth(storedOrNext: string) {
       await refreshBrowserAuthSession();
+      await syncServerAuthSession();
       const dest = await resolvePathAfterSignIn(storedOrNext, { defaultToCheckout: false });
       if (!cancelled) {
         router.refresh();

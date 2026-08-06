@@ -1,10 +1,23 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import {
+  applyAuthCookiesToResponse,
+  AUTH_COOKIE_DEFAULTS,
+} from "@/lib/supabase/cookie-options";
 import {
   getSupabaseAnonKey,
   getSupabaseServiceRoleKey,
   getSupabaseUrl,
 } from "@/lib/supabase/env";
+
+type CookieToSet = { name: string; value: string; options: CookieOptions };
+
+function setCookiesOnStore(
+  setCookie: (name: string, value: string, options: CookieOptions) => void,
+  cookiesToSet: CookieToSet[],
+) {
+  applyAuthCookiesToResponse(setCookie, cookiesToSet);
+}
 
 export async function createSupabaseServerClient() {
   const url = getSupabaseUrl();
@@ -16,17 +29,19 @@ export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
 
   return createServerClient(url, anon, {
+    cookieOptions: AUTH_COOKIE_DEFAULTS,
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          setCookiesOnStore(
+            (name, value, options) => cookieStore.set(name, value, options),
+            cookiesToSet,
+          );
         } catch {
-          // Called from a Server Component — session refresh happens in middleware.
+          // Called from a Server Component — session refresh happens in middleware/API routes.
         }
       },
     },

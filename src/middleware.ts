@@ -23,6 +23,9 @@ export default async function middleware(request: NextRequest) {
     if (pathname === "/auth/callback" || pathname.startsWith("/auth/callback/")) {
       return updateSupabaseSession(request, NextResponse.next());
     }
+    if (pathname === "/beta-login" || pathname.startsWith("/beta-login/")) {
+      return updateSupabaseSession(request, NextResponse.next());
+    }
     return NextResponse.next();
   }
 
