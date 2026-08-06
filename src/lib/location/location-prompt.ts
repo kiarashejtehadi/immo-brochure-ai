@@ -86,6 +86,49 @@ function mapLandmarkToPayload(
   };
 }
 
+function hasExactStreetAddress(address: ListingAddress): boolean {
+  return address.streetAddress.trim().length > 0;
+}
+
+/** Well-known Berlin district labels derived from postal code (prompt guidance only). */
+function berlinDistrictLabel(postalCode: string): string | undefined {
+  const pc = postalCode.trim();
+  if (pc.startsWith("105") || pc.startsWith("106")) return "Charlottenburg";
+  if (pc.startsWith("140")) return "Charlottenburg";
+  if (pc.startsWith("101") || pc.startsWith("104")) return "Mitte";
+  if (pc.startsWith("102") || pc.startsWith("109")) return "Friedrichshain-Kreuzberg";
+  if (pc.startsWith("103")) return "Prenzlauer Berg";
+  if (pc.startsWith("107") || pc.startsWith("108")) return "Tempelhof-Schöneberg";
+  if (pc.startsWith("120") || pc.startsWith("121")) return "Neukölln";
+  if (pc.startsWith("130") || pc.startsWith("131")) return "Pankow";
+  return undefined;
+}
+
+function resolveAreaLabel(
+  address: ListingAddress,
+  districtContext: string,
+): string {
+  const city = address.city.trim();
+  const postalCode = address.postalCode.trim();
+  const districtFromContext = districtContext
+    .replace(postalCode, "")
+    .replace(city, "")
+    .trim();
+
+  if (districtFromContext && districtFromContext !== city) {
+    return city ? `${city}-${districtFromContext}` : districtFromContext;
+  }
+
+  const cityLower = city.toLowerCase();
+  if (cityLower.includes("berlin")) {
+    const berlinDistrict = berlinDistrictLabel(postalCode);
+    if (berlinDistrict) return `Berlin-${berlinDistrict}`;
+  }
+
+  if (postalCode && city) return `${postalCode} ${city}`;
+  return city || postalCode || "this area";
+}
+
 /** Connectivity hints for well-known DACH urban postal codes (prompt guidance only). */
 export function dachConnectivityHint(
   address: ListingAddress,
@@ -98,16 +141,22 @@ export function dachConnectivityHint(
   const isBerlin = city.includes("berlin");
   const isGerman = outputLanguage === "German";
 
+  if (isBerlin && (postalCode.startsWith("105") || postalCode.startsWith("106"))) {
+    return isGerman
+      ? "Berlin-Charlottenburg: begehrte, zentrale Wohnlage mit dichter ÖPNV-Anbindung (U-Bahn, S-Bahn, Bus) und kurzen Wegen zu den Hauptverkehrsachsen."
+      : "Berlin-Charlottenburg: sought-after central location with dense public transport (U-Bahn, S-Bahn, bus) and major roadways within easy reach.";
+  }
+
   if (isBerlin && postalCode.startsWith("140")) {
     return isGerman
-      ? "Charlottenburg (PLZ 140xx): hervorragende Anbindung an den S-Bahn-Ring, zahlreiche Buslinien (z. B. M45) sowie die Stadtautobahn A100 — schnelle Wege in alle Teile Berlins."
-      : "Charlottenburg (140xx): excellent S-Bahn Ring access, frequent bus lines (e.g. M45), and the A100 city motorway for swift connections across Berlin.";
+      ? "Berlin-Charlottenburg: hervorragende Anbindung an den S-Bahn-Ring, zahlreiche Buslinien (z. B. M45) sowie die Stadtautobahn A100 — schnelle Wege in alle Teile Berlins."
+      : "Berlin-Charlottenburg: excellent S-Bahn Ring access, frequent bus lines (e.g. M45), and the A100 city motorway for swift connections across Berlin.";
   }
 
   if (isBerlin && postalCode.startsWith("10")) {
     return isGerman
-      ? "Berliner Innenstadtlage (PLZ 10xxx): zentrale Lage mit dichter ÖPNV-Anbindung (U-Bahn, S-Bahn, Bus) und kurzen Wegen zu den Hauptverkehrsachsen."
-      : "Central Berlin (10xxx): dense public transport (U-Bahn, S-Bahn, bus) and major roadways within easy reach.";
+      ? "Zentrale Berliner Wohnlage mit dichter ÖPNV-Anbindung (U-Bahn, S-Bahn, Bus) und kurzen Wegen zu den Hauptverkehrsachsen."
+      : "Central Berlin location with dense public transport (U-Bahn, S-Bahn, bus) and major roadways within easy reach.";
   }
 
   if (isBerlin) {
@@ -192,9 +241,54 @@ function hasSpecificTransit(enrichment: LocationEnrichment | null): boolean {
 
 function marketingToneRule(): string {
   return `LOCATION / SURROUNDINGS — MARKETING TONE (STRICT):
-- Write the locationDescription as a professional, attractive real estate exposé sales paragraph.
+- Write the locationDescription as an elegant, fluent, and highly attractive real estate exposé marketing paragraph for property seekers.
+- Highlight lifestyle factors smoothly: urban convenience, local amenities, public transport, and nearby green spaces.
 - NEVER use defensive, cautious, or negative phrases such as "no specific connections verified", "not verified", "limited data", "information unavailable", "could not be retrieved", "unfortunately", or similar disclaimers.
 - Focus on lifestyle appeal, connectivity, and neighborhood quality — always in a confident, inviting tone.`;
+}
+
+function outputCleanlinessRule(outputLanguage: OutputLanguage): string {
+  const germanExamples =
+    outputLanguage === "German"
+      ? `
+- Avoid tautological phrasing (e.g. NEVER: "Innenstadtlage zeichnet sich durch eine zentrale Lage aus").`
+      : `
+- Avoid tautological phrasing (e.g. NEVER: "The inner-city location is characterized by a central location").`;
+
+  return `STRICT OUTPUT & CLEANLINESS (MANDATORY):
+- NEVER output internal formatting codes, regex patterns, or generic placeholders such as "(PLZ 10xxx)", "[PLZ]", "PLZ 10585" in brackets, or "Ortsteil XXX".
+- NEVER use robotic meta-phrases such as "PLZ-Bereich", "PLZ 10xxx", "in diesem Postleitzahlengebiet", or masked postal codes (e.g. "10xxx", "140xx").
+- Write flowing exposé prose — no template brackets, no placeholder syntax, no technical meta-labels.${germanExamples}`;
+}
+
+function missingStreetLocationRule(
+  address: ListingAddress,
+  districtContext: string,
+  outputLanguage: OutputLanguage,
+): string {
+  if (hasExactStreetAddress(address)) return "";
+
+  const areaLabel = resolveAreaLabel(address, districtContext);
+  const postalCode = address.postalCode.trim();
+  const city = address.city.trim();
+
+  if (outputLanguage === "German") {
+    return `MISSING STREET / HOUSE NUMBER (PRIMARY APPROACH):
+Only postal code and city are available — no exact street address.
+- Lead with the city and district/neighborhood name naturally in the narrative (e.g. "${areaLabel}" for ${postalCode} ${city}).
+- You MAY include the actual postal code once, naturally embedded — e.g. "in ${areaLabel} (${postalCode})" or "in attraktiver Lage von ${postalCode} ${city}".
+- Do NOT mask or generalize the postal code (never "10xxx" or similar).
+- Good: "Die Wohnung befindet sich in begehrter und zentraler Lage in ${areaLabel}${postalCode ? ` (${postalCode})` : ""}. Der Kiez bietet eine exzellente Infrastruktur..."
+- Good: "In attraktiver Lage von ${postalCode} ${city} gelegen, profitiert diese Immobilie von einer hervorragenden Anbindung..."
+- Bad (NEVER output): "Die Berliner Innenstadtlage (PLZ 10xxx) zeichnet sich..."`;
+  }
+
+  return `MISSING STREET / HOUSE NUMBER (PRIMARY APPROACH):
+Only postal code and city are available — no exact street address.
+- Lead with the city and district/neighborhood name naturally in the narrative (e.g. "${areaLabel}" for ${postalCode} ${city}).
+- You MAY include the actual postal code once, naturally embedded — e.g. "in ${areaLabel} (${postalCode})" or "in the attractive ${postalCode} ${city} area".
+- Do NOT mask or generalize the postal code (never "10xxx" or similar).
+- Write confident, lifestyle-focused prose — never placeholder-style location labels.`;
 }
 
 function transitLocationRule(
@@ -223,16 +317,16 @@ function transitLocationRule(
 function dachPostalCodeRule(
   address: ListingAddress,
   outputLanguage: OutputLanguage,
+  districtContext: string,
   connectivityHint?: string,
 ): string {
   if (!connectivityHint) return "";
 
-  const locationLabel = [address.postalCode.trim(), address.city.trim()]
-    .filter(Boolean)
-    .join(" ");
+  const areaLabel = resolveAreaLabel(address, districtContext);
 
-  return `DACH / URBAN CONTEXT (${locationLabel}):
+  return `DACH / URBAN CONTEXT (${areaLabel}):
 - Acknowledge the area's high connectivity positively — e.g. nearby S-Bahn Ring, bus lines, and motorway access where applicable.
+- Use the district/neighborhood name naturally (e.g. "${areaLabel}") — never masked postal codes or "PLZ-Bereich" phrasing.
 - Guidance: ${connectivityHint}
 - Weave this into locationDescription naturally; do NOT frame it as unverified or uncertain.`;
 }
@@ -300,11 +394,15 @@ ${formatLandmarksForPrompt(enrichment.nearbyLandmarks, outputLanguage)}`
   return `LOCATION & NEIGHBORHOOD GENERATION INSTRUCTIONS:
 Property: ${locationLine || "this property"}
 
+${outputCleanlinessRule(outputLanguage)}
+
 ${marketingToneRule()}
+
+${missingStreetLocationRule(address, locationContext.districtContext, outputLanguage)}
 
 ${transitLocationRule(outputLanguage, enrichment)}
 
-${dachPostalCodeRule(address, outputLanguage, connectivityHint)}
+${dachPostalCodeRule(address, outputLanguage, locationContext.districtContext, connectivityHint)}
 
 ${landmarkSection}
 
@@ -315,7 +413,7 @@ ${poiBlock}
 
 Write a compelling, professional locationDescription (${outputLanguage}) for the exposé Location / Surroundings section.
 Use provided POI names, transit stops, landmarks, and proximityText where available.
-When specific names are absent from the payload, rely on positive general phrasing and district context — never on disclaimers.
+When specific names are absent from the payload, rely on positive general phrasing and district context — never on disclaimers or placeholder labels.
 
 ${distanceFormattingRules(outputLanguage)}`;
 }
