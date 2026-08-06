@@ -129,7 +129,7 @@ export function buildOpenImmoFormStateSlice(
       ...defaults.address,
       streetAddress: data.address?.streetAddress ?? "",
       houseNumber: data.address?.houseNumber ?? "",
-      unitNumber: data.address?.unitNumber ?? "",
+      unitNumber: "",
       postalCode: data.address?.postalCode ?? "",
       city: data.address?.city ?? "",
       country: data.address?.country ?? defaults.address.country,
@@ -139,7 +139,10 @@ export function buildOpenImmoFormStateSlice(
     property: {
       ...defaults.property,
       propertyType: data.property?.propertyType ?? "",
-      floorLevel: data.property?.floorLevel ?? "",
+      floorLevel:
+        data.property?.floorLevel?.trim() ||
+        data.address?.unitNumber?.trim() ||
+        "",
       condition: data.property?.condition ?? "",
       parking: data.property?.parking ?? defaults.property.parking,
     },

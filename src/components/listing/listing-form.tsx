@@ -492,18 +492,6 @@ export function ListingForm(props: ListingFormProps) {
             />
           </div>
           <div>
-            <label htmlFor="unitNumber" className={labelClassName()}>
-              {copy.unitNumber}
-            </label>
-            <input
-              id="unitNumber"
-              placeholder={copy.unitNumberPlaceholder}
-              value={address.unitNumber ?? ""}
-              onChange={(e) => onAddress({ unitNumber: e.target.value })}
-              className={inputClassName()}
-            />
-          </div>
-          <div>
             <label htmlFor="postalCode" className={labelClassName()}>
               {copy.postalCode}
             </label>
@@ -549,14 +537,14 @@ export function ListingForm(props: ListingFormProps) {
         <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-3 dark:border-zinc-700 dark:bg-zinc-950/40">
           <input
             type="checkbox"
-            checked={address.hideExactAddress === true}
-            onChange={(e) => onAddress({ hideExactAddress: e.target.checked })}
+            checked={address.hideExactHouseNumber === true}
+            onChange={(e) => onAddress({ hideExactHouseNumber: e.target.checked })}
             className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
           />
           <span>
-            <span className={labelClassName()}>{copy.hideExactAddress}</span>
+            <span className={labelClassName()}>{copy.hideExactHouseNumber}</span>
             <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-              {copy.hideExactAddressHint}
+              {copy.hideExactHouseNumberHint}
             </span>
           </span>
         </label>

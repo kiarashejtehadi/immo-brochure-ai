@@ -214,7 +214,7 @@ export function buildDachDemoListingPreset(): DachDemoListingPreset {
       postalCode: "14059",
       city: "Berlin",
       country: "Germany",
-      hideExactAddress: false,
+      hideExactHouseNumber: false,
     },
     size: "85",
     rooms: "3",

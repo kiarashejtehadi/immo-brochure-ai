@@ -235,7 +235,7 @@ function missingStreetLocationRule(
   districtContext: string,
   outputLanguage: OutputLanguage,
 ): string {
-  if (hasStreetLevelInput(address) && !address.hideExactAddress) return "";
+  if (hasStreetLevelInput(address)) return "";
 
   const areaLabel = resolveAreaLabel(address, districtContext);
   const postalCode = address.postalCode.trim();

@@ -29,7 +29,7 @@ const en: DemoListingContent = {
     postalCode: "10115",
     city: "Berlin",
     country: "Germany",
-    hideExactAddress: false,
+    hideExactHouseNumber: false,
   },
   size: "67",
   rooms: "2",

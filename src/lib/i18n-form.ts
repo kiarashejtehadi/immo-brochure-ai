@@ -106,8 +106,8 @@ export type FormCopy = {
   stagingDisclaimerUnfurnished: string;
   stagingDisclaimerPartially: string;
   resetToBrandingDefaults: string;
-  hideExactAddress: string;
-  hideExactAddressHint: string;
+  hideExactHouseNumber: string;
+  hideExactHouseNumberHint: string;
   targetMarketLabel: string;
   targetMarketDach: string;
   targetMarketGlobal: string;
@@ -270,9 +270,9 @@ const en: FormCopy = {
   stagingDisclaimerPartially:
     "Note: Interior furniture shown is for staging purposes only. The unit is delivered partially furnished with built-in fixtures as specified.",
   resetToBrandingDefaults: "Reset to account branding defaults",
-  hideExactAddress: "Hide exact house/unit number in public text & PDF output",
-  hideExactAddressHint:
-    "When checked, full address details are used solely to improve AI location & transport accuracy, but will be masked in generated texts and PDFs (e.g., displaying \"Berlin-Charlottenburg\" instead of \"Otto-Suhr-Allee 27, Apt 12\").",
+  hideExactHouseNumber: "Hide exact house number in public text & PDF output",
+  hideExactHouseNumberHint:
+    "When checked, the street name (e.g. Otto-Suhr-Allee) remains visible, but the house number (e.g. 27) is hidden from generated texts and PDFs while still used internally for accurate transit & location AI detection.",
   targetMarketLabel: "Target market",
   targetMarketDach: "🇩🇪 DACH (DE / AT / CH)",
   targetMarketGlobal: "🌐 Global / Standard",
@@ -431,10 +431,10 @@ const de: Partial<FormCopy> = {
   stagingDisclaimerPartially:
     "Hinweis: Gezeigte Einrichtung dient nur Staging-Zwecken. Das Objekt wird teilmöbliert mit den angegebenen Einbauten übergeben.",
   resetToBrandingDefaults: "Auf Konto-Branding zurücksetzen",
-  hideExactAddress:
-    "Genaue Haus-/Wohnungsnummer in Texten & PDF ausblenden",
-  hideExactAddressHint:
-    "Wenn aktiviert, werden vollständige Adressdaten nur zur Verbesserung der KI-Lage- und Verkehrsanalyse genutzt, in generierten Texten und PDFs jedoch maskiert (z. B. „Berlin-Charlottenburg“ statt „Otto-Suhr-Allee 27, Wohnung 12“).",
+  hideExactHouseNumber:
+    "Genaue Hausnummer in Texten & PDF ausblenden",
+  hideExactHouseNumberHint:
+    "Wenn aktiviert, bleibt der Straßenname (z. B. Otto-Suhr-Allee) sichtbar, die Hausnummer (z. B. 27) wird jedoch in generierten Texten und PDFs ausgeblendet — intern weiter für präzise KI-Lage- und Verkehrsanalyse genutzt.",
   targetMarketLabel: "Zielmarkt",
   targetMarketDach: "🇩🇪 DACH (DE / AT / CH)",
   targetMarketGlobal: "🌐 Global / Standard",

@@ -141,7 +141,6 @@ export function collectGenerateModerationText(body: GenerateRequestPayload): str
   const parts = [
     body.address?.streetAddress,
     body.address?.houseNumber,
-    body.address?.unitNumber,
     body.address?.postalCode,
     body.address?.city,
     body.address?.country,

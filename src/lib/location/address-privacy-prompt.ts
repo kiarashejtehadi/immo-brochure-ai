@@ -1,6 +1,9 @@
 import type { OutputLanguage } from "@/lib/i18n";
 import type { AddressDataPayload } from "@/types/listing";
-import { resolvePublicAreaLabel } from "@/lib/location/format-address";
+import {
+  resolvePublicAreaLabel,
+  shouldMaskHouseNumberInOutput,
+} from "@/lib/location/format-address";
 import type { ListingAddress } from "@/types/listing";
 
 export function buildAddressPrivacyInstructions(
@@ -13,26 +16,42 @@ export function buildAddressPrivacyInstructions(
     resolvePublicAreaLabel(address, districtContext) ||
     addressData.city ||
     "the surrounding area";
+  const maskHouse = shouldMaskHouseNumberInOutput(address);
+  const streetExample = addressData.street || "Otto-Suhr-Allee";
+  const maskedExample =
+    areaLabel && areaLabel !== addressData.city
+      ? `${streetExample}, ${areaLabel}`
+      : `${streetExample}, ${addressData.city}`.replace(/,\s*$/, "").trim();
 
-  if (!addressData.hideExactAddress) {
+  const streetRule =
+    outputLanguage === "German"
+      ? `- Street name ("${addressData.street}") MUST appear naturally in title, fullDescription, locationDescription, and socialCaptions when provided — e.g. "an der ${streetExample}" or "in der ${streetExample}".`
+      : `- Street name ("${addressData.street}") MUST appear naturally in title, fullDescription, locationDescription, and socialCaptions when provided — e.g. "on ${streetExample}" or "in ${streetExample}".`;
+
+  if (!maskHouse) {
     return `ADDRESS IN GENERATED COPY:
-- hideExactAddress is false — you may reference the street address naturally in title or fullDescription when it supports the marketing narrative.
-- Prefer district/neighborhood phrasing in locationDescription; do not paste the full address repeatedly.
-- addressData (for context only): ${JSON.stringify(addressData)}`;
+${streetRule}
+- hideExactHouseNumber is false and a house number is provided — you MAY include the house number in address phrasing (e.g. "${streetExample} ${addressData.houseNumber}").
+- Prefer district/neighborhood context in locationDescription; do not paste the full address repeatedly.
+- addressData (for context — full address used internally for transit/geocoding): ${JSON.stringify(addressData)}`;
   }
 
-  const germanRules =
+  const houseRule =
     outputLanguage === "German"
-      ? `- NEVER mention street name ("${addressData.street}"), house number ("${addressData.houseNumber}"), or unit/floor ("${addressData.unitNumber}") in title, fullDescription, locationDescription, or socialCaptions.
-- Use district-level phrasing instead — e.g. "${areaLabel}" or "Berlin-Charlottenburg (10585)".
-- Good: "Die Wohnung befindet sich in begehrter Lage in ${areaLabel}."
-- Bad (NEVER): "${addressData.street} ${addressData.houseNumber}" or "Wohnung in der ${addressData.street}."
-- The full address in addressData is provided ONLY to improve your understanding of connectivity — do NOT quote it in output.`
-      : `- NEVER mention street name ("${addressData.street}"), house number ("${addressData.houseNumber}"), or unit/floor ("${addressData.unitNumber}") in title, fullDescription, locationDescription, or socialCaptions.
-- Use district-level phrasing instead — e.g. "${areaLabel}".
-- The full address in addressData is for connectivity context only — do NOT quote it in output.`;
+      ? `- DO NOT output the numeric house number ("${addressData.houseNumber}") in title, fullDescription, locationDescription, or socialCaptions.
+- Good: "${maskedExample}" — Bad (NEVER): "${streetExample} ${addressData.houseNumber}".
+- The full street + house number in addressData is for internal transit/geocoding context only — never quote the house number in output.`
+      : `- DO NOT output the numeric house number ("${addressData.houseNumber}") in title, fullDescription, locationDescription, or socialCaptions.
+- Good: "${maskedExample}" — Bad (NEVER): "${streetExample} ${addressData.houseNumber}".
+- Full street + house number in addressData is for internal transit/geocoding only — never quote the house number in output.`;
 
-  return `ADDRESS PRIVACY (MANDATORY — hideExactAddress: true):
-${germanRules}
+  const reason =
+    addressData.hideExactHouseNumber
+      ? "hideExactHouseNumber is true"
+      : "no house number was provided";
+
+  return `ADDRESS PRIVACY — HOUSE NUMBER MASKING (MANDATORY — ${reason}):
+${streetRule}
+${houseRule}
 addressData: ${JSON.stringify(addressData, null, 2)}`;
 }

@@ -8,7 +8,7 @@ export const DEFAULT_LISTING_ADDRESS: ListingAddress = {
   postalCode: "",
   city: "",
   country: "Germany",
-  hideExactAddress: false,
+  hideExactHouseNumber: false,
 };
 
 export const LISTING_COUNTRY_OPTIONS = [
@@ -90,19 +90,19 @@ function splitLegacyStreetLine(streetLine: string): {
   return { streetAddress: trimmed, houseNumber: "" };
 }
 
-/** Street line for geocoding — always includes house number and unit when provided. */
+/** Street line for geocoding — always includes house number when provided. */
 export function buildStreetLine(address: ListingAddress): string {
   const street = address.streetAddress.trim();
   const house = address.houseNumber.trim();
-  const unit = address.unitNumber.trim();
-  const line1 = [street, house].filter(Boolean).join(" ");
-  if (!line1 && !unit) return "";
-  if (unit) return line1 ? `${line1}, ${unit}` : unit;
-  return line1;
+  return [street, house].filter(Boolean).join(" ");
+}
+
+export function shouldMaskHouseNumberInOutput(address: ListingAddress): boolean {
+  return address.hideExactHouseNumber === true || !address.houseNumber.trim();
 }
 
 export function hasStreetLevelInput(address: ListingAddress): boolean {
-  return buildStreetLine(address).length > 0;
+  return address.streetAddress.trim() !== "" || address.houseNumber.trim() !== "";
 }
 
 /** Full address string for geocoding / map queries — never masked. */
@@ -121,32 +121,43 @@ export function formatListingAddress(address: ListingAddress): string {
   return formatFullListingAddress(address);
 }
 
-/** Address shown in PDF and public-facing UI — respects hideExactAddress. */
+/** Address shown in PDF and public-facing UI — masks house number when privacy toggle is on. */
 export function formatPublicListingAddress(
   address: ListingAddress,
   districtContext?: string,
 ): string {
+  const street = address.streetAddress.trim();
+  const house = address.houseNumber.trim();
   const postalCity = [address.postalCode.trim(), address.city.trim()]
     .filter(Boolean)
     .join(" ");
   const country = address.country.trim();
+  const area = resolvePublicAreaLabel(address, districtContext);
+  const maskHouse = shouldMaskHouseNumberInOutput(address);
 
-  if (address.hideExactAddress) {
-    const area = resolvePublicAreaLabel(address, districtContext);
-    return [area, country].filter(Boolean).join(", ");
+  const streetPart = maskHouse ? street : [street, house].filter(Boolean).join(" ");
+
+  let locationLine = "";
+  if (streetPart && maskHouse && area) {
+    locationLine = `${streetPart}, ${area}`;
+  } else if (streetPart) {
+    locationLine = [streetPart, postalCity].filter(Boolean).join(", ");
+  } else if (area) {
+    locationLine = area;
+  } else {
+    locationLine = postalCity;
   }
 
-  return formatFullListingAddress(address);
+  return [locationLine, country].filter(Boolean).join(", ");
 }
 
 export function buildAddressDataPayload(address: ListingAddress): AddressDataPayload {
   return {
     street: address.streetAddress.trim(),
     houseNumber: address.houseNumber.trim(),
-    unitNumber: address.unitNumber.trim(),
     zipCode: address.postalCode.trim(),
     city: address.city.trim(),
-    hideExactAddress: address.hideExactAddress === true,
+    hideExactHouseNumber: address.hideExactHouseNumber === true,
   };
 }
 
@@ -179,6 +190,10 @@ export function normalizeListingAddress(raw: unknown): ListingAddress {
       houseNumber = split.houseNumber;
     }
 
+    const legacyHideExact = (value as { hideExactAddress?: boolean }).hideExactAddress;
+    const hideExactHouseNumber =
+      value.hideExactHouseNumber === true || legacyHideExact === true;
+
     return {
       streetAddress,
       houseNumber,
@@ -186,7 +201,7 @@ export function normalizeListingAddress(raw: unknown): ListingAddress {
       postalCode: String(value.postalCode ?? "").trim(),
       city: String(value.city ?? "").trim(),
       country: String(value.country ?? "Germany").trim() || "Germany",
-      hideExactAddress: value.hideExactAddress === true,
+      hideExactHouseNumber,
     };
   }
 
@@ -222,7 +237,7 @@ function parseLegacyAddressString(line: string): ListingAddress {
         postalCode: postalMatch[1],
         city: postalMatch[2],
         country,
-        hideExactAddress: false,
+        hideExactHouseNumber: false,
       };
     }
 
@@ -233,7 +248,7 @@ function parseLegacyAddressString(line: string): ListingAddress {
       postalCode: "",
       city: cityPart,
       country,
-      hideExactAddress: false,
+      hideExactHouseNumber: false,
     };
   }
 
@@ -247,7 +262,7 @@ function parseLegacyAddressString(line: string): ListingAddress {
       postalCode: inlinePostal[2],
       city: inlinePostal[3].trim(),
       country: "Germany",
-      hideExactAddress: false,
+      hideExactHouseNumber: false,
     };
   }
 
@@ -259,6 +274,6 @@ function parseLegacyAddressString(line: string): ListingAddress {
     postalCode: "",
     city: "",
     country: "Germany",
-    hideExactAddress: false,
+    hideExactHouseNumber: false,
   };
 }

@@ -148,7 +148,6 @@ function buildPropertyPayload(
     addressData,
     streetAddress: listingAddress.streetAddress.trim() || "Not specified",
     houseNumber: listingAddress.houseNumber.trim() || "Not specified",
-    unitNumber: listingAddress.unitNumber.trim() || "Not specified",
     postalCode: listingAddress.postalCode.trim() || "Not specified",
     city: listingAddress.city.trim() || "Not specified",
     country: listingAddress.country.trim() || "Not specified",
