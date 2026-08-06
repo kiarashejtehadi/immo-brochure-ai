@@ -2,6 +2,11 @@ import type { OutputLanguage } from "@/lib/i18n";
 import type { ListingAddress } from "@/types/listing";
 import type { LocationEnrichment, NearbyLandmark, NearbyPoi } from "@/types/location-poi";
 import {
+  buildStreetLine,
+  hasStreetLevelInput,
+  resolvePublicAreaLabel,
+} from "@/lib/location/format-address";
+import {
   distanceFormattingRules,
   formatDistanceForLanguage,
 } from "@/lib/location/distance-format";
@@ -86,47 +91,11 @@ function mapLandmarkToPayload(
   };
 }
 
-function hasExactStreetAddress(address: ListingAddress): boolean {
-  return address.streetAddress.trim().length > 0;
-}
-
-/** Well-known Berlin district labels derived from postal code (prompt guidance only). */
-function berlinDistrictLabel(postalCode: string): string | undefined {
-  const pc = postalCode.trim();
-  if (pc.startsWith("105") || pc.startsWith("106")) return "Charlottenburg";
-  if (pc.startsWith("140")) return "Charlottenburg";
-  if (pc.startsWith("101") || pc.startsWith("104")) return "Mitte";
-  if (pc.startsWith("102") || pc.startsWith("109")) return "Friedrichshain-Kreuzberg";
-  if (pc.startsWith("103")) return "Prenzlauer Berg";
-  if (pc.startsWith("107") || pc.startsWith("108")) return "Tempelhof-Schöneberg";
-  if (pc.startsWith("120") || pc.startsWith("121")) return "Neukölln";
-  if (pc.startsWith("130") || pc.startsWith("131")) return "Pankow";
-  return undefined;
-}
-
 function resolveAreaLabel(
   address: ListingAddress,
   districtContext: string,
 ): string {
-  const city = address.city.trim();
-  const postalCode = address.postalCode.trim();
-  const districtFromContext = districtContext
-    .replace(postalCode, "")
-    .replace(city, "")
-    .trim();
-
-  if (districtFromContext && districtFromContext !== city) {
-    return city ? `${city}-${districtFromContext}` : districtFromContext;
-  }
-
-  const cityLower = city.toLowerCase();
-  if (cityLower.includes("berlin")) {
-    const berlinDistrict = berlinDistrictLabel(postalCode);
-    if (berlinDistrict) return `Berlin-${berlinDistrict}`;
-  }
-
-  if (postalCode && city) return `${postalCode} ${city}`;
-  return city || postalCode || "this area";
+  return resolvePublicAreaLabel(address, districtContext) || "this area";
 }
 
 /** Connectivity hints for well-known DACH urban postal codes (prompt guidance only). */
@@ -266,7 +235,7 @@ function missingStreetLocationRule(
   districtContext: string,
   outputLanguage: OutputLanguage,
 ): string {
-  if (hasExactStreetAddress(address)) return "";
+  if (hasStreetLevelInput(address) && !address.hideExactAddress) return "";
 
   const areaLabel = resolveAreaLabel(address, districtContext);
   const postalCode = address.postalCode.trim();
@@ -362,9 +331,10 @@ export function buildLocationPromptInstructions(
   enrichment: LocationEnrichment | null,
   outputLanguage: OutputLanguage,
 ): string {
-  const locationLine = [address.streetAddress.trim(), address.city.trim()]
-    .filter(Boolean)
-    .join(", ");
+  const streetLine = buildStreetLine(address);
+  const locationLine = streetLine
+    ? [streetLine, address.city.trim()].filter(Boolean).join(", ")
+    : [address.postalCode.trim(), address.city.trim()].filter(Boolean).join(" ");
   const locationContext = buildLocationContextPayload(
     address,
     enrichment,

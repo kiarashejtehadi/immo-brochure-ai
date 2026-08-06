@@ -23,7 +23,7 @@ import {
 } from "@/lib/listing-pdf";
 import {
   DEFAULT_LISTING_ADDRESS,
-  formatListingAddress,
+  formatPublicListingAddress,
   getDefaultCountryForLocale,
 } from "@/lib/location/format-address";
 import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
@@ -947,7 +947,10 @@ function ListingStudioContent() {
     return reelBrandingFromProfile(brandingProfile, proReel, agentMerged);
   }, [agentForLocale, billingStatus, brandingProfile]);
 
-  const formattedAddress = useMemo(() => formatListingAddress(address), [address]);
+  const formattedAddress = useMemo(
+    () => formatPublicListingAddress(address),
+    [address],
+  );
 
   const furnishingDisclaimerText = useMemo(
     () =>

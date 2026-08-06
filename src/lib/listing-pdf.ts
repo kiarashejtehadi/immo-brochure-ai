@@ -16,7 +16,7 @@ import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
 import { propertyOverviewRows, certificateTypeLabel, heatingSourceLabel } from "@/lib/listing-property-labels";
 import { filterPdfTableRows } from "@/lib/pdf-table-rows";
 import { getFurnishingDisclaimerText } from "@/lib/furnishing-guardrail";
-import { formatListingAddress } from "@/lib/location/format-address";
+import { formatPublicListingAddress } from "@/lib/location/format-address";
 
 /** Strip EPC value/class when no certificate applies. */
 export function sanitizeEnergyForPayload(energy: EnergyFormData): EnergyFormData {
@@ -137,7 +137,7 @@ export function buildBrochurePdfProps(input: {
     transactionType: input.transactionType,
     transactionBadge: badge,
     title: input.result.title,
-    address: formatListingAddress(input.address),
+    address: formatPublicListingAddress(input.address),
     size: input.size,
     rooms: input.rooms,
     currency: input.currency,

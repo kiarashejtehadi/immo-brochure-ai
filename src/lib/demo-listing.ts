@@ -23,10 +23,13 @@ export type DemoListingContent = {
 
 const en: DemoListingContent = {
   address: {
-    streetAddress: "Herneweg 12",
+    streetAddress: "Herneweg",
+    houseNumber: "12",
+    unitNumber: "",
     postalCode: "10115",
     city: "Berlin",
     country: "Germany",
+    hideExactAddress: false,
   },
   size: "67",
   rooms: "2",

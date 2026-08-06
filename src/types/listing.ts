@@ -98,10 +98,25 @@ export type AgentFormData = {
 };
 
 export type ListingAddress = {
+  /** Street name without house number (e.g. "Otto-Suhr-Allee"). */
   streetAddress: string;
+  houseNumber: string;
+  /** Unit / floor detail (e.g. "3rd Floor", "Wohnung 12", "Hinterhaus"). */
+  unitNumber: string;
   postalCode: string;
   city: string;
   country: string;
+  /** When true, mask street/house/unit in AI copy and PDF — full address still used for geocoding. */
+  hideExactAddress: boolean;
+};
+
+export type AddressDataPayload = {
+  street: string;
+  houseNumber: string;
+  unitNumber: string;
+  zipCode: string;
+  city: string;
+  hideExactAddress: boolean;
 };
 
 export type GenerateRequestPayload = {

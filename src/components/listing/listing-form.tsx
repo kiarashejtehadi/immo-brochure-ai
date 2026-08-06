@@ -25,7 +25,7 @@ import {
   type CurrencyCode,
 } from "@/lib/currency";
 import { blockNonNumericKey, sanitizeNumericInput } from "@/lib/numeric-input";
-import { LISTING_COUNTRY_OPTIONS } from "@/lib/location/format-address";
+import { LISTING_COUNTRY_OPTIONS, hasStreetLevelInput } from "@/lib/location/format-address";
 import { btnPrimaryCompact, chipActive, chipInactive, segmentActive } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type {
@@ -353,7 +353,8 @@ export function ListingForm(props: ListingFormProps) {
 
   const hasMinimumFields =
     property.propertyType !== "" &&
-    ((address.streetAddress.trim() !== "" && address.city.trim() !== "") ||
+    (((hasStreetLevelInput(address) || address.postalCode.trim() !== "") &&
+      address.city.trim() !== "") ||
       size.trim() !== "");
   const showCreditCost =
     billingStatus?.billingEnabled === true &&
@@ -479,6 +480,30 @@ export function ListingForm(props: ListingFormProps) {
             />
           </div>
           <div>
+            <label htmlFor="houseNumber" className={labelClassName()}>
+              {copy.houseNumber}
+            </label>
+            <input
+              id="houseNumber"
+              placeholder={copy.houseNumberPlaceholder}
+              value={address.houseNumber}
+              onChange={(e) => onAddress({ houseNumber: e.target.value })}
+              className={inputClassName()}
+            />
+          </div>
+          <div>
+            <label htmlFor="unitNumber" className={labelClassName()}>
+              {copy.unitNumber}
+            </label>
+            <input
+              id="unitNumber"
+              placeholder={copy.unitNumberPlaceholder}
+              value={address.unitNumber}
+              onChange={(e) => onAddress({ unitNumber: e.target.value })}
+              className={inputClassName()}
+            />
+          </div>
+          <div>
             <label htmlFor="postalCode" className={labelClassName()}>
               {copy.postalCode}
             </label>
@@ -520,6 +545,21 @@ export function ListingForm(props: ListingFormProps) {
             </select>
           </div>
         </FormGrid>
+
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-3 dark:border-zinc-700 dark:bg-zinc-950/40">
+          <input
+            type="checkbox"
+            checked={address.hideExactAddress}
+            onChange={(e) => onAddress({ hideExactAddress: e.target.checked })}
+            className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <span>
+            <span className={labelClassName()}>{copy.hideExactAddress}</span>
+            <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {copy.hideExactAddressHint}
+            </span>
+          </span>
+        </label>
       </FormAccordionCard>
 
       <FormAccordionCard

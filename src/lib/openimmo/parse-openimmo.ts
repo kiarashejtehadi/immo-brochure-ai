@@ -91,11 +91,13 @@ function mapOpenImmoToAppState(
     getValue(objektart, "vermarktungsart"),
   );
 
-  const street = cleanImportedText(
-    firstText(
-      [firstTextFromNode(geo, "strasse"), getText(geo, "hausnummer")].filter(Boolean).join(" ").trim(),
-      deepFindText(immobilie, ["strasse"]),
-    ),
+  const streetName = cleanImportedText(
+    firstTextFromNode(geo, "strasse") || deepFindText(immobilie, ["strasse"]),
+  );
+  const houseNumber = cleanImportedText(getText(geo, "hausnummer") || deepFindText(immobilie, ["hausnummer"]));
+  const unitNumber = cleanImportedText(
+    firstTextFromNode(geo, "wohnungsnr", "wohnung", "etage") ||
+      deepFindText(immobilie, ["wohnungsnr", "wohnung"]),
   );
 
   const energyValue = firstTextFromNode(
@@ -166,7 +168,9 @@ function mapOpenImmoToAppState(
     title,
     transactionType,
     address: {
-      streetAddress: street,
+      streetAddress: streetName,
+      houseNumber,
+      unitNumber,
       postalCode: cleanImportedText(getText(geo, "plz") || deepFindText(immobilie, ["plz"])),
       city: cleanImportedText(getText(geo, "ort") || deepFindText(immobilie, ["ort"])),
       country,

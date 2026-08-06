@@ -140,6 +140,8 @@ export function sanitizeVoiceParseResult(fields: VoiceParseResult): VoiceParseRe
 export function collectGenerateModerationText(body: GenerateRequestPayload): string {
   const parts = [
     body.address?.streetAddress,
+    body.address?.houseNumber,
+    body.address?.unitNumber,
     body.address?.postalCode,
     body.address?.city,
     body.address?.country,

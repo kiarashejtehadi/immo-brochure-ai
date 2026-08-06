@@ -16,9 +16,12 @@ import {
   hasFittedKitchen,
 } from "@/lib/furnishing-guardrail";
 import {
-  formatListingAddress,
+  buildAddressDataPayload,
+  formatFullListingAddress,
+  formatPublicListingAddress,
   normalizeListingAddress,
 } from "@/lib/location/format-address";
+import { buildAddressPrivacyInstructions } from "@/lib/location/address-privacy-prompt";
 import { fetchLocationEnrichment } from "@/lib/location/geocode-pois";
 import { buildLocationPromptInstructions, buildLocationContextPayload } from "@/lib/location/location-prompt";
 import OpenAI from "openai";
@@ -113,6 +116,7 @@ function buildPropertyPayload(
   outputLanguage: OutputLanguage,
   listingAddress: ListingAddress,
   formattedAddress: string,
+  publicAddress: string,
   locationContext: ReturnType<typeof buildLocationContextPayload>,
 ) {
   const currency = normalizeCurrency(body.currency);
@@ -135,11 +139,16 @@ function buildPropertyPayload(
   const isStagedOrModel = property.isStagedOrModel === true;
   const fittedKitchen = hasFittedKitchen(body.features ?? []);
 
+  const addressData = buildAddressDataPayload(listingAddress);
+
   const common = {
     transactionType: body.transactionType,
     targetLanguage: outputLanguage,
-    address: formattedAddress || "Not specified",
+    address: publicAddress || formattedAddress || "Not specified",
+    addressData,
     streetAddress: listingAddress.streetAddress.trim() || "Not specified",
+    houseNumber: listingAddress.houseNumber.trim() || "Not specified",
+    unitNumber: listingAddress.unitNumber.trim() || "Not specified",
     postalCode: listingAddress.postalCode.trim() || "Not specified",
     city: listingAddress.city.trim() || "Not specified",
     country: listingAddress.country.trim() || "Not specified",
@@ -261,7 +270,7 @@ export async function POST(request: Request) {
   const openai = new OpenAI({ apiKey, timeout: 90_000, maxRetries: 1 });
 
   const listingAddress = normalizeListingAddress(body.address);
-  const formattedAddress = formatListingAddress(listingAddress);
+  const formattedAddress = formatFullListingAddress(listingAddress);
 
   const outputLanguage = normalizeOutputLanguage(body.targetLanguage);
   const instagramTags = getCaptionHashtags(outputLanguage);
@@ -290,6 +299,17 @@ export async function POST(request: Request) {
     enrichment,
     outputLanguage,
   );
+  const publicAddress = formatPublicListingAddress(
+    listingAddress,
+    locationContext.districtContext,
+  );
+  const addressData = buildAddressDataPayload(listingAddress);
+  const addressPrivacyRules = buildAddressPrivacyInstructions(
+    listingAddress,
+    addressData,
+    outputLanguage,
+    locationContext.districtContext,
+  );
   if (enrichment) {
     locationRules = buildLocationPromptInstructions(
       listingAddress,
@@ -303,6 +323,7 @@ export async function POST(request: Request) {
     outputLanguage,
     listingAddress,
     formattedAddress,
+    publicAddress,
     locationContext,
   );
 
@@ -351,6 +372,8 @@ Use only provided facts and observed details from the attached photos; do not in
 If energy certificate is "na", omit claiming specific energy class values.
 
 ${furnishingRules}
+
+${addressPrivacyRules}
 
 ${locationRules}
 

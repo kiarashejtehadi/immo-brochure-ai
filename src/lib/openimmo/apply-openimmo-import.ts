@@ -128,6 +128,8 @@ export function buildOpenImmoFormStateSlice(
     address: {
       ...defaults.address,
       streetAddress: data.address?.streetAddress ?? "",
+      houseNumber: data.address?.houseNumber ?? "",
+      unitNumber: data.address?.unitNumber ?? "",
       postalCode: data.address?.postalCode ?? "",
       city: data.address?.city ?? "",
       country: data.address?.country ?? defaults.address.country,
@@ -184,6 +186,8 @@ export function buildImportedFormState(
     address: {
       ...currentState.address,
       streetAddress: pickImportedString(imported.address.streetAddress, currentState.address.streetAddress),
+      houseNumber: pickImportedString(imported.address.houseNumber, currentState.address.houseNumber),
+      unitNumber: pickImportedString(imported.address.unitNumber, currentState.address.unitNumber),
       postalCode: pickImportedString(imported.address.postalCode, currentState.address.postalCode),
       city: pickImportedString(imported.address.city, currentState.address.city),
       country: pickImportedString(imported.address.country, currentState.address.country),
