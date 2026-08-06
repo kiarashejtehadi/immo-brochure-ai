@@ -1,3 +1,4 @@
+import { mergeListingAddress } from "@/lib/location/format-address";
 import { compressImageForUpload, fileToBase64 } from "@/lib/prepare-images";
 import type { CurrencyCode } from "@/lib/currency";
 import type { FeatureKey, OutputLanguage, ToneKey } from "@/lib/i18n";
@@ -68,7 +69,10 @@ export function readListingStudioDraft(): ListingStudioDraft | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ListingStudioDraft;
     if (parsed?.version !== 1 || typeof parsed.ownerKey !== "string") return null;
-    return parsed;
+    return {
+      ...parsed,
+      address: mergeListingAddress(parsed.address),
+    };
   } catch {
     return null;
   }

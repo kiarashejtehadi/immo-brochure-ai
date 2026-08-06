@@ -158,6 +158,13 @@ export function isListingAddressComplete(address: ListingAddress): boolean {
   );
 }
 
+/** Merge partial/legacy address data into a complete ListingAddress. */
+export function mergeListingAddress(
+  raw: Partial<ListingAddress> | ListingAddress,
+): ListingAddress {
+  return normalizeListingAddress(raw);
+}
+
 /** Accept legacy single-line address strings from older clients. */
 export function normalizeListingAddress(raw: unknown): ListingAddress {
   if (raw && typeof raw === "object" && "streetAddress" in raw) {

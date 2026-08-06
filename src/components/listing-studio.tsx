@@ -23,6 +23,8 @@ import {
 } from "@/lib/listing-pdf";
 import {
   DEFAULT_LISTING_ADDRESS,
+  mergeListingAddress,
+  normalizeListingAddress,
   formatPublicListingAddress,
   getDefaultCountryForLocale,
 } from "@/lib/location/format-address";
@@ -707,7 +709,7 @@ function ListingStudioContent() {
     setBathrooms(draft.bathrooms ?? "");
     setCurrency(draft.currency);
     setTransactionType(draft.transactionType);
-    setAddress(draft.address);
+    setAddress(mergeListingAddress(draft.address));
     setSize(draft.size);
     setRooms(draft.rooms);
     setProperty(draft.property);
@@ -970,7 +972,8 @@ function ListingStudioContent() {
     (parsedData: VoiceParseResult) => {
       applyVoiceParseResult(parsedData, transactionType, {
         onTransactionType: setTransactionType,
-        onAddress: (patch) => setAddress((current) => ({ ...current, ...patch })),
+        onAddress: (patch) =>
+          setAddress((current) => mergeListingAddress({ ...current, ...patch })),
         onSize: setSize,
         onRooms: setRooms,
         onProperty: (patch) => setProperty((current) => ({ ...current, ...patch })),
@@ -1188,7 +1191,7 @@ function ListingStudioContent() {
       setTargetLanguage("German");
       setCurrency("EUR");
       setTransactionType(merged.transactionType ?? "rent");
-      setAddress(merged.address);
+      setAddress(normalizeListingAddress(merged.address));
       setSize(merged.size);
       setRooms(merged.rooms);
       setProperty(merged.property);
@@ -1630,7 +1633,9 @@ function ListingStudioContent() {
             property={property}
             onProperty={(patch) => setProperty((p) => ({ ...p, ...patch }))}
             address={address}
-            onAddress={(patch) => setAddress((a) => ({ ...a, ...patch }))}
+            onAddress={(patch) =>
+              setAddress((a) => mergeListingAddress({ ...a, ...patch }))
+            }
             size={size}
             onSize={setSize}
             rooms={rooms}

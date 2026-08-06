@@ -474,7 +474,7 @@ export function ListingForm(props: ListingFormProps) {
             <input
               id="streetAddress"
               placeholder={copy.streetAddressPlaceholder}
-              value={address.streetAddress}
+              value={address.streetAddress ?? ""}
               onChange={(e) => onAddress({ streetAddress: e.target.value })}
               className={inputClassName()}
             />
@@ -486,7 +486,7 @@ export function ListingForm(props: ListingFormProps) {
             <input
               id="houseNumber"
               placeholder={copy.houseNumberPlaceholder}
-              value={address.houseNumber}
+              value={address.houseNumber ?? ""}
               onChange={(e) => onAddress({ houseNumber: e.target.value })}
               className={inputClassName()}
             />
@@ -498,7 +498,7 @@ export function ListingForm(props: ListingFormProps) {
             <input
               id="unitNumber"
               placeholder={copy.unitNumberPlaceholder}
-              value={address.unitNumber}
+              value={address.unitNumber ?? ""}
               onChange={(e) => onAddress({ unitNumber: e.target.value })}
               className={inputClassName()}
             />
@@ -510,7 +510,7 @@ export function ListingForm(props: ListingFormProps) {
             <input
               id="postalCode"
               placeholder={copy.postalCodePlaceholder}
-              value={address.postalCode}
+              value={address.postalCode ?? ""}
               onChange={(e) => onAddress({ postalCode: e.target.value })}
               className={inputClassName()}
             />
@@ -522,7 +522,7 @@ export function ListingForm(props: ListingFormProps) {
             <input
               id="city"
               placeholder={copy.cityPlaceholder}
-              value={address.city}
+              value={address.city ?? ""}
               onChange={(e) => onAddress({ city: e.target.value })}
               className={inputClassName()}
             />
@@ -549,7 +549,7 @@ export function ListingForm(props: ListingFormProps) {
         <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-3 dark:border-zinc-700 dark:bg-zinc-950/40">
           <input
             type="checkbox"
-            checked={address.hideExactAddress}
+            checked={address.hideExactAddress === true}
             onChange={(e) => onAddress({ hideExactAddress: e.target.checked })}
             className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
           />
