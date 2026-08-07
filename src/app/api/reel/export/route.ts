@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 /**
  * Authorizes property reel export/render for signed-in users with billing access.
- * Pro (Monthly/Yearly) subscribers export without the demo watermark.
+ * Pro (Monthly/Yearly) and credit pack purchasers export without the demo watermark.
  */
 export async function POST() {
   const access = await assertReelExportAccess();

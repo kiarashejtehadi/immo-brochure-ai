@@ -9,9 +9,10 @@ import {
   upsertUserFromAuth,
 } from "@/lib/billing/repository";
 import {
-  audioCreditsLimitForTier,
   resolveUserTier,
+  resolveAudioCreditsLimit,
 } from "@/lib/billing/tier";
+import { hasCreditPackEntitlements } from "@/lib/billing/client-access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { BillingAccess, BillingStatusResponse } from "@/types/billing";
 
@@ -140,7 +141,12 @@ export async function getBillingStatusForClient(): Promise<BillingStatusResponse
     currentPeriodEnd: subscription?.current_period_end ?? null,
     tier,
     audioCreditsUsed,
-    audioCreditsLimit: audioCreditsLimitForTier(tier),
+    audioCreditsLimit: resolveAudioCreditsLimit({
+      tier,
+      remainingCredits,
+      trialCredits,
+      creditsTotal,
+    }),
   };
 }
 
@@ -229,9 +235,15 @@ export async function assertReelExportAccess(): Promise<ReelExportAccessResult> 
     };
   }
 
+  await upsertUserFromAuth({ id: authUser.id, email: authUser.email });
   const subscription = await getActiveSubscription(authUser.id);
+  const remainingCredits = await getUserCredits(authUser.id);
+  const trialCredits = await getTrialCredits(authUser.id);
+  const creditsUsed = await getCreditsUsedCount(authUser.id);
+  const creditsTotal = remainingCredits + creditsUsed;
   const isProReel = Boolean(
-    subscription && PRO_REEL_PLANS.has(subscription.plan_id),
+    (subscription && PRO_REEL_PLANS.has(subscription.plan_id)) ||
+      hasCreditPackEntitlements(remainingCredits, trialCredits, creditsTotal),
   );
 
   return { ok: true, userId: authUser.id, isProReel };

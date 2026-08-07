@@ -1,6 +1,7 @@
 import { defaultCreditsGrant } from "@/lib/billing/repository";
 import {
   addCredits,
+  resetAudioCreditsUsed,
   upsertSubscription,
   upsertUserFromAuth,
   setPaymentCustomerId,
@@ -68,6 +69,7 @@ async function handleOrderCreated(payload: LemonWebhookPayload): Promise<void> {
     userId,
     Number.isFinite(grant) && grant > 0 ? grant : defaultCreditsGrant(),
   );
+  await resetAudioCreditsUsed(userId);
 
   const customerId = parseCustomerId(attrs);
   if (customerId) {

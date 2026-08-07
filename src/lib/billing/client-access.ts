@@ -1,12 +1,7 @@
 import type { BillingStatusResponse } from "@/types/billing";
+import { hasCreditPackEntitlements, isTrialOnlyCredits } from "@/lib/billing/tier";
 
-/** True when remaining credits are trial-only (no purchased pack balance). */
-export function isTrialOnlyCredits(
-  remainingCredits: number,
-  trialCredits: number,
-): boolean {
-  return remainingCredits <= trialCredits;
-}
+export { isTrialOnlyCredits, hasCreditPackEntitlements } from "@/lib/billing/tier";
 
 /** True when the user has a subscription or purchased credits (not trial-only). */
 export function hasPurchasedBillingAccess(
@@ -14,7 +9,11 @@ export function hasPurchasedBillingAccess(
 ): boolean {
   if (!status?.billingEnabled || !status.email) return false;
   if (status.hasActiveSubscription) return true;
-  return !isTrialOnlyCredits(status.remainingCredits ?? 0, status.trialCredits ?? 0);
+  return hasCreditPackEntitlements(
+    status.remainingCredits ?? 0,
+    status.trialCredits ?? 0,
+    status.creditsTotal ?? 0,
+  );
 }
 
 /** Pay-per-use credit pack without an active Pro subscription. */
@@ -26,12 +25,22 @@ export function isCreditPackPlan(
   return hasPurchasedBillingAccess(status);
 }
 
-/** Active Monthly or Yearly Pro subscription — watermark-free branded video reels. */
+/** Watermark-free video reel export (Pro subscription or credit pack purchase). */
 export function hasProReelAccess(
   status: BillingStatusResponse | null | undefined,
 ): boolean {
   if (status && status.billingEnabled === false) return true;
   if (!status?.billingEnabled || !status.email) return false;
-  if (!status.hasActiveSubscription || !status.isPro) return false;
-  return status.planId === "monthly" || status.planId === "yearly";
+  if (
+    status.hasActiveSubscription &&
+    status.isPro &&
+    (status.planId === "monthly" || status.planId === "yearly")
+  ) {
+    return true;
+  }
+  return hasCreditPackEntitlements(
+    status.remainingCredits ?? 0,
+    status.trialCredits ?? 0,
+    status.creditsTotal ?? 0,
+  );
 }

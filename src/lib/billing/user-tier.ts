@@ -2,14 +2,18 @@ import { isBillingEnabled } from "@/lib/billing/config";
 import {
   getActiveSubscription,
   getAudioCreditsUsed,
+  getCreditsUsedCount,
+  getTrialCredits,
+  getUserCredits,
   incrementAudioCreditsUsed,
   upsertUserFromAuth,
 } from "@/lib/billing/repository";
 import { getSessionUser } from "@/lib/billing/access";
 import {
-  TRIAL_AUDIO_CREDIT_LIMIT,
   TRIAL_AUDIO_LIMIT_ERROR,
+  creditPackAudioLimitError,
   isProTier,
+  resolveAudioCreditsLimit,
   resolveUserTier,
   type UserTier,
 } from "@/lib/billing/tier";
@@ -70,12 +74,27 @@ export async function assertVoiceParseAccess(): Promise<VoiceParseAccessResult> 
     };
   }
 
+  const remainingCredits = await getUserCredits(authUser.id);
+  const trialCredits = await getTrialCredits(authUser.id);
+  const creditsUsed = await getCreditsUsedCount(authUser.id);
+  const creditsTotal = remainingCredits + creditsUsed;
+  const audioLimit = resolveAudioCreditsLimit({
+    tier,
+    remainingCredits,
+    trialCredits,
+    creditsTotal,
+  });
   const audioCreditsUsed = await getAudioCreditsUsed(authUser.id);
-  if (audioCreditsUsed >= TRIAL_AUDIO_CREDIT_LIMIT) {
+
+  if (audioLimit !== null && audioCreditsUsed >= audioLimit) {
+    const error =
+      audioLimit > 2
+        ? creditPackAudioLimitError(audioCreditsUsed, audioLimit)
+        : TRIAL_AUDIO_LIMIT_ERROR;
     return {
       ok: false,
       status: 403,
-      error: TRIAL_AUDIO_LIMIT_ERROR,
+      error,
       code: "audio_limit_reached",
     };
   }

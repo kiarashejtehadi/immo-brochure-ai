@@ -50,6 +50,7 @@ export type BillingCopy = {
   featureAiCopy: string;
   featureCustomBrandingExcluded: string;
   featureVideoReelsDemo: string;
+  featureVideoReelsClean: string;
   featureVideoReelsPro: string;
   featureAiVision: string;
   featureUnlimitedGenerations: string;
@@ -57,6 +58,7 @@ export type BillingCopy = {
   featurePrioritySpeed: string;
   featureAnnualDiscount: string;
   featureAudioDictationTrial: string;
+  featureAudioDictationPack: string;
   featureGeocodedLocation: string;
   featureUnlimitedVoice: string;
   featureAutomatedLocationPoi: string;
@@ -198,6 +200,7 @@ const en: BillingCopy = {
   featureCustomBrandingExcluded:
     "Custom Logo & Agency Branding (Pro Subscriptions Only)",
   featureVideoReelsDemo: "AI Property Video Reels (Includes demo watermark)",
+  featureVideoReelsClean: "AI Property Video Reels (Watermark-Free)",
   featureVideoReelsPro:
     "Unlimited Watermark-Free HD Video Reels with Agency Branding",
   featureAiVision:
@@ -207,6 +210,7 @@ const en: BillingCopy = {
   featurePrioritySpeed: "Priority AI Generation Speed",
   featureAnnualDiscount: "Discounted Annual Rate (€10/mo equivalent)",
   featureAudioDictationTrial: "2 Audio Dictation Credits",
+  featureAudioDictationPack: "{count} Audio Dictation Credits",
   featureGeocodedLocation: "Geocoded Location Insights",
   featureUnlimitedVoice: "Unlimited Voice Dictation & AI Parsing",
   featureAutomatedLocationPoi: "Automated Location & POI Descriptions",
@@ -351,6 +355,7 @@ const de: Partial<BillingCopy> = {
   featureCustomBrandingExcluded:
     "Individuelles Logo & Agentur-Branding (nur Pro-Abo)",
   featureVideoReelsDemo: "KI Property-Video-Reels (mit Demo-Wasserzeichen)",
+  featureVideoReelsClean: "KI Property-Video-Reels (ohne Wasserzeichen)",
   featureVideoReelsPro:
     "Unbegrenzte HD-Video-Reels ohne Wasserzeichen mit Agentur-Branding",
   featureAiVision:
@@ -360,6 +365,7 @@ const de: Partial<BillingCopy> = {
   featurePrioritySpeed: "Priorisierte KI-Generierung",
   featureAnnualDiscount: "Ermäßigter Jahrestarif (ca. 10 €/Monat)",
   featureAudioDictationTrial: "2 Sprach-Diktat-Credits",
+  featureAudioDictationPack: "{count} Sprach-Diktat-Credits",
   featureGeocodedLocation: "Geokodierte Lage-Insights",
   featureUnlimitedVoice: "Unbegrenztes Sprach-Diktat & KI-Parsing",
   featureAutomatedLocationPoi: "Automatische Lage- & POI-Beschreibungen",

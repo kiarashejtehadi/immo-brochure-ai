@@ -180,6 +180,18 @@ export async function incrementAudioCreditsUsed(userId: string): Promise<number>
   return next;
 }
 
+export async function resetAudioCreditsUsed(userId: string): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("user_credits")
+    .update({
+      audio_credits_used: 0,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+}
+
 /** Count exposé generations that consumed a credit-pack credit. */
 export async function getCreditsUsedCount(userId: string): Promise<number> {
   const supabase = createSupabaseServiceClient();
