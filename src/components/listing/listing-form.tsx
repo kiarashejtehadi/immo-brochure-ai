@@ -488,6 +488,14 @@ export function ListingForm(props: ListingFormProps) {
 
       {workflowStep === 1 ? (
         <FormStepPanel>
+          <MarketConfigBar
+            copy={copy}
+            targetMarket={targetMarket}
+            onTargetMarket={onTargetMarket}
+            userRole={userRole}
+            onUserRole={onUserRole}
+          />
+
           {onOpenImmoImport ? (
             <OpenImmoImportDropzone copy={copy} onImport={handleOpenImmoImport} />
           ) : null}
@@ -1350,14 +1358,6 @@ export function ListingForm(props: ListingFormProps) {
 
       {workflowStep === 3 ? (
         <FormStepPanel>
-          <MarketConfigBar
-            copy={copy}
-            targetMarket={targetMarket}
-            onTargetMarket={onTargetMarket}
-            userRole={userRole}
-            onUserRole={onUserRole}
-          />
-
           <div>
             <p className={labelClassName()}>{copy.exposeLanguage}</p>
             <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">{copy.exposeLanguageHint}</p>
