@@ -21,3 +21,13 @@ export function outputLanguageFromLocale(locale: UiLocale): OutputLanguage {
     OUTPUT_LANGUAGE_OPTIONS.find((o) => o.locale === locale)?.value ?? "English"
   );
 }
+
+export const EXPOSE_LANGUAGE_SHORT: Record<OutputLanguage, string> = {
+  English: "EN",
+  German: "DE",
+  French: "FR",
+  Spanish: "ES",
+  Italian: "IT",
+  Dutch: "NL",
+  Polish: "PL",
+};

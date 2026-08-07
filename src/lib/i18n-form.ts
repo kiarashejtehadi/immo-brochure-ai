@@ -10,6 +10,9 @@ export type FormCopy = {
   sectionFeatures: string;
   sectionMedia: string;
   sectionAgentOutput: string;
+  advancedOutputOptions: string;
+  includeStandardLegalDisclaimer: string;
+  includeStandardLegalDisclaimerHint: string;
   propertyType: string;
   propertyTypeApartment: string;
   propertyTypeHouse: string;
@@ -166,7 +169,11 @@ const en: FormCopy = {
   sectionBuildingEnergy: "Building, energy & parking",
   sectionFeatures: "Features & amenities",
   sectionMedia: "Media uploads",
-  sectionAgentOutput: "Agent & output settings",
+  sectionAgentOutput: "Agent & contact",
+  advancedOutputOptions: "Advanced / output options",
+  includeStandardLegalDisclaimer: "Include standard legal disclaimer (Haftungsausschluss)",
+  includeStandardLegalDisclaimerHint:
+    "Shown on the PDF contact page. You can edit the text below before generating.",
   propertyType: "Property type",
   propertyTypeApartment: "Apartment",
   propertyTypeHouse: "House",
@@ -329,7 +336,12 @@ const de: Partial<FormCopy> = {
   sectionBuildingEnergy: "Gebäude, Energie & Parken",
   sectionFeatures: "Ausstattung & Merkmale",
   sectionMedia: "Medien-Uploads",
-  sectionAgentOutput: "Makler & Ausgabe",
+  sectionAgentOutput: "Makler & Kontakt",
+  advancedOutputOptions: "Erweitert / Ausgabeoptionen",
+  includeStandardLegalDisclaimer:
+    "Standard-Haftungsausschluss einbinden",
+  includeStandardLegalDisclaimerHint:
+    "Erscheint auf der PDF-Kontaktseite. Text vor dem Generieren anpassbar.",
   propertyType: "Objektart",
   propertyTypeApartment: "Wohnung",
   propertyTypeHouse: "Haus",

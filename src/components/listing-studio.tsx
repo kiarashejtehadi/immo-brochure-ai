@@ -319,6 +319,7 @@ function ListingStudioContent() {
   );
 
   const [targetLanguage, setTargetLanguage] = useState<OutputLanguage>("German");
+  const [includeLegalDisclaimer, setIncludeLegalDisclaimer] = useState(true);
   const [targetMarket, setTargetMarket] = useState<TargetMarket>("dach");
   const [userRole, setUserRole] = useState<UserRole>("agent");
   const [commissionPreset, setCommissionPreset] = useState<CommissionPreset>("commission_free");
@@ -548,16 +549,20 @@ function ListingStudioContent() {
   }
 
   const agentForLocale = useMemo(
-    () => ({
-      ...agent,
-      legalDisclaimer:
+    () => {
+      const resolvedDisclaimer =
         targetMarket === "dach" &&
         (agent.legalDisclaimer.trim() === DACH_LEGAL_DISCLAIMER ||
           isKnownDefaultLegalDisclaimer(agent.legalDisclaimer))
           ? DACH_LEGAL_DISCLAIMER
-          : resolveLegalDisclaimer(agent.legalDisclaimer, uiLocale),
-    }),
-    [agent, uiLocale, targetMarket],
+          : resolveLegalDisclaimer(agent.legalDisclaimer, uiLocale);
+
+      return {
+        ...agent,
+        legalDisclaimer: includeLegalDisclaimer ? resolvedDisclaimer : "",
+      };
+    },
+    [agent, uiLocale, targetMarket, includeLegalDisclaimer],
   );
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("story");
@@ -682,6 +687,7 @@ function ListingStudioContent() {
       legalDisclaimer: DACH_LEGAL_DISCLAIMER,
     });
     setTargetLanguage("German");
+    setIncludeLegalDisclaimer(true);
     if (uiLocale === "en") setCurrency("EUR");
     setResult(null);
     setHasGenerated(false);
@@ -728,6 +734,7 @@ function ListingStudioContent() {
     });
     setEnergy(draft.energy);
     setAgent(draft.agent);
+    setIncludeLegalDisclaimer(draft.includeLegalDisclaimer ?? true);
     setPhotos((prev) => {
       for (const photo of prev) URL.revokeObjectURL(photo.url);
       return draft.photos.map(storedPhotoToPreview);
@@ -839,6 +846,7 @@ function ListingStudioContent() {
             sale,
             energy,
             agent,
+            includeLegalDisclaimer,
             photos: photosStored,
             floorPlan: floorPlanStored,
             result,
@@ -878,6 +886,7 @@ function ListingStudioContent() {
     sale,
     energy,
     agent,
+    includeLegalDisclaimer,
     photos,
     floorPlanFile,
     result,
@@ -1670,6 +1679,9 @@ function ListingStudioContent() {
             onTone={setTone}
             targetLanguage={targetLanguage}
             onTargetLanguage={handleExposeLanguageChange}
+            includeLegalDisclaimer={includeLegalDisclaimer}
+            onIncludeLegalDisclaimer={setIncludeLegalDisclaimer}
+            defaultLegalDisclaimer={exposeFormCopy.defaultLegalDisclaimer}
             generateError={generateError}
             billingHint={billingHint}
             onOpenAuth={() => setAuthOpen(true)}

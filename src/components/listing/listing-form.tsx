@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
 import { FormAccordionCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
@@ -16,8 +17,7 @@ import type {
   OutputLanguage,
   UiCopy,
 } from "@/lib/i18n";
-import { LOCALE_LABELS } from "@/lib/i18n";
-import { EXPOSE_LANGUAGE_OPTIONS } from "@/lib/target-languages";
+import { EXPOSE_LANGUAGE_OPTIONS, EXPOSE_LANGUAGE_SHORT } from "@/lib/target-languages";
 import {
   CURRENCY_LABELS,
   ENGLISH_CURRENCY_OPTIONS,
@@ -227,6 +227,9 @@ export type ListingFormProps = {
   onTone: (tone: ToneKey) => void;
   targetLanguage: OutputLanguage;
   onTargetLanguage: (lang: OutputLanguage) => void;
+  includeLegalDisclaimer: boolean;
+  onIncludeLegalDisclaimer: (include: boolean) => void;
+  defaultLegalDisclaimer: string;
   generateError: string | null;
   billingHint: "auth" | "checkout" | null;
   onOpenAuth: () => void;
@@ -294,6 +297,9 @@ export function ListingForm(props: ListingFormProps) {
     onTone,
     targetLanguage,
     onTargetLanguage,
+    includeLegalDisclaimer,
+    onIncludeLegalDisclaimer,
+    defaultLegalDisclaimer,
     generateError,
     billingHint,
     onOpenAuth,
@@ -407,6 +413,7 @@ export function ListingForm(props: ListingFormProps) {
   );
 
   const [openStep, setOpenStep] = useState(1);
+  const [advancedOutputOpen, setAdvancedOutputOpen] = useState(false);
 
   useEffect(() => {
     if (openImmoImportAppliedTick && openImmoImportAppliedTick > 0) {
@@ -1401,40 +1408,6 @@ export function ListingForm(props: ListingFormProps) {
             ))}
           </div>
         </div>
-
-        <div>
-          <label htmlFor="expose-language" className={labelClassName()}>
-            {copy.exposeLanguage}
-          </label>
-          <p className="mb-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            {copy.exposeLanguageHint}
-          </p>
-          <select
-            id="expose-language"
-            value={targetLanguage}
-            onChange={(e) => onTargetLanguage(e.target.value as OutputLanguage)}
-            className={inputClassName()}
-          >
-            {EXPOSE_LANGUAGE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {LOCALE_LABELS[opt.locale]}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="legalDisclaimer" className={labelClassName()}>
-            {copy.legalDisclaimer}
-          </label>
-          <textarea
-            id="legalDisclaimer"
-            rows={2}
-            value={agent.legalDisclaimer}
-            onChange={(e) => onAgent({ legalDisclaimer: e.target.value })}
-            className={cn(inputClassName(), "resize-y")}
-          />
-        </div>
       </FormAccordionCard>
 
       <div className="sticky bottom-0 z-10 -mx-1 space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/95">
@@ -1459,6 +1432,87 @@ export function ListingForm(props: ListingFormProps) {
         ) : null}
 
         <CreditPackUsage status={billingStatus} variant="panel" />
+
+        <div>
+          <p className={labelClassName()}>{copy.exposeLanguage}</p>
+          <div
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label={copy.exposeLanguage}
+          >
+            {EXPOSE_LANGUAGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onTargetLanguage(opt.value)}
+                className={cn(
+                  "min-w-[3rem] rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200",
+                  targetLanguage === opt.value
+                    ? "border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 dark:border-indigo-500 dark:bg-indigo-500"
+                    : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 hover:bg-indigo-50/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+                )}
+              >
+                {EXPOSE_LANGUAGE_SHORT[opt.value]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <button
+            type="button"
+            onClick={() => setAdvancedOutputOpen((open) => !open)}
+            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800/60"
+          >
+            {copy.advancedOutputOptions}
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-zinc-500 transition-transform",
+                advancedOutputOpen && "rotate-180",
+              )}
+            />
+          </button>
+          {advancedOutputOpen ? (
+            <div className="space-y-3 border-t border-zinc-200 px-3 py-3 dark:border-zinc-700">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={includeLegalDisclaimer}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    onIncludeLegalDisclaimer(checked);
+                    if (checked && !agent.legalDisclaimer.trim()) {
+                      onAgent({ legalDisclaimer: defaultLegalDisclaimer });
+                    }
+                  }}
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>
+                  <span className={labelClassName()}>
+                    {copy.includeStandardLegalDisclaimer}
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    {copy.includeStandardLegalDisclaimerHint}
+                  </span>
+                </span>
+              </label>
+              {includeLegalDisclaimer ? (
+                <div>
+                  <label htmlFor="legalDisclaimer" className={labelClassName()}>
+                    {copy.legalDisclaimer}
+                  </label>
+                  <textarea
+                    id="legalDisclaimer"
+                    rows={3}
+                    value={agent.legalDisclaimer}
+                    onChange={(e) => onAgent({ legalDisclaimer: e.target.value })}
+                    className={cn(inputClassName(), "resize-y")}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
 
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="space-y-1.5">

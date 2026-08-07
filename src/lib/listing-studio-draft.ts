@@ -50,6 +50,7 @@ export type ListingStudioDraft = {
   sale: SaleFormData;
   energy: EnergyFormData;
   agent: AgentFormData;
+  includeLegalDisclaimer: boolean;
   photos: StoredPhotoDraft[];
   floorPlan: StoredPhotoDraft | null;
   result: GenerateResult | null;
