@@ -23,7 +23,7 @@ import {
 } from "@/lib/supabase/client-session";
 import { savePostAuthRedirect } from "@/lib/supabase/auth-redirect";
 import { readJsonResponse } from "@/lib/http/read-json-response";
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import type { UiLocale } from "@/lib/i18n";
 import { getBillingCopy, interpolate } from "@/lib/i18n-billing";
 import { cn } from "@/lib/utils";
@@ -86,18 +86,42 @@ export function PricingSection({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [withdrawalAccepted, setWithdrawalAccepted] = useState(false);
   const [legalHighlight, setLegalHighlight] = useState(false);
+  const [legalError, setLegalError] = useState<string | null>(null);
   const autoCheckoutStarted = useRef(false);
+
+  const isLegalAgreed = termsAccepted && withdrawalAccepted;
 
   const plans = getPlanCardDefinitions(uiLocale).filter(
     (plan) => !subscriptionOnly || plan.key !== "credits_pack",
   );
   const freeTrialPlan = !subscriptionOnly ? getFreeTrialCardDefinition(uiLocale) : null;
 
-  const acceptLegalConsent = useCallback(() => {
-    setTermsAccepted(true);
-    setWithdrawalAccepted(true);
-    setLegalHighlight(false);
-  }, []);
+  const requireLegalConsent = useCallback(() => {
+    if (isLegalAgreed) {
+      setLegalError(null);
+      setLegalHighlight(false);
+      return true;
+    }
+    setLegalHighlight(true);
+    setLegalError(copy.legalConsentRequired);
+    document.getElementById("pricing-legal-notice")?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+    return false;
+  }, [copy.legalConsentRequired, isLegalAgreed]);
+
+  const handleTermsChange = useCallback((accepted: boolean) => {
+    setTermsAccepted(accepted);
+    setLegalError(null);
+    if (accepted && withdrawalAccepted) setLegalHighlight(false);
+  }, [withdrawalAccepted]);
+
+  const handleWithdrawalChange = useCallback((accepted: boolean) => {
+    setWithdrawalAccepted(accepted);
+    setLegalError(null);
+    if (accepted && termsAccepted) setLegalHighlight(false);
+  }, [termsAccepted]);
 
   const startCheckout = useCallback(
     async (plan: BillingPlanKey) => {
@@ -142,7 +166,7 @@ export function PricingSection({
 
   const handlePaidPlanClick = useCallback(
     async (plan: BillingPlanKey) => {
-      acceptLegalConsent();
+      if (!requireLegalConsent()) return;
 
       if (!isSignedIn) {
         const redirectPath = checkoutPathWithPlan(locale, plan);
@@ -155,8 +179,13 @@ export function PricingSection({
 
       await startCheckout(plan);
     },
-    [acceptLegalConsent, isSignedIn, locale, startCheckout],
+    [isSignedIn, locale, requireLegalConsent, startCheckout],
   );
+
+  const handleFreeTrialClick = useCallback(() => {
+    if (!requireLegalConsent()) return;
+    router.push("/create");
+  }, [requireLegalConsent, router]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -167,8 +196,13 @@ export function PricingSection({
     if (!isBillingPlanKey(planParam)) return;
 
     autoCheckoutStarted.current = true;
-    acceptLegalConsent();
     router.replace(pathname);
+
+    if (!isLegalAgreed) {
+      setLegalHighlight(true);
+      setLegalError(copy.legalConsentRequired);
+      return;
+    }
 
     if (status?.hasActiveSubscription && planParam !== "credits_pack") {
       router.push("/create");
@@ -177,8 +211,9 @@ export function PricingSection({
 
     void startCheckout(planParam);
   }, [
-    acceptLegalConsent,
     billingEnabled,
+    copy.legalConsentRequired,
+    isLegalAgreed,
     isSignedIn,
     pathname,
     router,
@@ -189,7 +224,7 @@ export function PricingSection({
 
   const paidButtonClass = (highlight?: boolean) =>
     cn(
-      "mt-5 w-full cursor-pointer rounded-xl py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed",
+      "mt-5 w-full cursor-pointer rounded-xl py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
       highlight
         ? "bg-indigo-600 text-white hover:bg-indigo-500"
         : "border border-zinc-300 bg-white hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:hover:bg-zinc-900",
@@ -238,13 +273,14 @@ export function PricingSection({
                 <PlanFeatureRow key={feature.text} feature={feature} />
               ))}
             </ul>
-            <Link
-              href="/create"
-              onClick={acceptLegalConsent}
-              className="mt-5 inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-indigo-600 bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            <button
+              type="button"
+              disabled={!isLegalAgreed}
+              onClick={handleFreeTrialClick}
+              className="mt-5 inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-indigo-600 bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {freeTrialPlan.cta}
-            </Link>
+            </button>
           </article>
         ) : null}
         {plans.map((plan) => (
@@ -283,7 +319,7 @@ export function PricingSection({
 
             <button
               type="button"
-              disabled={loadingPlan === plan.key}
+              disabled={loadingPlan === plan.key || !isLegalAgreed}
               onClick={() => void handlePaidPlanClick(plan.key)}
               className={cn(
                 paidButtonClass(plan.highlight),
@@ -300,10 +336,16 @@ export function PricingSection({
         variant="panel"
         termsAccepted={termsAccepted}
         withdrawalAccepted={withdrawalAccepted}
-        onTermsAcceptedChange={setTermsAccepted}
-        onWithdrawalAcceptedChange={setWithdrawalAccepted}
+        onTermsAcceptedChange={handleTermsChange}
+        onWithdrawalAcceptedChange={handleWithdrawalChange}
         highlightMissing={legalHighlight}
       />
+
+      {legalError ? (
+        <p className="text-sm font-medium text-red-600 dark:text-red-400" role="alert">
+          {legalError}
+        </p>
+      ) : null}
 
       <AuthEmailModal
         open={authOpen}

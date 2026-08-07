@@ -39,15 +39,13 @@ export function MarketingNavbar({
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/90 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/90">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3.5">
-          <div className="min-w-0">
-            <Link
-              href="/"
-              className="truncate text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-50"
-            >
-              {copy.brandName}
-            </Link>
-          </div>
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6">
+          <Link
+            href="/"
+            className="min-w-0 flex-1 truncate text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-50"
+          >
+            {copy.brandName}
+          </Link>
 
           <nav
             className="hidden items-center gap-1 md:flex"
@@ -65,7 +63,7 @@ export function MarketingNavbar({
             ))}
           </nav>
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <label className="sr-only" htmlFor="marketing-nav-locale">
               Language
             </label>
@@ -87,12 +85,15 @@ export function MarketingNavbar({
             <button
               type="button"
               onClick={handleSignIn}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              className="whitespace-nowrap rounded-lg px-2 py-2 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 sm:px-3 sm:text-sm dark:text-zinc-300 dark:hover:bg-zinc-900"
             >
               {copy.navSignIn}
             </button>
 
-            <Link href="/create" className={cn(btnPrimary, "px-4 py-2 text-sm shadow-sm")}>
+            <Link
+              href="/create"
+              className={cn(btnPrimary, "hidden px-3 py-2 text-xs shadow-sm sm:inline-flex sm:px-4 sm:text-sm")}
+            >
               {copy.navTryFree}
             </Link>
           </div>

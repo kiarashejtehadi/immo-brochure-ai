@@ -22,56 +22,31 @@ const SPRING_TEXT = { damping: 200, stiffness: 100, mass: 0.9 };
 const PLACEHOLDER_GRADIENT =
   "linear-gradient(160deg, #1e293b 0%, #0f172a 45%, #312e81 100%)";
 
-const DEMO_WATERMARK_TEXT = "DEMO PREVIEW • SUBSCRIBE TO REMOVE WATERMARK";
+const DEMO_WATERMARK_BADGE = "Demo Preview";
 
 function DemoWatermarkOverlay() {
   return (
-    <AbsoluteFill
-      style={{
-        pointerEvents: "none",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
       <div
         style={{
-          transform: "rotate(-32deg)",
-          width: "140%",
-          textAlign: "center",
+          position: "absolute",
+          bottom: 48,
+          right: 32,
+          padding: "12px 20px",
+          borderRadius: 999,
+          backgroundColor: "rgba(0, 0, 0, 0.55)",
+          backdropFilter: "blur(4px)",
+          color: "rgba(255, 255, 255, 0.92)",
+          fontFamily:
+            'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+          fontSize: 22,
+          fontWeight: 600,
+          letterSpacing: "0.04em",
+          lineHeight: 1.2,
+          textTransform: "uppercase",
         }}
       >
-        <p
-          style={{
-            margin: 0,
-            color: "rgba(255, 255, 255, 0.38)",
-            fontFamily:
-              'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
-            fontSize: 40,
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            lineHeight: 1.35,
-            textTransform: "uppercase",
-            textShadow: "0 4px 24px rgba(0,0,0,0.45)",
-          }}
-        >
-          {DEMO_WATERMARK_TEXT}
-        </p>
-        <p
-          style={{
-            margin: "48px 0 0",
-            color: "rgba(255, 255, 255, 0.28)",
-            fontFamily:
-              'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
-            fontSize: 40,
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            lineHeight: 1.35,
-            textTransform: "uppercase",
-            textShadow: "0 4px 24px rgba(0,0,0,0.45)",
-          }}
-        >
-          {DEMO_WATERMARK_TEXT}
-        </p>
+        {DEMO_WATERMARK_BADGE}
       </div>
     </AbsoluteFill>
   );

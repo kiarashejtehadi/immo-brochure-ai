@@ -264,17 +264,6 @@ export function PropertyReelPreview({
             acknowledgeRemotionLicense
           />
 
-          {showDemoWatermark ? (
-            <button
-              type="button"
-              onClick={() => setUpgradeOpen(true)}
-              className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-black/80 px-3 py-2.5 text-left transition hover:bg-black/90"
-            >
-              <p className="text-[10px] font-semibold leading-snug text-white sm:text-xs">
-                {copy.reelUpgradeBanner}
-              </p>
-            </button>
-          ) : null}
         </div>
 
         <div className="w-full max-w-sm space-y-2">
@@ -294,7 +283,20 @@ export function PropertyReelPreview({
           </button>
 
           <p className="text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            {showDemoWatermark ? copy.reelDemoHint : copy.reelHint}
+            {showDemoWatermark ? (
+              <>
+                {copy.reelDemoHint}{" "}
+                <button
+                  type="button"
+                  onClick={() => setUpgradeOpen(true)}
+                  className="font-medium text-indigo-600 underline underline-offset-2 hover:text-indigo-500 dark:text-indigo-400"
+                >
+                  {copy.reelUpgradeBanner}
+                </button>
+              </>
+            ) : (
+              copy.reelHint
+            )}
           </p>
 
           {exportError ? (

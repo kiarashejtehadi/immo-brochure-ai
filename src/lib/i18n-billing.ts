@@ -131,6 +131,7 @@ export type BillingCopy = {
   dataExportPreparing: string;
   dataExportSuccess: string;
   dataExportFailed: string;
+  legalConsentRequired: string;
 };
 
 export function interpolate(
@@ -296,6 +297,7 @@ const en: BillingCopy = {
   dataExportPreparing: "Preparing your download…",
   dataExportSuccess: "Your data export has been downloaded.",
   dataExportFailed: "Could not export your data. Please try again or contact support.",
+  legalConsentRequired: "Please accept the terms and conditions to proceed.",
 };
 
 const de: Partial<BillingCopy> = {
@@ -455,6 +457,8 @@ const de: Partial<BillingCopy> = {
   dataExportSuccess: "Ihr Datenexport wurde heruntergeladen.",
   dataExportFailed:
     "Datenexport fehlgeschlagen. Bitte erneut versuchen oder Support kontaktieren.",
+  legalConsentRequired:
+    "Bitte akzeptieren Sie die AGB, um fortzufahren.",
 };
 
 const fr: Partial<BillingCopy> = {

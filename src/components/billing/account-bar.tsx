@@ -107,7 +107,7 @@ export function AccountBar({ locale }: { locale: string }) {
     <>
       <div className="flex flex-col items-stretch gap-2 sm:items-end">
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{copy.account}</p>
-        <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
+        <div className="flex flex-wrap items-center justify-start gap-1.5 sm:justify-end sm:gap-2 text-sm">
           {!ready && !email ? (
             <span className="text-xs text-zinc-400">{copy.loading}</span>
           ) : email ? (

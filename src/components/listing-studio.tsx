@@ -1561,40 +1561,66 @@ function ListingStudioContent() {
   return (
     <div className="min-h-screen overflow-visible bg-gradient-to-b from-blue-50/30 via-zinc-50 to-zinc-50 text-zinc-900 dark:from-indigo-950/20 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-50">
       <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
-          <div>
-            <p className="text-xs font-medium tracking-widest text-zinc-500 uppercase">
-              {copy.brand}
-            </p>
-            <h1 className="text-lg font-semibold tracking-tight">
-              {copy.pageTitle}
-            </h1>
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex w-full items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 pr-2">
+              <p className="truncate text-xs font-medium tracking-widest text-zinc-500 uppercase">
+                {copy.brand}
+              </p>
+              <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">
+                {copy.pageTitle}
+              </h1>
+            </div>
+            <div className="hidden shrink-0 sm:block">
+              <label
+                htmlFor="ui-language-header"
+                className="text-xs font-medium text-zinc-500"
+              >
+                {copy.uiLanguage}
+              </label>
+              <select
+                id="ui-language-header"
+                value={routeLocale}
+                onChange={(e) =>
+                  router.replace(pathname, {
+                    locale: e.target.value as UiLocale,
+                  })
+                }
+                className="mt-1 block min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                {UI_LOCALES.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {LOCALE_LABELS[loc]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="flex w-full flex-col-reverse items-stretch gap-3 sm:w-auto sm:flex-col sm:items-end">
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <AccountBar locale={routeLocale} />
-            <div className="flex flex-col gap-1 sm:items-end">
-            <label
-              htmlFor="ui-language-header"
-              className="text-xs font-medium text-zinc-500"
-            >
-              {copy.uiLanguage}
-            </label>
-            <select
-              id="ui-language-header"
-              value={routeLocale}
-              onChange={(e) =>
-                router.replace(pathname, {
-                  locale: e.target.value as UiLocale,
-                })
-              }
-              className="w-full min-w-[10rem] rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm sm:w-auto dark:border-zinc-700 dark:bg-zinc-900"
-            >
-              {UI_LOCALES.map((loc) => (
-                <option key={loc} value={loc}>
-                  {LOCALE_LABELS[loc]}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1 sm:hidden">
+              <label
+                htmlFor="ui-language-header-mobile"
+                className="text-xs font-medium text-zinc-500"
+              >
+                {copy.uiLanguage}
+              </label>
+              <select
+                id="ui-language-header-mobile"
+                value={routeLocale}
+                onChange={(e) =>
+                  router.replace(pathname, {
+                    locale: e.target.value as UiLocale,
+                  })
+                }
+                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                {UI_LOCALES.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {LOCALE_LABELS[loc]}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
