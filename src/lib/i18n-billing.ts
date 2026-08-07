@@ -112,6 +112,17 @@ export type BillingCopy = {
   deleteAccountTypeHint: string;
   settingsAccount: string;
   settingsAccountSubtitle: string;
+  settingsBillingTitle: string;
+  settingsBillingSubtitle: string;
+  billingCurrentPlan: string;
+  billingRenewsOn: string;
+  billingChangePlan: string;
+  billingChangePlanHint: string;
+  billingSwitchToYearly: string;
+  billingSwitchToMonthly: string;
+  billingPortalTitle: string;
+  billingPortalHint: string;
+  billingNoSubscription: string;
 };
 
 export function interpolate(
@@ -254,6 +265,20 @@ const en: BillingCopy = {
   deleteAccountTypeHint: 'Enter DELETE to enable confirmation.',
   settingsAccount: "Account",
   settingsAccountSubtitle: "Manage your sign-in and permanently delete your account and data.",
+  settingsBillingTitle: "Billing",
+  settingsBillingSubtitle:
+    "View your plan, switch between monthly and yearly, or manage payment details.",
+  billingCurrentPlan: "Current plan",
+  billingRenewsOn: "Renews on {date}",
+  billingChangePlan: "Change plan",
+  billingChangePlanHint:
+    "Switch billing interval anytime. Checkout opens for the new plan; cancel the old subscription in the customer portal if both remain active.",
+  billingSwitchToYearly: "Switch to yearly",
+  billingSwitchToMonthly: "Switch to monthly",
+  billingPortalTitle: "Payment & invoices",
+  billingPortalHint:
+    "Update your payment method, download invoices, or cancel your subscription in the Lemon Squeezy customer portal.",
+  billingNoSubscription: "You do not have an active subscription. Choose a plan to unlock Pro features.",
 };
 
 const de: Partial<BillingCopy> = {
@@ -388,6 +413,21 @@ const de: Partial<BillingCopy> = {
   settingsAccount: "Konto",
   settingsAccountSubtitle:
     "Anmeldung verwalten und Konto sowie Daten dauerhaft löschen.",
+  settingsBillingTitle: "Abrechnung",
+  settingsBillingSubtitle:
+    "Tarif ansehen, zwischen Monats- und Jahresabo wechseln oder Zahlungsdaten verwalten.",
+  billingCurrentPlan: "Aktueller Tarif",
+  billingRenewsOn: "Verlängert am {date}",
+  billingChangePlan: "Tarif wechseln",
+  billingChangePlanHint:
+    "Abrechnungsintervall jederzeit ändern. Checkout für den neuen Tarif; altes Abo ggf. im Kundenportal kündigen.",
+  billingSwitchToYearly: "Auf Jahresabo wechseln",
+  billingSwitchToMonthly: "Auf Monatsabo wechseln",
+  billingPortalTitle: "Zahlung & Rechnungen",
+  billingPortalHint:
+    "Zahlungsmethode aktualisieren, Rechnungen laden oder Abo im Lemon-Squeezy-Kundenportal kündigen.",
+  billingNoSubscription:
+    "Kein aktives Abo. Wählen Sie einen Tarif, um Pro-Funktionen freizuschalten.",
 };
 
 const fr: Partial<BillingCopy> = {

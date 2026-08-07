@@ -129,6 +129,13 @@ export function AccountBar({ locale }: { locale: string }) {
                   >
                     {copy.choosePlan}
                   </Link>
+                ) : status?.hasActiveSubscription ? (
+                  <Link
+                    href="/settings/billing"
+                    className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  >
+                    {copy.settingsBillingTitle}
+                  </Link>
                 ) : (
                   <Link
                     href="/pricing"

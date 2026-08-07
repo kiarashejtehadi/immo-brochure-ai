@@ -17,6 +17,11 @@ export function SettingsNav() {
   const brandingLocked = isCreditPackPlan(status);
   const onBranding = pathname === "/settings";
   const onAccount = pathname === "/settings/account";
+  const onBilling = pathname === "/settings/billing";
+  const hasSubscription = status?.hasActiveSubscription === true;
+  const billingHref = hasSubscription ? "/settings/billing" : "/pricing";
+  const billingLabel = hasSubscription ? copy.settingsBillingTitle : copy.settingsPlansBilling;
+  const onBillingTab = hasSubscription ? onBilling : pathname === "/pricing";
 
   return (
     <nav
@@ -49,10 +54,15 @@ export function SettingsNav() {
         {copy.settingsAccount}
       </Link>
       <Link
-        href="/pricing"
-        className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        href={billingHref}
+        className={cn(
+          "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition",
+          onBillingTab
+            ? "border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300"
+            : "border-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
+        )}
       >
-        {copy.settingsPlansBilling}
+        {billingLabel}
       </Link>
     </nav>
   );
