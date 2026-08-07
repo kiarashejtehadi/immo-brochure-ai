@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { DeleteAccountModal } from "@/components/settings/delete-account-modal";
-import { CopyToastProvider, useCopyToast } from "@/components/ui/copy-toast";
+import { useCopyToast } from "@/components/ui/copy-toast";
 import type { BillingCopy } from "@/lib/i18n-billing";
 
 function AccountDangerZoneInner({ copy }: { copy: BillingCopy }) {
@@ -47,9 +47,5 @@ function AccountDangerZoneInner({ copy }: { copy: BillingCopy }) {
 }
 
 export function AccountDangerZone({ copy }: { copy: BillingCopy }) {
-  return (
-    <CopyToastProvider>
-      <AccountDangerZoneInner copy={copy} />
-    </CopyToastProvider>
-  );
+  return <AccountDangerZoneInner copy={copy} />;
 }

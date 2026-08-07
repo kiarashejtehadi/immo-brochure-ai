@@ -3,7 +3,9 @@
 import { Link } from "@/i18n/navigation";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { AccountDangerZone } from "@/components/settings/account-danger-zone";
+import { PrivacyDataExport } from "@/components/settings/privacy-data-export";
 import { SettingsNav } from "@/components/settings/settings-nav";
+import { CopyToastProvider } from "@/components/ui/copy-toast";
 import type { UiLocale } from "@/lib/i18n";
 import { getBillingCopy } from "@/lib/i18n-billing";
 
@@ -14,7 +16,7 @@ export function AccountSettingsPage({ locale }: { locale: string }) {
   const email = status?.email;
 
   return (
-    <>
+    <CopyToastProvider>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/create"
@@ -49,8 +51,10 @@ export function AccountSettingsPage({ locale }: { locale: string }) {
           )}
         </section>
 
+        <PrivacyDataExport copy={copy} />
+
         <AccountDangerZone copy={copy} />
       </div>
-    </>
+    </CopyToastProvider>
   );
 }

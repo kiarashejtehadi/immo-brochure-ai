@@ -123,6 +123,12 @@ export type BillingCopy = {
   billingPortalTitle: string;
   billingPortalHint: string;
   billingNoSubscription: string;
+  privacyDataTitle: string;
+  privacyDataDescription: string;
+  dataExportButton: string;
+  dataExportPreparing: string;
+  dataExportSuccess: string;
+  dataExportFailed: string;
 };
 
 export function interpolate(
@@ -279,6 +285,13 @@ const en: BillingCopy = {
   billingPortalHint:
     "Update your payment method, download invoices, or cancel your subscription in the Lemon Squeezy customer portal.",
   billingNoSubscription: "You do not have an active subscription. Choose a plan to unlock Pro features.",
+  privacyDataTitle: "Privacy & data",
+  privacyDataDescription:
+    "Download a JSON archive of your account profile, billing history, usage logs, and uploaded branding files stored on our servers.",
+  dataExportButton: "Download My Personal Data (JSON)",
+  dataExportPreparing: "Preparing your download…",
+  dataExportSuccess: "Your data export has been downloaded.",
+  dataExportFailed: "Could not export your data. Please try again or contact support.",
 };
 
 const de: Partial<BillingCopy> = {
@@ -428,6 +441,14 @@ const de: Partial<BillingCopy> = {
     "Zahlungsmethode aktualisieren, Rechnungen laden oder Abo im Lemon-Squeezy-Kundenportal kündigen.",
   billingNoSubscription:
     "Kein aktives Abo. Wählen Sie einen Tarif, um Pro-Funktionen freizuschalten.",
+  privacyDataTitle: "Datenschutz & Daten",
+  privacyDataDescription:
+    "JSON-Archiv mit Kontoprofil, Abrechnungsverlauf, Nutzungsprotokollen und hochgeladenen Branding-Dateien auf unseren Servern herunterladen.",
+  dataExportButton: "Meine personenbezogenen Daten (JSON)",
+  dataExportPreparing: "Download wird vorbereitet…",
+  dataExportSuccess: "Ihr Datenexport wurde heruntergeladen.",
+  dataExportFailed:
+    "Datenexport fehlgeschlagen. Bitte erneut versuchen oder Support kontaktieren.",
 };
 
 const fr: Partial<BillingCopy> = {
