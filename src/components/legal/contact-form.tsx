@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { inputClassName, labelClassName } from "@/components/listing/form-ui";
+import { useOptionalAuthSession } from "@/components/providers/auth-session-provider";
 import { useCopyToast } from "@/components/ui/copy-toast";
+import { CONTACT_HONEYPOT_FIELD } from "@/lib/contact/honeypot";
 import { CONTACT_TOPICS, type ContactTopic } from "@/lib/contact/topics";
 import { readJsonResponse } from "@/lib/http/read-json-response";
 import { cn } from "@/lib/utils";
@@ -15,13 +17,24 @@ export function ContactForm() {
   const t = useTranslations("contact");
   const tf = useTranslations("footer");
   const { showToast } = useCopyToast();
+  const authSession = useOptionalAuthSession();
+  const sessionEmail = authSession?.email ?? null;
+  const sessionLoading = authSession?.loading ?? false;
+  const isSignedIn = Boolean(sessionEmail);
 
   const [topic, setTopic] = useState<ContactTopic | "">("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+
+  useEffect(() => {
+    if (sessionEmail) {
+      setEmail(sessionEmail);
+    }
+  }, [sessionEmail]);
 
   const topicLabel = (value: ContactTopic) => {
     const map: Record<ContactTopic, string> = {
@@ -43,7 +56,13 @@ export function ContactForm() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, name, email, message }),
+        body: JSON.stringify({
+          topic,
+          name,
+          email: isSignedIn ? sessionEmail : email,
+          message,
+          [CONTACT_HONEYPOT_FIELD]: honeypot,
+        }),
       });
 
       const data = await readJsonResponse<{
@@ -64,8 +83,11 @@ export function ContactForm() {
 
       setTopic("");
       setName("");
-      setEmail("");
+      if (!isSignedIn) {
+        setEmail("");
+      }
       setMessage("");
+      setHoneypot("");
       showToast(t("successToast"));
     } catch (err) {
       setErrors({
@@ -82,6 +104,19 @@ export function ContactForm() {
       className="space-y-5 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80"
       noValidate
     >
+      <div className="hidden" aria-hidden="true">
+        <label htmlFor="contact-website-url">{t("honeypotLabel")}</label>
+        <input
+          id="contact-website-url"
+          name={CONTACT_HONEYPOT_FIELD}
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+
       <div>
         <label htmlFor="contact-topic" className={labelClassName()}>
           {t("topicLabel")} <span className="text-red-600 dark:text-red-400">*</span>
@@ -129,32 +164,65 @@ export function ContactForm() {
         />
       </div>
 
-      <div>
-        <label htmlFor="contact-email" className={labelClassName()}>
-          {t("emailLabel")} <span className="text-red-600 dark:text-red-400">*</span>
-        </label>
-        <input
-          id="contact-email"
-          type="email"
-          autoComplete="email"
-          inputMode="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={t("emailPlaceholder")}
-          required
-          aria-invalid={Boolean(errors.email || errors.form)}
-          aria-describedby={errors.email ? "contact-email-error" : undefined}
-          className={cn(
-            inputClassName(),
-            errors.email && "border-red-400 focus:ring-red-500/20 dark:border-red-500",
-          )}
-        />
-        {errors.email ? (
-          <p id="contact-email-error" className="mt-1.5 text-sm text-red-600 dark:text-red-400" role="alert">
-            {errors.email}
-          </p>
-        ) : null}
-      </div>
+      {isSignedIn ? (
+        <div>
+          <label htmlFor="contact-email" className={labelClassName()}>
+            {t("emailLabel")}
+          </label>
+          <input
+            id="contact-email"
+            type="email"
+            value={sessionEmail ?? ""}
+            readOnly
+            aria-readonly="true"
+            className={cn(
+              inputClassName(),
+              "cursor-default bg-zinc-50 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400",
+            )}
+          />
+          <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">{t("signedInEmailHint")}</p>
+        </div>
+      ) : sessionLoading ? (
+        <div>
+          <label htmlFor="contact-email" className={labelClassName()}>
+            {t("emailLabel")} <span className="text-red-600 dark:text-red-400">*</span>
+          </label>
+          <div
+            className={cn(
+              inputClassName(),
+              "h-[38px] animate-pulse bg-zinc-100 dark:bg-zinc-800",
+            )}
+            aria-hidden
+          />
+        </div>
+      ) : (
+        <div>
+          <label htmlFor="contact-email" className={labelClassName()}>
+            {t("emailLabel")} <span className="text-red-600 dark:text-red-400">*</span>
+          </label>
+          <input
+            id="contact-email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t("emailPlaceholder")}
+            required
+            aria-invalid={Boolean(errors.email || errors.form)}
+            aria-describedby={errors.email ? "contact-email-error" : undefined}
+            className={cn(
+              inputClassName(),
+              errors.email && "border-red-400 focus:ring-red-500/20 dark:border-red-500",
+            )}
+          />
+          {errors.email ? (
+            <p id="contact-email-error" className="mt-1.5 text-sm text-red-600 dark:text-red-400" role="alert">
+              {errors.email}
+            </p>
+          ) : null}
+        </div>
+      )}
 
       <div>
         <label htmlFor="contact-message" className={labelClassName()}>
@@ -192,7 +260,7 @@ export function ContactForm() {
       <div className="space-y-3 pt-1">
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || sessionLoading}
           className={cn(
             "w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white transition",
             "hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60",

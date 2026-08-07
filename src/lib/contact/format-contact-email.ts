@@ -24,12 +24,16 @@ export function formatContactEmailSubject(data: ContactFormPayload): string {
 export function formatContactEmailHtml(data: ContactFormPayload): string {
   const topic = TOPIC_LABELS[data.topic];
   const name = data.name.trim() || "—";
+  const userIdLine = data.userId
+    ? `<p><strong>User ID:</strong> ${escapeHtml(data.userId)}</p>`
+    : "";
 
   return `
     <h2>New contact form submission</h2>
     <p><strong>Topic:</strong> ${escapeHtml(topic)}</p>
     <p><strong>Name:</strong> ${escapeHtml(name)}</p>
     <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+    ${userIdLine}
     <p><strong>Message:</strong></p>
     <pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(data.message)}</pre>
   `.trim();

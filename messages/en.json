@@ -32,6 +32,8 @@
     "submitting": "Sending…",
     "submitError": "Could not send your message. Please try again.",
     "successToast": "Thank you! Your message has been received.",
+    "signedInEmailHint": "Using your account email — sign out to use a different address.",
+    "honeypotLabel": "Website",
     "legalNoticePrefix": "By submitting this form, your message and email will be processed to respond to your request. For details, see our",
     "legalNoticeSuffix": "."
   },

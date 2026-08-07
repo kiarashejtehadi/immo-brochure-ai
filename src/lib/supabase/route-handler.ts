@@ -67,6 +67,7 @@ export async function refreshSupabaseAuthSession(request: NextRequest) {
   const response = NextResponse.json({
     ok: !error,
     email: user?.email ?? null,
+    userId: user?.id ?? null,
   });
   pending.forEach(({ name, value, options }) => {
     response.cookies.set(name, value, options);

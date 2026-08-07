@@ -1,3 +1,18 @@
+function userSafeResendError(status: number, body: string): Error {
+  console.error("[resend]", status, body);
+  if (status === 401 || status === 403) {
+    return new Error(
+      "Email delivery is not configured correctly. Please try again later or contact us directly.",
+    );
+  }
+  if (status === 422 || status === 400) {
+    return new Error(
+      "Your message could not be delivered. Please check your email address and try again.",
+    );
+  }
+  return new Error("Could not send your message. Please try again later.");
+}
+
 export async function sendViaResend(params: {
   to: string | string[];
   subject: string;
@@ -8,7 +23,7 @@ export async function sendViaResend(params: {
   const from =
     process.env.RESEND_FROM?.trim() ?? "Immo Brochure AI <onboarding@resend.dev>";
   if (!apiKey) {
-    throw new Error("RESEND_API_KEY is not configured.");
+    throw new Error("Email delivery is not configured.");
   }
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -28,6 +43,6 @@ export async function sendViaResend(params: {
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Resend error (${res.status}): ${body}`);
+    throw userSafeResendError(res.status, body);
   }
 }

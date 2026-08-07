@@ -32,6 +32,8 @@
     "submitting": "Wird gesendet…",
     "submitError": "Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.",
     "successToast": "Vielen Dank! Ihre Nachricht ist eingegangen.",
+    "signedInEmailHint": "Es wird Ihre Konto-E-Mail verwendet — melden Sie sich ab, um eine andere Adresse zu nutzen.",
+    "honeypotLabel": "Website",
     "legalNoticePrefix": "Mit dem Absenden werden Ihre Nachricht und E-Mail-Adresse zur Bearbeitung Ihrer Anfrage verarbeitet. Details finden Sie in unserer",
     "legalNoticeSuffix": "."
   },

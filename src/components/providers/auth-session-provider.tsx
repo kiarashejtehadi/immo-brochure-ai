@@ -15,6 +15,7 @@ import { readJsonResponse } from "@/lib/http/read-json-response";
 
 type AuthSessionContextValue = {
   email: string | null;
+  userId: string | null;
   loading: boolean;
   refresh: () => Promise<void>;
 };
@@ -27,11 +28,13 @@ const supabaseConfigured = Boolean(
 
 export function AuthSessionProvider({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(supabaseConfigured);
 
   const refresh = useCallback(async () => {
     if (!supabaseConfigured) {
       setEmail(null);
+      setUserId(null);
       setLoading(false);
       return;
     }
@@ -44,13 +47,16 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) {
         setEmail(null);
+        setUserId(null);
         return;
       }
-      const data = await readJsonResponse<{ email?: string | null }>(res);
+      const data = await readJsonResponse<{ email?: string | null; userId?: string | null }>(res);
       setEmail(data.email ?? null);
+      setUserId(data.userId ?? null);
       window.dispatchEvent(new Event(BILLING_REFRESH_EVENT));
     } catch {
       setEmail(null);
+      setUserId(null);
     } finally {
       setLoading(false);
     }
@@ -80,10 +86,11 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       email,
+      userId,
       loading,
       refresh,
     }),
-    [email, loading, refresh],
+    [email, userId, loading, refresh],
   );
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;

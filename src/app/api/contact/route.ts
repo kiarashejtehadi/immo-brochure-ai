@@ -4,7 +4,9 @@ import {
   formatContactEmailHtml,
   formatContactEmailSubject,
 } from "@/lib/contact/format-contact-email";
+import { isHoneypotTriggered } from "@/lib/contact/honeypot";
 import { validateContactForm } from "@/lib/contact/validate-contact-form";
+import { getSupabaseAuthUser } from "@/lib/billing/access";
 import { sendViaResend } from "@/lib/email/send-via-resend";
 
 export const runtime = "nodejs";
@@ -21,7 +23,15 @@ export async function POST(request: Request) {
       return jsonError("Invalid JSON.", 400);
     }
 
-    const validated = validateContactForm(body);
+    if (isHoneypotTriggered(body)) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const authUser = await getSupabaseAuthUser();
+    const validated = validateContactForm(body, {
+      sessionEmail: authUser?.email ?? null,
+      sessionUserId: authUser?.id ?? null,
+    });
     if (!validated.ok) {
       return NextResponse.json(
         { error: validated.message, field: validated.field },

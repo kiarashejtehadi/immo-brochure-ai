@@ -7,6 +7,7 @@ export type ContactFormPayload = {
   name: string;
   email: string;
   message: string;
+  userId?: string | null;
 };
 
 export type ContactFormValidationResult =
@@ -17,7 +18,10 @@ function trimOptional(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export function validateContactForm(body: unknown): ContactFormValidationResult {
+export function validateContactForm(
+  body: unknown,
+  context?: { sessionEmail?: string | null; sessionUserId?: string | null },
+): ContactFormValidationResult {
   if (!body || typeof body !== "object") {
     return { ok: false, field: "form", message: "Invalid request body." };
   }
@@ -25,8 +29,10 @@ export function validateContactForm(body: unknown): ContactFormValidationResult 
   const raw = body as Record<string, unknown>;
   const topicRaw = trimOptional(raw.topic);
   const name = trimOptional(raw.name);
-  const email = trimOptional(raw.email);
   const message = trimOptional(raw.message);
+  const sessionEmail = trimOptional(context?.sessionEmail);
+  const sessionUserId = trimOptional(context?.sessionUserId);
+  const email = sessionEmail || trimOptional(raw.email);
 
   if (!topicRaw || !isContactTopic(topicRaw)) {
     return { ok: false, field: "topic", message: "Please select a topic." };
@@ -71,6 +77,7 @@ export function validateContactForm(body: unknown): ContactFormValidationResult 
       name,
       email,
       message,
+      userId: sessionUserId || null,
     },
   };
 }
