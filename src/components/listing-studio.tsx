@@ -1297,6 +1297,17 @@ function ListingStudioContent() {
     });
   }
 
+  const movePhoto = useCallback((id: string, direction: -1 | 1) => {
+    setPhotos((prev) => {
+      const index = prev.findIndex((p) => p.id === id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  }, []);
+
   function toggleFeature(feature: FeatureKey) {
     setFeatures((prev) =>
       prev.includes(feature)
@@ -1660,6 +1671,7 @@ function ListingStudioContent() {
             onDragOver={setDragOver}
             onAddPhotos={addPhotos}
             onRemovePhoto={removePhoto}
+            onMovePhoto={movePhoto}
             photoInputRef={photoInputRef}
             floorPlanPreview={floorPlanPreview}
             floorPlanInputRef={floorPlanInputRef}
@@ -1684,6 +1696,10 @@ function ListingStudioContent() {
             result={result}
             onGenerate={handleGenerate}
             onDownloadPdf={handleDownloadPdf}
+            onSelectPreviewTab={(tab) => {
+              setPreviewTab(tab);
+              previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
           />
           </section>
 

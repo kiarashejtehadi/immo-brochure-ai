@@ -10,6 +10,15 @@ export type FormCopy = {
   sectionFeatures: string;
   sectionMedia: string;
   sectionAgentOutput: string;
+  workflowStep1Title: string;
+  workflowStep2Title: string;
+  workflowStep3Title: string;
+  workflowNext: string;
+  workflowBack: string;
+  workflowStep1Error: string;
+  previewOutputsLabel: string;
+  photoMoveEarlier: string;
+  photoMoveLater: string;
   advancedOutputOptions: string;
   includeStandardLegalDisclaimer: string;
   includeStandardLegalDisclaimerHint: string;
@@ -170,6 +179,16 @@ const en: FormCopy = {
   sectionFeatures: "Features & amenities",
   sectionMedia: "Media uploads",
   sectionAgentOutput: "Agent & contact",
+  workflowStep1Title: "Property Info",
+  workflowStep2Title: "Specs & Media",
+  workflowStep3Title: "Generate & Export",
+  workflowNext: "Next",
+  workflowBack: "Back",
+  workflowStep1Error:
+    "Select a property type and enter a street or postal code with city before continuing.",
+  previewOutputsLabel: "Preview outputs",
+  photoMoveEarlier: "Move earlier",
+  photoMoveLater: "Move later",
   advancedOutputOptions: "Advanced / output options",
   includeStandardLegalDisclaimer: "Include standard legal disclaimer",
   includeStandardLegalDisclaimerHint:
@@ -337,6 +356,16 @@ const de: Partial<FormCopy> = {
   sectionFeatures: "Ausstattung & Merkmale",
   sectionMedia: "Medien-Uploads",
   sectionAgentOutput: "Makler & Kontakt",
+  workflowStep1Title: "Objektinfo",
+  workflowStep2Title: "Details & Medien",
+  workflowStep3Title: "Generieren & Export",
+  workflowNext: "Weiter",
+  workflowBack: "Zurück",
+  workflowStep1Error:
+    "Bitte Objektart wählen und Straße oder PLZ mit Ort eingeben, bevor Sie fortfahren.",
+  previewOutputsLabel: "Vorschau-Ausgaben",
+  photoMoveEarlier: "Nach vorne",
+  photoMoveLater: "Nach hinten",
   advancedOutputOptions: "Erweitert / Ausgabeoptionen",
   includeStandardLegalDisclaimer:
     "Standard-Haftungsausschluss einbinden",

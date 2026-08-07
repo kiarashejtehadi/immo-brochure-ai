@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
-import { FormAccordionCard, FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
+import { FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
+import { FormStepNav, FormStepPanel, FormStepper } from "@/components/listing/form-stepper";
 import { CommissionField } from "@/components/listing/commission-field";
 import { OpenImmoImportDropzone } from "@/components/listing/openimmo-import-dropzone";
 import { MarketConfigBar } from "@/components/listing/market-config-bar";
@@ -215,6 +215,7 @@ export type ListingFormProps = {
   onDragOver: (over: boolean) => void;
   onAddPhotos: (files: FileList | File[]) => void;
   onRemovePhoto: (id: string) => void;
+  onMovePhoto?: (id: string, direction: -1 | 1) => void;
   photoInputRef: React.RefObject<HTMLInputElement>;
   floorPlanPreview: string | null;
   floorPlanInputRef: React.RefObject<HTMLInputElement>;
@@ -239,6 +240,7 @@ export type ListingFormProps = {
   result: GenerateResult | null;
   onGenerate: () => void;
   onDownloadPdf: () => void;
+  onSelectPreviewTab?: (tab: "story" | "location" | "social" | "reel") => void;
 };
 
 export function ListingForm(props: ListingFormProps) {
@@ -285,6 +287,7 @@ export function ListingForm(props: ListingFormProps) {
     onDragOver,
     onAddPhotos,
     onRemovePhoto,
+    onMovePhoto,
     photoInputRef,
     floorPlanPreview,
     floorPlanInputRef,
@@ -309,11 +312,11 @@ export function ListingForm(props: ListingFormProps) {
     result,
     onGenerate,
     onDownloadPdf,
+    onSelectPreviewTab,
   } = props;
 
   const epcDetailsVisible = energy.certificateType !== "na";
   const isDach = targetMarket === "dach";
-  const [globalEnergyOpen, setGlobalEnergyOpen] = useState(false);
 
   const transactionToggle = (
     <div className="flex gap-1 rounded-lg bg-indigo-50/80 p-1 dark:bg-indigo-950/40">
@@ -412,12 +415,51 @@ export function ListingForm(props: ListingFormProps) {
     [copy],
   );
 
-  const [openStep, setOpenStep] = useState(1);
-  const [advancedOutputOpen, setAdvancedOutputOpen] = useState(false);
+  const [workflowStep, setWorkflowStep] = useState(1);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [globalEnergyOpen, setGlobalEnergyOpen] = useState(true);
+
+  const step1Valid =
+    property.propertyType !== "" &&
+    ((hasStreetLevelInput(address) || address.postalCode.trim() !== "") &&
+      address.city.trim() !== "");
+
+  const workflowSteps = [
+    { id: 1, label: copy.workflowStep1Title, shortLabel: copy.workflowStep1Title.split(" ")[0] },
+    { id: 2, label: copy.workflowStep2Title, shortLabel: copy.workflowStep2Title.split(" ")[0] },
+    { id: 3, label: copy.workflowStep3Title, shortLabel: copy.workflowStep3Title.split(" & ")[0] ?? copy.workflowStep3Title.split(" ")[0] },
+  ];
+
+  const goToStep = useCallback(
+    (step: number) => {
+      if (step >= 2 && !step1Valid) {
+        setStepError(copy.workflowStep1Error);
+        setWorkflowStep(1);
+        return;
+      }
+      setStepError(null);
+      setWorkflowStep(step);
+    },
+    [copy.workflowStep1Error, step1Valid],
+  );
+
+  const goNext = useCallback(() => {
+    if (workflowStep === 1 && !step1Valid) {
+      setStepError(copy.workflowStep1Error);
+      return;
+    }
+    setStepError(null);
+    setWorkflowStep((step) => Math.min(3, step + 1));
+  }, [copy.workflowStep1Error, step1Valid, workflowStep]);
+
+  const goBack = useCallback(() => {
+    setStepError(null);
+    setWorkflowStep((step) => Math.max(1, step - 1));
+  }, []);
 
   useEffect(() => {
     if (openImmoImportAppliedTick && openImmoImportAppliedTick > 0) {
-      setOpenStep(1);
+      setWorkflowStep(1);
     }
   }, [openImmoImportAppliedTick]);
 
@@ -425,32 +467,32 @@ export function ListingForm(props: ListingFormProps) {
     async (file: File) => {
       if (!onOpenImmoImport) return;
       await onOpenImmoImport(file);
-      setOpenStep(1);
+      setWorkflowStep(1);
     },
     [onOpenImmoImport],
   );
 
   return (
-    <div className="space-y-3 pb-8">
-      <MarketConfigBar
-        copy={copy}
-        targetMarket={targetMarket}
-        onTargetMarket={onTargetMarket}
-        userRole={userRole}
-        onUserRole={onUserRole}
+    <div className="mx-auto w-full max-w-4xl space-y-6 pb-8">
+      <FormStepper
+        steps={workflowSteps}
+        currentStep={workflowStep}
+        onStepClick={goToStep}
       />
 
-      {onOpenImmoImport ? (
-        <OpenImmoImportDropzone copy={copy} onImport={handleOpenImmoImport} />
+      {stepError ? (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {stepError}
+        </p>
       ) : null}
 
-      <FormAccordionCard
-        step={1}
-        title={copy.sectionListingOverview}
-        isOpen={openStep === 1}
-        onToggle={() => setOpenStep(1)}
-      >
-        {transactionToggle}
+      {workflowStep === 1 ? (
+        <FormStepPanel>
+          {onOpenImmoImport ? (
+            <OpenImmoImportDropzone copy={copy} onImport={handleOpenImmoImport} />
+          ) : null}
+
+          {transactionToggle}
 
         <div>
           <label htmlFor="propertyType" className={labelClassName()}>
@@ -555,14 +597,16 @@ export function ListingForm(props: ListingFormProps) {
             </span>
           </span>
         </label>
-      </FormAccordionCard>
+        </FormStepPanel>
+      ) : null}
 
-      <FormAccordionCard
-        step={2}
-        title={copy.sectionSpecsPricing}
-        isOpen={openStep === 2}
-        onToggle={() => setOpenStep(2)}
-      >
+      {workflowStep === 2 ? (
+        <FormStepPanel>
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {copy.sectionSpecsPricing}
+          </h3>
+        </div>
         <FormGrid cols={3}>
           <NumericField
             id="size"
@@ -763,14 +807,12 @@ export function ListingForm(props: ListingFormProps) {
             </div>
           ) : null}
         </FormGrid>
-      </FormAccordionCard>
 
-      <FormAccordionCard
-        step={3}
-        title={copy.sectionBuildingEnergy}
-        isOpen={openStep === 3}
-        onToggle={() => setOpenStep(3)}
-      >
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {copy.sectionBuildingEnergy}
+          </h3>
+        </div>
         {isDach ? (
           <>
             <div className="rounded-lg border border-zinc-100 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
@@ -1089,14 +1131,11 @@ export function ListingForm(props: ListingFormProps) {
             ) : null}
           </>
         )}
-      </FormAccordionCard>
-
-      <FormAccordionCard
-        step={4}
-        title={copy.sectionFeatures}
-        isOpen={openStep === 4}
-        onToggle={() => setOpenStep(4)}
-      >
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {copy.sectionFeatures}
+          </h3>
+        </div>
         <div className="mb-4 max-w-sm">
           <label htmlFor="furnishingStatus" className={labelClassName()}>
             {copy.furnishingStatus}
@@ -1140,15 +1179,12 @@ export function ListingForm(props: ListingFormProps) {
             );
           })}
         </div>
-      </FormAccordionCard>
-
-      <FormAccordionCard
-        step={5}
-        title={copy.sectionMedia}
-        description={copy.propertyDetailsHint}
-        isOpen={openStep === 5}
-        onToggle={() => setOpenStep(5)}
-      >
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {copy.sectionMedia}
+          </h3>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{copy.propertyDetailsHint}</p>
+        </div>
         <label className="mb-4 flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-3 dark:border-zinc-700 dark:bg-zinc-950/40">
           <input
             type="checkbox"
@@ -1208,7 +1244,7 @@ export function ListingForm(props: ListingFormProps) {
           />
           {photos.length > 0 ? (
             <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-              {photos.map((photo) => (
+              {photos.map((photo, index) => (
                 <li
                   key={photo.id}
                   className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800"
@@ -1219,13 +1255,43 @@ export function ListingForm(props: ListingFormProps) {
                     alt={photo.file.name}
                     className="h-full w-full object-cover"
                   />
+                  <div className="absolute inset-x-1 top-1 flex justify-between gap-1 opacity-0 transition group-hover:opacity-100">
+                    {onMovePhoto ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMovePhoto(photo.id, -1);
+                          }}
+                          className="rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white disabled:opacity-40"
+                          aria-label={copy.photoMoveEarlier}
+                        >
+                          ←
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === photos.length - 1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMovePhoto(photo.id, 1);
+                          }}
+                          className="rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white disabled:opacity-40"
+                          aria-label={copy.photoMoveLater}
+                        >
+                          →
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRemovePhoto(photo.id);
                     }}
-                    className="absolute top-1 right-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100"
+                    className="absolute right-1 bottom-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100"
                   >
                     {copy.remove}
                   </button>
@@ -1279,14 +1345,90 @@ export function ListingForm(props: ListingFormProps) {
             </div>
           ) : null}
         </div>
-      </FormAccordionCard>
+        </FormStepPanel>
+      ) : null}
 
-      <FormAccordionCard
-        step={6}
-        title={copy.sectionAgentOutput}
-        isOpen={openStep === 6}
-        onToggle={() => setOpenStep(6)}
-      >
+      {workflowStep === 3 ? (
+        <FormStepPanel>
+          <MarketConfigBar
+            copy={copy}
+            targetMarket={targetMarket}
+            onTargetMarket={onTargetMarket}
+            userRole={userRole}
+            onUserRole={onUserRole}
+          />
+
+          <div>
+            <p className={labelClassName()}>{copy.exposeLanguage}</p>
+            <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">{copy.exposeLanguageHint}</p>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={copy.exposeLanguage}>
+              {EXPOSE_LANGUAGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onTargetLanguage(opt.value)}
+                  className={cn(
+                    "min-w-[3rem] rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200",
+                    targetLanguage === opt.value
+                      ? "border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 dark:border-indigo-500 dark:bg-indigo-500"
+                      : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 hover:bg-indigo-50/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+                  )}
+                >
+                  {EXPOSE_LANGUAGE_SHORT[opt.value]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+            {copy.complianceBadge}
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <p className={cn(labelClassName(), "px-3 pt-3")}>{copy.advancedOutputOptions}</p>
+            <div className="space-y-3 border-t border-zinc-200 px-3 py-3 dark:border-zinc-700">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={includeLegalDisclaimer}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    onIncludeLegalDisclaimer(checked);
+                    if (checked && !agent.legalDisclaimer.trim()) {
+                      onAgent({ legalDisclaimer: defaultLegalDisclaimer });
+                    }
+                  }}
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>
+                  <span className={labelClassName()}>{copy.includeStandardLegalDisclaimer}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    {copy.includeStandardLegalDisclaimerHint}
+                  </span>
+                </span>
+              </label>
+              {includeLegalDisclaimer ? (
+                <div>
+                  <label htmlFor="legalDisclaimer" className={labelClassName()}>
+                    {copy.legalDisclaimer}
+                  </label>
+                  <textarea
+                    id="legalDisclaimer"
+                    rows={3}
+                    value={agent.legalDisclaimer}
+                    onChange={(e) => onAgent({ legalDisclaimer: e.target.value })}
+                    className={cn(inputClassName(), "resize-y")}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              {copy.sectionAgentOutput}
+            </h3>
+          </div>
         {(onResetAgentFromBranding || onFillDemoDach) ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {onResetAgentFromBranding ? (
@@ -1406,146 +1548,95 @@ export function ListingForm(props: ListingFormProps) {
             ))}
           </div>
         </div>
-      </FormAccordionCard>
 
-      <div className="sticky bottom-0 z-10 -mx-1 space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/95">
-        {generateError ? (
-          <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
-            <p>{generateError}</p>
-            {billingHint === "auth" ? (
-              <button
-                type="button"
-                onClick={onOpenAuth}
-                className="text-sm font-semibold underline"
-              >
-                Sign in with email
-              </button>
-            ) : null}
-            {billingHint === "checkout" ? (
-              <Link href="/checkout" className="inline-block text-sm font-semibold underline">
-                View pricing & buy credits
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
+          {onSelectPreviewTab ? (
+            <div>
+              <p className={labelClassName()}>{copy.previewOutputsLabel}</p>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ["story", copy.tabStory],
+                    ["location", copy.tabLocation],
+                    ["social", copy.tabSocial],
+                    ["reel", copy.tabReel],
+                  ] as const
+                ).map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => onSelectPreviewTab(tab)}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:border-indigo-200 hover:bg-indigo-50/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
-        <CreditPackUsage status={billingStatus} variant="panel" />
-
-        <div>
-          <p className={labelClassName()}>{copy.exposeLanguage}</p>
-          <div
-            className="flex flex-wrap gap-1.5"
-            role="group"
-            aria-label={copy.exposeLanguage}
-          >
-            {EXPOSE_LANGUAGE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onTargetLanguage(opt.value)}
-                className={cn(
-                  "min-w-[3rem] rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200",
-                  targetLanguage === opt.value
-                    ? "border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 dark:border-indigo-500 dark:bg-indigo-500"
-                    : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 hover:bg-indigo-50/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-                )}
-              >
-                {EXPOSE_LANGUAGE_SHORT[opt.value]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <button
-            type="button"
-            onClick={() => setAdvancedOutputOpen((open) => !open)}
-            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800/60"
-          >
-            {copy.advancedOutputOptions}
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 shrink-0 text-zinc-500 transition-transform",
-                advancedOutputOpen && "rotate-180",
-              )}
-            />
-          </button>
-          {advancedOutputOpen ? (
-            <div className="space-y-3 border-t border-zinc-200 px-3 py-3 dark:border-zinc-700">
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={includeLegalDisclaimer}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    onIncludeLegalDisclaimer(checked);
-                    if (checked && !agent.legalDisclaimer.trim()) {
-                      onAgent({ legalDisclaimer: defaultLegalDisclaimer });
-                    }
-                  }}
-                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span>
-                  <span className={labelClassName()}>
-                    {copy.includeStandardLegalDisclaimer}
-                  </span>
-                  <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                    {copy.includeStandardLegalDisclaimerHint}
-                  </span>
-                </span>
-              </label>
-              {includeLegalDisclaimer ? (
-                <div>
-                  <label htmlFor="legalDisclaimer" className={labelClassName()}>
-                    {copy.legalDisclaimer}
-                  </label>
-                  <textarea
-                    id="legalDisclaimer"
-                    rows={3}
-                    value={agent.legalDisclaimer}
-                    onChange={(e) => onAgent({ legalDisclaimer: e.target.value })}
-                    className={cn(inputClassName(), "resize-y")}
-                  />
-                </div>
+          {generateError ? (
+            <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
+              <p>{generateError}</p>
+              {billingHint === "auth" ? (
+                <button type="button" onClick={onOpenAuth} className="text-sm font-semibold underline">
+                  Sign in with email
+                </button>
+              ) : null}
+              {billingHint === "checkout" ? (
+                <Link href="/checkout" className="inline-block text-sm font-semibold underline">
+                  View pricing & buy credits
+                </Link>
               ) : null}
             </div>
           ) : null}
-        </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="space-y-1.5">
+          <CreditPackUsage status={billingStatus} variant="panel" />
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <button
+                type="button"
+                onClick={onGenerate}
+                disabled={isGenerating || !hasMinimumFields}
+                className={cn(btnPrimaryCompact, "w-full sm:col-span-1")}
+              >
+                {generateButtonLabel}
+              </button>
+              {!hasMinimumFields && !isGenerating ? (
+                <p className="text-xs leading-snug text-amber-800/90 dark:text-amber-200/90">
+                  {copy.generateMinimumFieldsHint}
+                </p>
+              ) : null}
+            </div>
             <button
               type="button"
-              onClick={onGenerate}
-              disabled={isGenerating || !hasMinimumFields}
-              className={cn(btnPrimaryCompact, "w-full sm:col-span-1")}
+              onClick={onDownloadPdf}
+              disabled={!result || isDownloadingPdf}
+              className={cn(
+                "rounded-xl border-2 py-3.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
+                result
+                  ? "border-emerald-600 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-100"
+                  : "border-zinc-200 bg-white text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900",
+              )}
             >
-              {generateButtonLabel}
+              {isDownloadingPdf ? copy.preparingPdf : copy.downloadPdf}
             </button>
-            {!hasMinimumFields && !isGenerating ? (
-              <p className="text-xs leading-snug text-amber-800/90 dark:text-amber-200/90">
-                {copy.generateMinimumFieldsHint}
-              </p>
-            ) : null}
           </div>
-          <button
-            type="button"
-            onClick={onDownloadPdf}
-            disabled={!result || isDownloadingPdf}
-            className={cn(
-              "rounded-xl border-2 py-3.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
-              result
-                ? "border-emerald-600 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-100"
-                : "border-zinc-200 bg-white text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900",
-            )}
-          >
-            {isDownloadingPdf ? copy.preparingPdf : copy.downloadPdf}
-          </button>
-        </div>
-        {!result ? (
-          <p className="text-center text-xs text-zinc-500">{copy.pdfHint}</p>
-        ) : null}
-      </div>
+          {!result ? (
+            <p className="text-center text-xs text-zinc-500">{copy.pdfHint}</p>
+          ) : null}
+        </FormStepPanel>
+      ) : null}
+
+      <FormStepNav
+        showBack={workflowStep > 1}
+        showNext={workflowStep < 3}
+        onBack={goBack}
+        onNext={goNext}
+        backLabel={copy.workflowBack}
+        nextLabel={copy.workflowNext}
+        nextDisabled={workflowStep === 1 && !step1Valid}
+      />
     </div>
   );
 }
