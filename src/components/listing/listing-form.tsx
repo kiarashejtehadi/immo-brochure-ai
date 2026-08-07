@@ -450,7 +450,7 @@ export function ListingForm(props: ListingFormProps) {
         isOpen={openStep === 1}
         onToggle={() => setOpenStep(1)}
       >
-        {!isDach ? transactionToggle : null}
+        {transactionToggle}
 
         <div>
           <label htmlFor="propertyType" className={labelClassName()}>
@@ -563,8 +563,6 @@ export function ListingForm(props: ListingFormProps) {
         isOpen={openStep === 2}
         onToggle={() => setOpenStep(2)}
       >
-        {isDach ? <div className="mb-4">{transactionToggle}</div> : null}
-
         <FormGrid cols={3}>
           <NumericField
             id="size"
