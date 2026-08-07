@@ -171,7 +171,7 @@ const en: FormCopy = {
   sectionMedia: "Media uploads",
   sectionAgentOutput: "Agent & contact",
   advancedOutputOptions: "Advanced / output options",
-  includeStandardLegalDisclaimer: "Include standard legal disclaimer (Haftungsausschluss)",
+  includeStandardLegalDisclaimer: "Include standard legal disclaimer",
   includeStandardLegalDisclaimerHint:
     "Shown on the PDF contact page. You can edit the text below before generating.",
   propertyType: "Property type",

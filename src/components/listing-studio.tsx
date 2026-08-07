@@ -96,7 +96,6 @@ import {
 import {
   buildDachDemoListingPreset,
   calculateWarmRent,
-  DACH_LEGAL_DISCLAIMER,
   dachMarketPresetApply,
   parseCommissionPreset,
   commissionFreeTerms,
@@ -344,10 +343,7 @@ function ListingStudioContent() {
     if (targetMarket === "global") {
       setTargetLanguage(outputLanguageFromLocale(routeLocale));
     }
-    const defaultDisclaimer =
-      targetMarket === "dach"
-        ? DACH_LEGAL_DISCLAIMER
-        : getFormCopy(routeLocale).defaultLegalDisclaimer;
+    const defaultDisclaimer = getFormCopy(routeLocale).defaultLegalDisclaimer;
     setAgent((prev) => {
       if (!isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)) return prev;
       if (prev.legalDisclaimer === defaultDisclaimer) return prev;
@@ -400,7 +396,7 @@ function ListingStudioContent() {
   const [energy, setEnergy] = useState<EnergyFormData>({ ...DEFAULT_ENERGY });
   const [agent, setAgent] = useState<AgentFormData>(() => ({
     ...DEFAULT_AGENT,
-    legalDisclaimer: DACH_LEGAL_DISCLAIMER,
+    legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
   }));
 
   const handleRentPatch = useCallback((patch: Partial<RentFormData>) => {
@@ -429,31 +425,9 @@ function ListingStudioContent() {
         const preset = dachMarketPresetApply();
         setCurrency(preset.currency);
         setTargetLanguage(preset.targetLanguage);
-        setAgent((prev) => {
-          if (
-            !prev.legalDisclaimer.trim() ||
-            isKnownDefaultLegalDisclaimer(prev.legalDisclaimer) ||
-            prev.legalDisclaimer === getFormCopy(routeLocale).defaultLegalDisclaimer
-          ) {
-            return { ...prev, legalDisclaimer: DACH_LEGAL_DISCLAIMER };
-          }
-          return prev;
-        });
         return;
       }
       setTargetLanguage(outputLanguageFromLocale(routeLocale));
-      setAgent((prev) => {
-        if (
-          prev.legalDisclaimer === DACH_LEGAL_DISCLAIMER ||
-          isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)
-        ) {
-          return {
-            ...prev,
-            legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
-          };
-        }
-        return prev;
-      });
     },
     [routeLocale],
   );
@@ -549,20 +523,13 @@ function ListingStudioContent() {
   }
 
   const agentForLocale = useMemo(
-    () => {
-      const resolvedDisclaimer =
-        targetMarket === "dach" &&
-        (agent.legalDisclaimer.trim() === DACH_LEGAL_DISCLAIMER ||
-          isKnownDefaultLegalDisclaimer(agent.legalDisclaimer))
-          ? DACH_LEGAL_DISCLAIMER
-          : resolveLegalDisclaimer(agent.legalDisclaimer, uiLocale);
-
-      return {
-        ...agent,
-        legalDisclaimer: includeLegalDisclaimer ? resolvedDisclaimer : "",
-      };
-    },
-    [agent, uiLocale, targetMarket, includeLegalDisclaimer],
+    () => ({
+      ...agent,
+      legalDisclaimer: includeLegalDisclaimer
+        ? resolveLegalDisclaimer(agent.legalDisclaimer, exposeLocale)
+        : "",
+    }),
+    [agent, exposeLocale, includeLegalDisclaimer],
   );
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("story");
@@ -684,7 +651,7 @@ function ListingStudioContent() {
     setEnergy({ ...DEFAULT_ENERGY });
     setAgent({
       ...DEFAULT_AGENT,
-      legalDisclaimer: DACH_LEGAL_DISCLAIMER,
+      legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
     });
     setTargetLanguage("German");
     setIncludeLegalDisclaimer(true);
@@ -1707,7 +1674,7 @@ function ListingStudioContent() {
             onTargetLanguage={handleExposeLanguageChange}
             includeLegalDisclaimer={includeLegalDisclaimer}
             onIncludeLegalDisclaimer={setIncludeLegalDisclaimer}
-            defaultLegalDisclaimer={exposeFormCopy.defaultLegalDisclaimer}
+            defaultLegalDisclaimer={formCopy.defaultLegalDisclaimer}
             generateError={generateError}
             billingHint={billingHint}
             onOpenAuth={() => setAuthOpen(true)}
