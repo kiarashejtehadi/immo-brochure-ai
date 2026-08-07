@@ -76,6 +76,15 @@ export const routing = defineRouting({
       nl: "/settings",
       pl: "/settings",
     },
+    "/settings/account": {
+      en: "/settings/account",
+      de: "/settings/account",
+      fr: "/settings/account",
+      es: "/settings/account",
+      it: "/settings/account",
+      nl: "/settings/account",
+      pl: "/settings/account",
+    },
     "/cookie-preferences": {
       en: "/cookie-preferences",
       de: "/cookie-einstellungen",

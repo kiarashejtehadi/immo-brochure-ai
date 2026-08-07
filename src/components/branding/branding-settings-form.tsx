@@ -6,7 +6,6 @@ import { useBillingStatus } from "@/hooks/use-billing-status";
 import { hasPurchasedBillingAccess, isCreditPackPlan } from "@/lib/billing/client-access";
 import { BrandKitSettings } from "@/components/branding/brand-kit-settings";
 import { BrandingProGate } from "@/components/branding/branding-pro-gate";
-import { AccountDangerZone } from "@/components/settings/account-danger-zone";
 import { ProBadge, UpgradeProModal } from "@/components/billing/upgrade-pro-modal";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import {
@@ -252,7 +251,6 @@ export function BrandingSettingsForm({ locale }: { locale: string }) {
         locale={locale}
         subscriptionOnly
       />
-      <AccountDangerZone copy={billingCopy} />
     </>
   );
 }

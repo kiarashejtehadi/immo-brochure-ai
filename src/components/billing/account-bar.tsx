@@ -164,6 +164,12 @@ export function AccountBar({ locale }: { locale: string }) {
                   <Lock className="h-3 w-3 text-amber-600 dark:text-amber-400" aria-hidden />
                 ) : null}
               </Link>
+              <Link
+                href="/settings/account"
+                className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                {copy.settingsAccount}
+              </Link>
               <button
                 type="button"
                 onClick={() => void handleSignOut()}

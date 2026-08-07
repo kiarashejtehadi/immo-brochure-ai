@@ -11,7 +11,7 @@ function AccountDangerZoneInner({ copy }: { copy: BillingCopy }) {
 
   return (
     <>
-      <section className="mt-10 rounded-xl border border-red-200 bg-red-50/50 p-5 dark:border-red-900/60 dark:bg-red-950/20">
+      <section className="rounded-xl border border-red-200 bg-red-50/50 p-5 dark:border-red-900/60 dark:bg-red-950/20">
         <h2 className="text-sm font-semibold text-red-800 dark:text-red-300">
           {copy.dangerZoneTitle}
         </h2>

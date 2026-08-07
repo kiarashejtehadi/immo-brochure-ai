@@ -16,6 +16,7 @@ export function SettingsNav() {
   const { status } = useBillingStatus();
   const brandingLocked = isCreditPackPlan(status);
   const onBranding = pathname === "/settings";
+  const onAccount = pathname === "/settings/account";
 
   return (
     <nav
@@ -35,6 +36,17 @@ export function SettingsNav() {
         {brandingLocked ? (
           <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-label={copy.proFeatureAria} />
         ) : null}
+      </Link>
+      <Link
+        href="/settings/account"
+        className={cn(
+          "relative -mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition",
+          onAccount
+            ? "border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300"
+            : "border-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
+        )}
+      >
+        {copy.settingsAccount}
       </Link>
       <Link
         href="/pricing"

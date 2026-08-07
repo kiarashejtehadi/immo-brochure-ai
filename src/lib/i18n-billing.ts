@@ -110,6 +110,8 @@ export type BillingCopy = {
   deleteAccountSuccess: string;
   deleteAccountFailed: string;
   deleteAccountTypeHint: string;
+  settingsAccount: string;
+  settingsAccountSubtitle: string;
 };
 
 export function interpolate(
@@ -250,6 +252,8 @@ const en: BillingCopy = {
   deleteAccountSuccess: "Account successfully deleted",
   deleteAccountFailed: "Could not delete account. Please try again or contact support.",
   deleteAccountTypeHint: 'Enter DELETE to enable confirmation.',
+  settingsAccount: "Account",
+  settingsAccountSubtitle: "Manage your sign-in and permanently delete your account and data.",
 };
 
 const de: Partial<BillingCopy> = {
@@ -381,6 +385,9 @@ const de: Partial<BillingCopy> = {
   deleteAccountFailed:
     "Konto konnte nicht gelöscht werden. Bitte erneut versuchen oder Support kontaktieren.",
   deleteAccountTypeHint: "Geben Sie DELETE ein, um die Bestätigung zu aktivieren.",
+  settingsAccount: "Konto",
+  settingsAccountSubtitle:
+    "Anmeldung verwalten und Konto sowie Daten dauerhaft löschen.",
 };
 
 const fr: Partial<BillingCopy> = {
