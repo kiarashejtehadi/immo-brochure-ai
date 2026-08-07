@@ -9,7 +9,31 @@
     "cookies": "Cookie-Einstellungen",
     "rights": "Alle Rechte vorbehalten.",
     "studio": "Studio",
-    "pricing": "Preise & Pläne"
+    "pricing": "Preise & Pläne",
+    "contact": "Kontakt & Feedback"
+  },
+  "contact": {
+    "title": "Kontakt & Feedback",
+    "subtitle": "Schreiben Sie uns bei rechtlichen Anfragen, Support, Feedback oder Fehlermeldungen. Wir antworten in der Regel innerhalb weniger Werktage.",
+    "topicLabel": "Thema / Betreff",
+    "topicPlaceholder": "Thema wählen…",
+    "topicGeneralSupport": "Allgemeiner Support / Rechtliche Anfrage",
+    "topicFeedback": "Feedback",
+    "topicFeatureRequest": "Feature-Wunsch",
+    "topicBugReport": "Problem / Bug melden",
+    "nameLabel": "Name",
+    "namePlaceholder": "Ihr Name",
+    "optional": "optional",
+    "emailLabel": "E-Mail-Adresse",
+    "emailPlaceholder": "sie@beispiel.de",
+    "messageLabel": "Nachricht",
+    "messagePlaceholder": "Wie können wir helfen?",
+    "submit": "Nachricht senden",
+    "submitting": "Wird gesendet…",
+    "submitError": "Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.",
+    "successToast": "Vielen Dank! Ihre Nachricht ist eingegangen.",
+    "legalNoticePrefix": "Mit dem Absenden werden Ihre Nachricht und E-Mail-Adresse zur Bearbeitung Ihrer Anfrage verarbeitet. Details finden Sie in unserer",
+    "legalNoticeSuffix": "."
   },
   "legal": {
     "lastUpdated": "Stand",

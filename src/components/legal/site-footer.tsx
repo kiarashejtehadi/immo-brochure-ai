@@ -32,6 +32,9 @@ export function SiteFooter() {
           <Link href="/create" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             {t("studio")}
           </Link>
+          <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-zinc-100">
+            {t("contact")}
+          </Link>
         </nav>
         <p className="text-xs">
           © {year} ImmoCaption AI — {t("rights")}

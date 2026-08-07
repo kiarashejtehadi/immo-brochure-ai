@@ -103,5 +103,14 @@ export const routing = defineRouting({
       nl: "/cookie-voorkeuren",
       pl: "/ustawienia-cookie",
     },
+    "/contact": {
+      en: "/contact",
+      de: "/kontakt",
+      fr: "/contact",
+      es: "/contacto",
+      it: "/contatto",
+      nl: "/contact",
+      pl: "/kontakt",
+    },
   },
 });

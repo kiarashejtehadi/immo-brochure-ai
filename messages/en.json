@@ -9,7 +9,31 @@
     "cookies": "Cookie preferences",
     "rights": "All rights reserved.",
     "studio": "Studio",
-    "pricing": "Pricing & plans"
+    "pricing": "Pricing & plans",
+    "contact": "Contact & feedback"
+  },
+  "contact": {
+    "title": "Contact & feedback",
+    "subtitle": "Reach us for legal inquiries, support, feedback, or to report an issue. We typically respond within a few business days.",
+    "topicLabel": "Topic / subject",
+    "topicPlaceholder": "Select a topic…",
+    "topicGeneralSupport": "General Support / Legal Inquiry",
+    "topicFeedback": "Feedback",
+    "topicFeatureRequest": "Feature Request",
+    "topicBugReport": "Report an Issue / Bug",
+    "nameLabel": "Name",
+    "namePlaceholder": "Your name",
+    "optional": "optional",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "messageLabel": "Message",
+    "messagePlaceholder": "How can we help?",
+    "submit": "Send message",
+    "submitting": "Sending…",
+    "submitError": "Could not send your message. Please try again.",
+    "successToast": "Thank you! Your message has been received.",
+    "legalNoticePrefix": "By submitting this form, your message and email will be processed to respond to your request. For details, see our",
+    "legalNoticeSuffix": "."
   },
   "legal": {
     "lastUpdated": "Last updated",

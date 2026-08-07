@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
+import { sendViaResend } from "@/lib/email/send-via-resend";
 
 export const runtime = "nodejs";
 
@@ -28,38 +29,6 @@ function hookSigningSecret(): string {
 }
 
 import { buildAppMagicLinkUrl } from "@/lib/supabase/magic-link";
-
-async function sendViaResend(params: {
-  to: string;
-  subject: string;
-  html: string;
-}): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from =
-    process.env.RESEND_FROM?.trim() ?? "Immo Brochure AI <onboarding@resend.dev>";
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY is not configured.");
-  }
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [params.to],
-      subject: params.subject,
-      html: params.html,
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Resend error (${res.status}): ${body}`);
-  }
-}
 
 export async function POST(request: Request) {
   const secret = hookSigningSecret();
