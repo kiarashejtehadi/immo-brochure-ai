@@ -150,6 +150,14 @@ export async function getSubscriptionCustomerPortalUrl(
   return json.data.attributes.urls?.customer_portal ?? null;
 }
 
+/** Immediately cancel a Lemon Squeezy subscription (no refund; access ends per provider rules). */
+export async function cancelLemonSqueezySubscription(subscriptionId: string): Promise<void> {
+  await lemonFetch<LemonJsonApiResponse<LemonSubscriptionData>>(
+    `/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    { method: "DELETE" },
+  );
+}
+
 export function mapLemonSubscriptionStatus(status: string): SubscriptionStatus {
   switch (status) {
     case "active":

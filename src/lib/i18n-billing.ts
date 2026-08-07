@@ -96,6 +96,20 @@ export type BillingCopy = {
   creditPackHint: string;
   creditPackCompact: string;
   creditPackTrialSuffix: string;
+  dangerZoneTitle: string;
+  dangerZoneDescription: string;
+  deleteAccountButton: string;
+  deleteAccountModalTitle: string;
+  deleteAccountModalWarning: string;
+  deleteAccountModalSubscriptionNote: string;
+  deleteAccountConfirmLabel: string;
+  deleteAccountConfirmPlaceholder: string;
+  deleteAccountConfirmButton: string;
+  deleteAccountCancel: string;
+  deleteAccountDeleting: string;
+  deleteAccountSuccess: string;
+  deleteAccountFailed: string;
+  deleteAccountTypeHint: string;
 };
 
 export function interpolate(
@@ -219,6 +233,23 @@ const en: BillingCopy = {
     "Each successful exposé generation uses one credit when you are on a pay-per-use plan.",
   creditPackCompact: "Credits: {used} used · {remaining} left",
   creditPackTrialSuffix: "({count} trial)",
+  dangerZoneTitle: "Danger zone",
+  dangerZoneDescription:
+    "Permanently delete your account and all associated data. This cannot be undone.",
+  deleteAccountButton: "Delete account",
+  deleteAccountModalTitle: "Delete Account & Data",
+  deleteAccountModalWarning:
+    "Warning: This action is permanent and cannot be undone. All your saved property data, exposés, and media files will be deleted immediately.",
+  deleteAccountModalSubscriptionNote:
+    "If you have an active paid subscription, it will be canceled immediately and remaining time will be forfeited without refund.",
+  deleteAccountConfirmLabel: 'Type "DELETE" to confirm',
+  deleteAccountConfirmPlaceholder: "DELETE",
+  deleteAccountConfirmButton: "Confirm deletion",
+  deleteAccountCancel: "Cancel",
+  deleteAccountDeleting: "Deleting account…",
+  deleteAccountSuccess: "Account successfully deleted",
+  deleteAccountFailed: "Could not delete account. Please try again or contact support.",
+  deleteAccountTypeHint: 'Enter DELETE to enable confirmation.',
 };
 
 const de: Partial<BillingCopy> = {
@@ -332,6 +363,24 @@ const de: Partial<BillingCopy> = {
     "Jede erfolgreiche Exposé-Generierung verbraucht ein Credit im Pay-per-use-Tarif.",
   creditPackCompact: "Credits: {used} genutzt · {remaining} übrig",
   creditPackTrialSuffix: "({count} Test)",
+  dangerZoneTitle: "Gefahrenzone",
+  dangerZoneDescription:
+    "Konto und alle zugehörigen Daten dauerhaft löschen. Dies kann nicht rückgängig gemacht werden.",
+  deleteAccountButton: "Konto löschen",
+  deleteAccountModalTitle: "Konto & Daten löschen",
+  deleteAccountModalWarning:
+    "Achtung: Diese Aktion ist endgültig und kann nicht rückgängig gemacht werden. Alle gespeicherten Objektdaten, Exposés und Mediendateien werden sofort gelöscht.",
+  deleteAccountModalSubscriptionNote:
+    "Bei einem aktiven kostenpflichtigen Abo wird dieses sofort gekündigt; verbleibende Laufzeit verfällt ohne Erstattung.",
+  deleteAccountConfirmLabel: '"DELETE" zur Bestätigung eingeben',
+  deleteAccountConfirmPlaceholder: "DELETE",
+  deleteAccountConfirmButton: "Löschung bestätigen",
+  deleteAccountCancel: "Abbrechen",
+  deleteAccountDeleting: "Konto wird gelöscht…",
+  deleteAccountSuccess: "Konto erfolgreich gelöscht",
+  deleteAccountFailed:
+    "Konto konnte nicht gelöscht werden. Bitte erneut versuchen oder Support kontaktieren.",
+  deleteAccountTypeHint: "Geben Sie DELETE ein, um die Bestätigung zu aktivieren.",
 };
 
 const fr: Partial<BillingCopy> = {
