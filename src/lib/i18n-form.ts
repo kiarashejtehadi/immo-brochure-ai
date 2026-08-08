@@ -168,6 +168,8 @@ export type FormCopy = {
   quickAutofillVoiceHint: string;
   quickAutofillTranscriptLabel: string;
   quickAutofillSuccessBadge: string;
+  quickAutofillReset: string;
+  quickAutofillResetHint: string;
   openImmoImportLabel: string;
   openImmoImportHint: string;
   openImmoImporting: string;
@@ -353,6 +355,8 @@ const en: FormCopy = {
   quickAutofillVoiceHint: "Tap the microphone and describe the property — we'll fill matching fields.",
   quickAutofillTranscriptLabel: "Transcript preview",
   quickAutofillSuccessBadge: "✓ {count} fields auto-filled. Please verify below.",
+  quickAutofillReset: "Clear form",
+  quickAutofillResetHint: "Remove all prefilled listing fields and start over.",
   openImmoImportLabel: "📁 Import OpenImmo XML / ZIP (1-Click)",
   openImmoImportHint: "Drop an OpenImmo export (.xml or .zip) to auto-fill the form.",
   openImmoImporting: "Importing OpenImmo file…",
@@ -540,6 +544,8 @@ const de: Partial<FormCopy> = {
     "Mikrofon tippen und Objekt beschreiben — passende Felder werden ausgefüllt.",
   quickAutofillTranscriptLabel: "Transkript-Vorschau",
   quickAutofillSuccessBadge: "✓ {count} Felder automatisch ausgefüllt. Bitte unten prüfen.",
+  quickAutofillReset: "Formular leeren",
+  quickAutofillResetHint: "Alle ausgefüllten Objektfelder entfernen und neu beginnen.",
   openImmoImportLabel: "📁 OpenImmo XML / ZIP importieren (1-Klick)",
   openImmoImportHint: "OpenImmo-Export (.xml oder .zip) ablegen, um das Formular automatisch auszufüllen.",
   openImmoImporting: "OpenImmo-Datei wird importiert…",

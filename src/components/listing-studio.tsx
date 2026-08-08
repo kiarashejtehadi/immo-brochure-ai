@@ -26,6 +26,7 @@ import {
   normalizeListingAddress,
   formatPublicListingAddress,
   getDefaultCountryForLocale,
+  hasStreetLevelInput,
 } from "@/lib/location/format-address";
 import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
 import { preparePdfImageProps, type PdfReadyImages } from "@/lib/pdf-image-data-url";
@@ -194,6 +195,63 @@ const DEFAULT_ENERGY: EnergyFormData = {
   constructionYear: "",
   heatingInstallYear: "",
 };
+
+function formFieldHasValue(value: string | undefined): boolean {
+  return Boolean(value?.trim());
+}
+
+function listingFormHasPrefilledContent(input: {
+  property: PropertyDetails;
+  address: ListingAddress;
+  size: string;
+  rooms: string;
+  bedrooms: string;
+  bathrooms: string;
+  rent: RentFormData;
+  sale: SaleFormData;
+  energy: EnergyFormData;
+  features: FeatureKey[];
+  photosCount: number;
+  hasFloorPlan: boolean;
+}): boolean {
+  if (input.property.propertyType) return true;
+  if (hasStreetLevelInput(input.address)) return true;
+  if (formFieldHasValue(input.address.postalCode) || formFieldHasValue(input.address.city)) return true;
+  if (input.address.hideExactHouseNumber) return true;
+  if (
+    formFieldHasValue(input.size) ||
+    formFieldHasValue(input.rooms) ||
+    formFieldHasValue(input.bedrooms) ||
+    formFieldHasValue(input.bathrooms)
+  ) {
+    return true;
+  }
+  if (input.features.length > 0 || input.photosCount > 0 || input.hasFloorPlan) return true;
+  if (
+    formFieldHasValue(input.property.floorLevel) ||
+    formFieldHasValue(input.property.parking) ||
+    formFieldHasValue(input.property.parkingFee) ||
+    formFieldHasValue(input.property.condition)
+  ) {
+    return true;
+  }
+  if (input.property.furnishingStatus !== "unfurnished" || input.property.isStagedOrModel) return true;
+  if (
+    input.energy.certificateType !== "na" ||
+    formFieldHasValue(input.energy.energyValue) ||
+    formFieldHasValue(input.energy.energyClass) ||
+    formFieldHasValue(input.energy.heatingSource) ||
+    formFieldHasValue(input.energy.constructionYear) ||
+    formFieldHasValue(input.energy.heatingInstallYear)
+  ) {
+    return true;
+  }
+  if (Object.values(input.rent).some(formFieldHasValue)) return true;
+  if (formFieldHasValue(input.sale.purchasePrice) || formFieldHasValue(input.sale.hoaFee) || formFieldHasValue(input.sale.rentalYield)) {
+    return true;
+  }
+  return false;
+}
 
 function CopyButton({
   text,
@@ -670,6 +728,81 @@ function ListingStudioContent() {
     pdfReadyImagesRef.current = null;
     pdfImagesFingerprintRef.current = "";
   }, [routeLocale, uiLocale]);
+
+  const resetListingFormContent = useCallback(() => {
+    setAutofillFieldCount(null);
+    setHighlightedFields([]);
+    totalRentManualRef.current = false;
+    setTransactionType("rent");
+    setAddress({
+      ...DEFAULT_LISTING_ADDRESS,
+      country: getDefaultCountryForLocale(routeLocale),
+    });
+    setSize("");
+    setRooms("");
+    setBedrooms("");
+    setBathrooms("");
+    setProperty({ ...DEFAULT_PROPERTY });
+    setFeatures([]);
+    setRent({ ...EMPTY_RENT });
+    setSale({ ...EMPTY_SALE });
+    setEnergy({ ...DEFAULT_ENERGY });
+    setCommissionPreset("commission_free");
+    setPhotos((prev) => {
+      for (const photo of prev) URL.revokeObjectURL(photo.url);
+      return [];
+    });
+    setFloorPlanPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setFloorPlanFile(null);
+    if (brandingProfile && hasBrandingAgentDefaults(brandingProfile)) {
+      setAgent((current) => mergeAgentWithBrandingDefaults(current, brandingProfile, { force: true }));
+    } else {
+      setAgent({
+        ...DEFAULT_AGENT,
+        legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
+      });
+    }
+    setResult(null);
+    setHasGenerated(false);
+    setIsDemoSample(false);
+    setGenerateError(null);
+    clearListingStudioDraft();
+  }, [brandingProfile, routeLocale]);
+
+  const canResetListingForm = useMemo(
+    () =>
+      listingFormHasPrefilledContent({
+        property,
+        address,
+        size,
+        rooms,
+        bedrooms,
+        bathrooms,
+        rent,
+        sale,
+        energy,
+        features,
+        photosCount: photos.length,
+        hasFloorPlan: Boolean(floorPlanPreview),
+      }),
+    [
+      property,
+      address,
+      size,
+      rooms,
+      bedrooms,
+      bathrooms,
+      rent,
+      sale,
+      energy,
+      features,
+      photos.length,
+      floorPlanPreview,
+    ],
+  );
 
   const applyListingDraft = useCallback((draft: ListingStudioDraft) => {
     setTargetLanguage(draft.targetLanguage);
@@ -1645,6 +1778,8 @@ function ListingStudioContent() {
             locale={routeLocale}
             autofillFieldCount={autofillFieldCount}
             highlightedFields={highlightedFields}
+            canResetListingForm={canResetListingForm}
+            onResetListingForm={resetListingFormContent}
             onVoiceAutofill={handleVoiceAutofill}
             transactionType={transactionType}
             onTransactionType={handleTransactionTypeChange}

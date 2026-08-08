@@ -194,6 +194,8 @@ export type ListingFormProps = {
   locale: UiLocale;
   autofillFieldCount?: number | null;
   highlightedFields?: AutofillFieldKey[];
+  canResetListingForm?: boolean;
+  onResetListingForm?: () => void;
   onVoiceAutofill?: (result: { fields: import("@/types/voice-parse").VoiceParseResult; transcript?: string }) => void;
   transactionType: TransactionType;
   onTransactionType: (type: TransactionType) => void;
@@ -270,6 +272,8 @@ export function ListingForm(props: ListingFormProps) {
     locale,
     autofillFieldCount,
     highlightedFields = [],
+    canResetListingForm,
+    onResetListingForm,
     onVoiceAutofill,
     transactionType,
     onTransactionType,
@@ -523,6 +527,8 @@ export function ListingForm(props: ListingFormProps) {
             locale={locale}
             transactionType={transactionType}
             autofillCount={autofillFieldCount ?? null}
+            canReset={canResetListingForm}
+            onReset={onResetListingForm}
             onOpenImmoImport={onOpenImmoImport ? handleOpenImmoImport : undefined}
             onVoiceParsed={onVoiceAutofill ?? (() => {})}
           />
