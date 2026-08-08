@@ -9,6 +9,7 @@ import type {
 } from "@/types/location-poi";
 import {
   geocodeAddress,
+  geocodeListingAddress,
   reverseGeocodeDistrict,
   searchDistrictLandmarks,
   type GeocodedAddress,
@@ -79,20 +80,32 @@ function elementCoords(element: OverpassElement): { lat: number; lon: number } |
 
 function poiName(tags: Record<string, string> | undefined, fallback: string): string {
   if (!tags) return fallback;
-  return (
+  const named =
     tags.name?.trim() ||
     tags["name:de"]?.trim() ||
     tags["name:en"]?.trim() ||
     tags.brand?.trim() ||
-    tags.operator?.trim() ||
-    fallback
-  );
+    tags.operator?.trim();
+  if (named) return named;
+
+  const ref = tags.ref?.trim() || tags["n:ref"]?.trim() || tags["route_ref"]?.trim();
+  if (ref) {
+    if (fallback === "bus stop") return `Bus ${ref}`;
+    if (fallback === "tram") return `Tram ${ref}`;
+    if (fallback === "subway") return `U-Bahn ${ref}`;
+    if (fallback === "rail station" || fallback === "rail halt") return ref;
+    return ref;
+  }
+
+  return fallback;
 }
 
-function isNamedPoi(name: string): boolean {
+function isNamedPoi(name: string, subtype?: string): boolean {
   const normalized = name.trim().toLowerCase();
-  if (normalized.length < 3) return false;
-  return !GENERIC_POI_NAMES.has(normalized);
+  if (normalized.length < 2) return false;
+  if (subtype === "bus stop" && /^bus\s+\S+/i.test(name.trim())) return true;
+  if (!GENERIC_POI_NAMES.has(normalized)) return true;
+  return false;
 }
 
 function classifyTransit(tags: Record<string, string>): { category: PoiCategory; subtype: string } | null {
@@ -219,11 +232,11 @@ function poiToLandmarkKind(category: PoiCategory): LandmarkKind {
 
 function landmarkPriority(poi: NearbyPoi): number {
   if (poi.category === "culture") return 0;
-  if (poi.category === "parks" && isNamedPoi(poi.name)) return 1;
-  if (poi.category === "water" && isNamedPoi(poi.name)) return 2;
+  if (poi.category === "parks" && isNamedPoi(poi.name, poi.subtype)) return 1;
+  if (poi.category === "water" && isNamedPoi(poi.name, poi.subtype)) return 2;
   if (
     poi.category === "transit" &&
-    isNamedPoi(poi.name) &&
+    isNamedPoi(poi.name, poi.subtype) &&
     poi.subtype !== "bus stop"
   ) {
     return poi.subtype === "subway" ? 3 : 4;
@@ -239,7 +252,7 @@ export function buildNearbyLandmarks(allPois: NearbyPoi[]): NearbyLandmark[] {
     .filter((poi) => {
       if (poi.category === "shopping" || poi.category === "connectivity") return false;
       if (poi.category === "transit" && poi.subtype === "bus stop") return false;
-      return isNamedPoi(poi.name);
+      return isNamedPoi(poi.name, poi.subtype);
     })
     .sort((a, b) => {
       const priorityDiff = landmarkPriority(a) - landmarkPriority(b);
@@ -414,24 +427,68 @@ function inferLandmarkKindFromName(name: string): LandmarkKind {
   return "culture";
 }
 
+async function fetchTransitFallback(
+  lat: number,
+  lon: number,
+  districtContext: string,
+): Promise<NearbyPoi[]> {
+  const cityQuery = districtContext.split(" ").pop() ?? "Berlin";
+  const queries = [
+    `U-Bahn ${districtContext}`,
+    `S-Bahn ${districtContext}`,
+    `Bahnhof ${cityQuery}`,
+    `Bus ${districtContext}`,
+  ];
+
+  const seen = new Set<string>();
+  const results: NearbyPoi[] = [];
+
+  for (const query of queries) {
+    const hits = await searchDistrictLandmarks(query, { lat, lon }, 3, 3_500);
+    for (const hit of hits) {
+      const key = hit.name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const distanceMeters = haversineMeters(lat, lon, hit.lat, hit.lon);
+      if (distanceMeters > 3_000) continue;
+      results.push({
+        name: hit.name,
+        category: "transit",
+        subtype: inferTransitSubtypeFromName(hit.name),
+        distanceMeters,
+      });
+      if (results.length >= MAX_POIS_PER_CATEGORY) break;
+    }
+    if (results.length >= MAX_POIS_PER_CATEGORY) break;
+  }
+
+  return results.sort((a, b) => a.distanceMeters - b.distanceMeters);
+}
+
+function inferTransitSubtypeFromName(name: string): string {
+  const lower = name.toLowerCase();
+  if (/u-bahn|ubahn|metro|subway/.test(lower)) return "subway";
+  if (/s-bahn|sbahn/.test(lower)) return "rail station";
+  if (/bus|haltestelle/.test(lower)) return "bus stop";
+  if (/bahnhof|station/.test(lower)) return "rail station";
+  return "transit station";
+}
+
 export async function fetchLocationEnrichment(
   address: ListingAddress,
 ): Promise<LocationEnrichment | null> {
   const query = formatListingAddress(address);
   if (!query.trim() || query.length < 6) return null;
 
-  const geocoded = await geocodeAddress(query);
+  const geocoded = await geocodeListingAddress(address, 5_000);
   if (!geocoded) return null;
 
-  let reverseDistrict: Pick<
-    GeocodedAddress,
-    "suburb" | "cityDistrict" | "postcode" | "city"
-  > = {};
-  try {
-    reverseDistrict = await reverseGeocodeDistrict(geocoded.lat, geocoded.lon);
-  } catch {
-    // district labels are optional; fallback queries use postal code + city
-  }
+  const [reverseDistrict, initialPois] = await Promise.all([
+    reverseGeocodeDistrict(geocoded.lat, geocoded.lon, 3_000).catch(
+      (): Pick<GeocodedAddress, "suburb" | "cityDistrict" | "postcode" | "city"> => ({}),
+    ),
+    fetchOverpassPois(geocoded.lat, geocoded.lon).catch(() => [] as NearbyPoi[]),
+  ]);
 
   const districtMeta = {
     suburb: geocoded.suburb ?? reverseDistrict.suburb,
@@ -442,7 +499,7 @@ export async function fetchLocationEnrichment(
 
   const districtContext = buildDistrictContext(address, districtMeta);
 
-  let allPois = await fetchOverpassPois(geocoded.lat, geocoded.lon);
+  let allPois = initialPois;
   let nearbyLandmarks = buildNearbyLandmarks(allPois);
 
   if (nearbyLandmarks.length === 0) {
@@ -450,7 +507,7 @@ export async function fetchLocationEnrichment(
       geocoded.lat,
       geocoded.lon,
       FALLBACK_LANDMARK_RADIUS_METERS,
-    );
+    ).catch(() => [] as NearbyPoi[]);
     allPois = widerPois;
     nearbyLandmarks = buildNearbyLandmarks(widerPois);
   }
@@ -463,10 +520,17 @@ export async function fetchLocationEnrichment(
     );
   }
 
-  const transit = dedupeAndLimit(
+  let transit = dedupeAndLimit(
     allPois.filter((p) => p.category === "transit"),
     MAX_POIS_PER_CATEGORY,
   );
+
+  if (transit.length === 0) {
+    transit = dedupeAndLimit(
+      await fetchTransitFallback(geocoded.lat, geocoded.lon, districtContext),
+      MAX_POIS_PER_CATEGORY,
+    );
+  }
   const parks = dedupeAndLimit(
     allPois.filter((p) => p.category === "parks"),
     MAX_POIS_PER_CATEGORY,

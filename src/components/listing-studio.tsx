@@ -28,7 +28,7 @@ import {
   getDefaultCountryForLocale,
   hasStreetLevelInput,
 } from "@/lib/location/format-address";
-import { fetchMapForPdf } from "@/lib/location/fetch-map-for-pdf";
+import { fetchMapForPdf, type MapFetchCoords } from "@/lib/location/fetch-map-for-pdf";
 import { preparePdfImageProps, type PdfReadyImages } from "@/lib/pdf-image-data-url";
 import { downloadExposePdf } from "@/lib/download-expose-pdf";
 import { resolvePdfDownloadError } from "@/lib/pdf-download-error";
@@ -113,6 +113,7 @@ import type {
   AgentFormData,
   CommissionPreset,
   EnergyFormData,
+  GenerateApiResponse,
   GenerateResult,
   HeatingSource,
   ListingAddress,
@@ -734,6 +735,8 @@ function ListingStudioContent() {
     setPreviewTab("story");
     pdfReadyImagesRef.current = null;
     pdfImagesFingerprintRef.current = "";
+    locationCoordsRef.current = null;
+    cachedMapDataUrlRef.current = undefined;
   }, [routeLocale, uiLocale]);
 
   const resetListingFormContent = useCallback(() => {
@@ -777,6 +780,8 @@ function ListingStudioContent() {
     setIsDemoSample(false);
     setGenerateError(null);
     setGenerationNotes("");
+    locationCoordsRef.current = null;
+    cachedMapDataUrlRef.current = undefined;
     clearListingStudioDraft();
   }, [brandingProfile, routeLocale]);
 
@@ -1015,6 +1020,8 @@ function ListingStudioContent() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const pdfReadyImagesRef = useRef<PdfReadyImages | null>(null);
   const pdfImagesFingerprintRef = useRef("");
+  const locationCoordsRef = useRef<MapFetchCoords | null>(null);
+  const cachedMapDataUrlRef = useRef<string | undefined>(undefined);
 
   const PDF_PREP_WATCHDOG_MS = 60_000;
 
@@ -1525,22 +1532,26 @@ function ListingStudioContent() {
       });
 
       const raw = await response.text();
-      let data: GenerateResult & { error?: string; code?: string; watermarkPdf?: boolean } = {
+      let data: GenerateApiResponse = {
         title: "",
         summary: [],
         fullDescription: "",
         locationDescription: "",
         socialCaptions: { instagram: "", linkedin: "", facebook: "" },
+        locationCoords: null,
+        mapDataUrl: null,
       };
       try {
         data = raw
-          ? (JSON.parse(raw) as typeof data)
+          ? (JSON.parse(raw) as GenerateApiResponse)
           : {
               title: "",
               summary: [],
               fullDescription: "",
               locationDescription: "",
               socialCaptions: { instagram: "", linkedin: "", facebook: "" },
+              locationCoords: null,
+              mapDataUrl: null,
             };
       } catch {
         throw new Error(
@@ -1579,6 +1590,10 @@ function ListingStudioContent() {
         customSections: [],
         watermarkPdf: data.watermarkPdf,
       });
+      locationCoordsRef.current = data.locationCoords ?? null;
+      cachedMapDataUrlRef.current = data.mapDataUrl ?? undefined;
+      pdfReadyImagesRef.current = null;
+      pdfImagesFingerprintRef.current = "";
       setPdfWatermark(Boolean(data.watermarkPdf));
       setIsDemoSample(false);
       setHasGenerated(true);
@@ -1611,8 +1626,14 @@ function ListingStudioContent() {
       const [logoDataUrl, avatarDataUrl, mapDataUrl] = await Promise.all([
         brand.logoUrl ? brandingUrlToPdfDataUrl(brand.logoUrl) : Promise.resolve(undefined),
         brand.avatarUrl ? brandingUrlToPdfDataUrl(brand.avatarUrl) : Promise.resolve(undefined),
-        fetchMapForPdf(address),
+        cachedMapDataUrlRef.current
+          ? Promise.resolve(cachedMapDataUrlRef.current)
+          : fetchMapForPdf(address, locationCoordsRef.current),
       ]);
+
+      if (mapDataUrl) {
+        cachedMapDataUrlRef.current = mapDataUrl;
+      }
 
       let readyImages = pdfReadyImagesRef.current;
       if (!readyImages || pdfImagesFingerprintRef.current !== fingerprint) {

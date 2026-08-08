@@ -122,6 +122,12 @@ export function dachConnectivityHint(
       : "Berlin-Charlottenburg: excellent S-Bahn Ring access, frequent bus lines (e.g. M45), and the A100 city motorway for swift connections across Berlin.";
   }
 
+  if (isBerlin && postalCode.startsWith("101")) {
+    return isGerman
+      ? "Berlin-Mitte: zentrale Lage nahe Regierungsviertel, Museumsinsel und Hauptbahnhof — hervorragende U-Bahn- (U6, U8, U9), S-Bahn- und Busanbindung sowie zahlreiche Parks (z. B. Tiergarten, Monbijoupark)."
+      : "Berlin-Mitte: central location near the government district, Museum Island, and Hauptbahnhof — excellent U-Bahn (U6, U8, U9), S-Bahn, and bus links plus parks such as Tiergarten and Monbijoupark.";
+  }
+
   if (isBerlin && postalCode.startsWith("10")) {
     return isGerman
       ? "Zentrale Berliner Wohnlage mit dichter ÖPNV-Anbindung (U-Bahn, S-Bahn, Bus) und kurzen Wegen zu den Hauptverkehrsachsen."
@@ -227,6 +233,7 @@ function outputCleanlinessRule(outputLanguage: OutputLanguage): string {
   return `STRICT OUTPUT & CLEANLINESS (MANDATORY):
 - NEVER output internal formatting codes, regex patterns, or generic placeholders such as "(PLZ 10xxx)", "[PLZ]", "PLZ 10585" in brackets, or "Ortsteil XXX".
 - NEVER use robotic meta-phrases such as "PLZ-Bereich", "PLZ 10xxx", "in diesem Postleitzahlengebiet", or masked postal codes (e.g. "10xxx", "140xx").
+- NEVER append agent names, signatures, or note sign-offs at the end of locationDescription.
 - Write flowing exposé prose — no template brackets, no placeholder syntax, no technical meta-labels.${germanExamples}`;
 }
 
@@ -271,9 +278,17 @@ function transitLocationRule(
 
   if (hasSpecificTransit(enrichment)) {
     return `TRANSIT & CONNECTIVITY (MANDATORY):
-- Specific transit stops/lines ARE provided in Nearby Transit below — name them explicitly in locationDescription (e.g. Bus M45, S-Bahn Westend, U7, U-Bahn Richard-Wagner-Platz).
+- Specific transit stops/lines ARE provided in Nearby Transit below — name at least TWO of them explicitly in locationDescription (e.g. Bus M45, S-Bahn Westend, U7, U-Bahn Friedrichstraße).
 - Pair each named stop with its pre-normalized proximity phrasing where available.
-- Do NOT replace named stops with generic disclaimers.`;
+- Do NOT replace named stops with generic disclaimers or vague phrases like "public transportation connections are easily accessible".`;
+  }
+
+  const hasLandmarks = (enrichment?.nearbyLandmarks.length ?? 0) > 0;
+  const hasParks = (enrichment?.parks.length ?? 0) > 0;
+  if (hasLandmarks || hasParks) {
+    return `TRANSIT & CONNECTIVITY (MANDATORY):
+- Nearby landmarks and/or parks ARE provided below — name at least TWO specific places (parks, stations, or cultural sites) with proximityText.
+- Do NOT use vague generic connectivity filler when specific names are available.`;
   }
 
   const fallbackPhrase = outputLanguage === "German" ? generalTransitDe : generalTransitEn;
@@ -281,6 +296,23 @@ function transitLocationRule(
 - No specific stop/line names appear in the payload — do NOT mention missing data or output any disclaimer.
 - Instead, include this positive general connectivity phrasing (adapt naturally into your paragraph):
   "${fallbackPhrase}"`;
+}
+
+function specificPoiMandateRule(enrichment: LocationEnrichment | null): string {
+  if (!enrichment) return "";
+
+  const hasAnyPoi =
+    enrichment.transit.length > 0 ||
+    enrichment.parks.length > 0 ||
+    enrichment.nearbyLandmarks.length > 0 ||
+    enrichment.culture.length > 0;
+
+  if (!hasAnyPoi) return "";
+
+  return `SPECIFIC VICINITY DETAIL (MANDATORY):
+- The locationContext payload contains verified nearby POIs — your locationDescription MUST cite at least 3 specific names from nearbyLandmarks, Nearby Transit, Parks/Recreation, or Cultural Landmarks.
+- Include walking-time phrasing (proximityText) for at least 2 of them.
+- Forbidden when POI names are provided: generic-only paragraphs that omit all stop, park, and landmark names.`;
 }
 
 function dachPostalCodeRule(
@@ -371,6 +403,8 @@ ${marketingToneRule()}
 ${missingStreetLocationRule(address, locationContext.districtContext, outputLanguage)}
 
 ${transitLocationRule(outputLanguage, enrichment)}
+
+${specificPoiMandateRule(enrichment)}
 
 ${dachPostalCodeRule(address, outputLanguage, locationContext.districtContext, connectivityHint)}
 

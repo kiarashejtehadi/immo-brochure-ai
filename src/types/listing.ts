@@ -159,3 +159,15 @@ export type GenerateResult = {
   /** Set when billing consumed a trial-only credit — PDF should be watermarked. */
   watermarkPdf?: boolean;
 };
+
+export type GenerateLocationMeta = {
+  locationCoords: { lat: number; lon: number } | null;
+  mapDataUrl: string | null;
+};
+
+export type GenerateApiResponse = GenerateResult &
+  GenerateLocationMeta & {
+    watermarkPdf?: boolean;
+    error?: string;
+    code?: string;
+  };

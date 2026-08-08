@@ -24,6 +24,7 @@ import {
 import { buildAddressPrivacyInstructions } from "@/lib/location/address-privacy-prompt";
 import { fetchLocationEnrichment } from "@/lib/location/geocode-pois";
 import { buildLocationPromptInstructions, buildLocationContextPayload } from "@/lib/location/location-prompt";
+import { fetchStaticMapAsDataUrl } from "@/lib/location/static-map";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { formatPriceAmount, normalizeCurrency } from "@/lib/currency";
@@ -43,7 +44,7 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 90;
 
-const LOCATION_ENRICHMENT_BUDGET_MS = 6_000;
+const LOCATION_ENRICHMENT_BUDGET_MS = 18_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise.race([
@@ -347,10 +348,17 @@ export async function POST(request: Request) {
       : "";
 
   const descriptionWordRange = images.length > 0 ? "280-380" : "250-350";
-  const locationWordRange = images.length > 0 ? "90-140" : "80-120";
+  const locationWordRange = images.length > 0 ? "120-180" : "100-150";
+  const hasLocationPois =
+    Boolean(enrichment?.transit.length) ||
+    Boolean(enrichment?.parks.length) ||
+    Boolean(enrichment?.nearbyLandmarks.length);
+  const locationSpecificityRule = hasLocationPois
+    ? `- locationDescription MUST name specific nearby transit stops, parks, and landmarks from locationContext when provided. Include at least 3 proper names and 2 walking-time distances. Do NOT write vague generic connectivity text when specific POI names are available.`
+    : `- locationDescription should highlight district character and connectivity positively using districtContext.`;
   const generationNotes = body.generationNotes?.trim();
   const generationNotesBlock = generationNotes
-    ? `\nAdditional agent notes (weave naturally into the first draft where relevant; do not list verbatim as a separate section unless appropriate):\n${generationNotes}\n`
+    ? `\nAdditional agent notes (weave naturally into headline/fullDescription where relevant; do NOT append names or sign-offs to locationDescription):\n${generationNotes}\n`
     : "";
 
   const userText = `You are creating a multi-page real estate exposé and social pack.
@@ -364,7 +372,8 @@ Return JSON with:
 - title: compelling marketing headline for cover page
 - summary: array of 4-6 short bullet highlights for specs sidebar
 - fullDescription: multi-paragraph narrative exposé (${descriptionWordRange} words), include room/flow descriptions where data allows
-- locationDescription: neighborhood & connectivity paragraph (${locationWordRange} words)
+- locationDescription: neighborhood & connectivity paragraph (${locationWordRange} words) with concrete vicinity detail
+${locationSpecificityRule}
 - socialCaptions object with:
   - instagram: engaging caption with hashtags (${instagramTags.join(" ")})
   - linkedin: professional post (no hashtag spam)
@@ -404,8 +413,13 @@ Schema:
 
   const systemContent = `Expert multilingual real estate copywriter. Return valid JSON only. Language: ${outputLanguage}.`;
 
+  const mapFetchPromise = enrichment
+    ? fetchStaticMapAsDataUrl(enrichment.lat, enrichment.lon).catch(() => null)
+    : Promise.resolve(null);
+
   try {
-    const completion = await openai.chat.completions.create({
+    const [completion, mapDataUrl] = await Promise.all([
+      openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.65,
       max_tokens: images.length > 0 ? 2200 : 1800,
@@ -417,10 +431,19 @@ Schema:
         },
         { role: "user", content: userContent },
       ],
-    });
+    }),
+      mapFetchPromise,
+    ]);
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("Empty response from OpenAI");
+
+    const locationMeta = {
+      locationCoords: enrichment
+        ? { lat: enrichment.lat, lon: enrichment.lon }
+        : null,
+      mapDataUrl: mapDataUrl ?? null,
+    };
 
     if (billingUserId) {
       if (useCreditForGeneration) {
@@ -437,6 +460,7 @@ Schema:
         const parsed = parseGenerateResult(content, instagramTags);
         return NextResponse.json({
           ...parsed,
+          ...locationMeta,
           watermarkPdf: isTrialOnlyCredits(remainingBefore, trialBefore),
         });
       }
@@ -446,6 +470,7 @@ Schema:
     const parsed = parseGenerateResult(content, instagramTags);
     return NextResponse.json({
       ...parsed,
+      ...locationMeta,
       watermarkPdf: false,
     });
   } catch (err) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { geocodeAddress } from "@/lib/location/geocode-address";
+import { geocodeAddress, geocodeListingAddress } from "@/lib/location/geocode-address";
 import {
   formatListingAddress,
   normalizeListingAddress,
@@ -10,8 +10,8 @@ import { withDeadline } from "@/lib/promise-timeout";
 export const runtime = "nodejs";
 export const maxDuration = 10;
 
-/** Hard server-side budget for map tile generation (matches client timeout). */
-const MAP_IMAGE_DEADLINE_MS = 2_000;
+/** Hard server-side budget for map tile generation. */
+const MAP_IMAGE_DEADLINE_MS = 10_000;
 
 type MapImageRequest = {
   lat?: number;
@@ -31,7 +31,7 @@ async function buildMapImageResponse(body: MapImageRequest) {
         ? body.query.trim()
         : formatListingAddress(address);
 
-    const geocoded = await geocodeAddress(query, 1_500);
+    const geocoded = await geocodeListingAddress(address, 8_000);
     if (!geocoded) {
       return { mapDataUrl: null, lat: null, lon: null };
     }

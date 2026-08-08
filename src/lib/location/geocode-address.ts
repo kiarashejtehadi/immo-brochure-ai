@@ -1,4 +1,6 @@
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+import type { ListingAddress } from "@/types/listing";
+import { formatListingAddress } from "@/lib/location/format-address";
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
@@ -147,4 +149,27 @@ export async function searchDistrictLandmarks(
         Number.isFinite(item.lat) &&
         Number.isFinite(item.lon),
     );
+}
+
+function formatPostalCityQuery(address: ListingAddress): string {
+  return [address.postalCode.trim(), address.city.trim(), address.country.trim()]
+    .filter(Boolean)
+    .join(", ");
+}
+
+/** Geocode a listing address, falling back to postal code + city when the street is unknown. */
+export async function geocodeListingAddress(
+  address: ListingAddress,
+  timeoutMs = 5_000,
+): Promise<GeocodedAddress | null> {
+  const fullQuery = formatListingAddress(address);
+  const geocoded = await geocodeAddress(fullQuery, timeoutMs);
+  if (geocoded) return geocoded;
+
+  const postalCityQuery = formatPostalCityQuery(address);
+  if (postalCityQuery.length >= 6 && postalCityQuery !== fullQuery) {
+    return geocodeAddress(postalCityQuery, timeoutMs);
+  }
+
+  return null;
 }
