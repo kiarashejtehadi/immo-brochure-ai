@@ -1,5 +1,5 @@
 import type { CurrencyCode } from "@/lib/currency";
-import type { TransactionType } from "@/types/listing";
+import type { PreviewCustomSection, TransactionType } from "@/types/listing";
 import type { BrandFontFamily, PDFBrandingProps } from "@/types/branding";
 
 export type BrochurePdfProps = {
@@ -35,6 +35,7 @@ export type BrochurePdfProps = {
   };
   legalDisclaimerFallback: string;
   stagingDisclaimer?: string;
+  customSections?: PreviewCustomSection[];
   photoDataUrls: string[];
   floorPlanDataUrl?: string;
   /** Static map preview for the location section (data URL). */

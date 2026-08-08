@@ -85,7 +85,8 @@ import {
   type AutofillFieldKey,
 } from "@/lib/listing/autofill-fields";
 import type { VoiceParseResult } from "@/types/voice-parse";
-import { StagingDisclaimerFooter } from "@/components/listing/staging-disclaimer";
+import { PreviewLocationPanel } from "@/components/listing/preview-location-panel";
+import { PreviewStoryPanel } from "@/components/listing/preview-story-panel";
 import { CopyToastProvider, useCopyToast } from "@/components/ui/copy-toast";
 import type { UserBrandingProfile } from "@/types/branding";
 import { importWithChunkRetry } from "@/lib/import-with-chunk-retry";
@@ -381,6 +382,7 @@ function ListingStudioContent() {
 
   const [targetLanguage, setTargetLanguage] = useState<OutputLanguage>("German");
   const [includeLegalDisclaimer, setIncludeLegalDisclaimer] = useState(true);
+  const [generationNotes, setGenerationNotes] = useState("");
   const [targetMarket, setTargetMarket] = useState<TargetMarket>("dach");
   const [userRole, setUserRole] = useState<UserRole>("agent");
   const [commissionPreset, setCommissionPreset] = useState<CommissionPreset>("commission_free");
@@ -596,6 +598,10 @@ function ListingStudioContent() {
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("story");
   const [result, setResult] = useState<GenerateResult | null>(null);
+
+  const updateResult = useCallback((patch: Partial<GenerateResult>) => {
+    setResult((current) => (current ? { ...current, ...patch } : current));
+  }, []);
   const [isDemoSample, setIsDemoSample] = useState(false);
   const [pdfWatermark, setPdfWatermark] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
@@ -720,6 +726,7 @@ function ListingStudioContent() {
     setTargetLanguage("German");
     setIncludeLegalDisclaimer(true);
     if (uiLocale === "en") setCurrency("EUR");
+    setGenerationNotes("");
     setResult(null);
     setHasGenerated(false);
     setIsDemoSample(false);
@@ -769,6 +776,7 @@ function ListingStudioContent() {
     setHasGenerated(false);
     setIsDemoSample(false);
     setGenerateError(null);
+    setGenerationNotes("");
     clearListingStudioDraft();
   }, [brandingProfile, routeLocale]);
 
@@ -841,6 +849,7 @@ function ListingStudioContent() {
     setEnergy(draft.energy);
     setAgent(draft.agent);
     setIncludeLegalDisclaimer(draft.includeLegalDisclaimer ?? true);
+    setGenerationNotes(draft.generationNotes ?? "");
     setPhotos((prev) => {
       for (const photo of prev) URL.revokeObjectURL(photo.url);
       return draft.photos.map(storedPhotoToPreview);
@@ -953,6 +962,7 @@ function ListingStudioContent() {
             energy,
             agent,
             includeLegalDisclaimer,
+            generationNotes,
             photos: photosStored,
             floorPlan: floorPlanStored,
             result,
@@ -993,6 +1003,7 @@ function ListingStudioContent() {
     energy,
     agent,
     includeLegalDisclaimer,
+    generationNotes,
     photos,
     floorPlanFile,
     result,
@@ -1329,6 +1340,7 @@ function ListingStudioContent() {
           fullDescription: merged.description,
           locationDescription: merged.locationText || "—",
           socialCaptions: { instagram: "", linkedin: "", facebook: "" },
+          customSections: [],
         });
         setHasGenerated(true);
         setPreviewTab(merged.description ? "story" : "location");
@@ -1502,6 +1514,7 @@ function ListingStudioContent() {
         agent: agentForLocale,
         images,
         floorPlan,
+        generationNotes,
       });
 
       const response = await fetch("/api/generate", {
@@ -1561,8 +1574,9 @@ function ListingStudioContent() {
         title: data.title,
         summary: Array.isArray(data.summary) ? data.summary : [],
         fullDescription: data.fullDescription,
-        locationDescription: data.locationDescription || "â€”",
+        locationDescription: data.locationDescription || "—",
         socialCaptions: sc,
+        customSections: [],
         watermarkPdf: data.watermarkPdf,
       });
       setPdfWatermark(Boolean(data.watermarkPdf));
@@ -1845,6 +1859,8 @@ function ListingStudioContent() {
               setPreviewTab(tab);
               previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
+            generationNotes={generationNotes}
+            onGenerationNotes={setGenerationNotes}
           />
           </section>
 
@@ -1976,89 +1992,56 @@ function ListingStudioContent() {
                 </p>
               </div>
             ) : result && previewTab === "story" ? (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                      {copy.headline}
-                    </span>
+              <PreviewStoryPanel
+                copy={formCopy}
+                result={result}
+                onUpdateResult={updateResult}
+                includeLegalDisclaimer={includeLegalDisclaimer}
+                legalDisclaimer={agent.legalDisclaimer}
+                onLegalDisclaimerChange={(legalDisclaimer) => setAgent((current) => ({ ...current, legalDisclaimer }))}
+                furnishingDisclaimerText={furnishingDisclaimerText}
+                headlineActions={
+                  <CopyButton
+                    text={result.title}
+                    copyLabel={copy.copy}
+                    copiedLabel={copy.copied}
+                    onCopied={notifyCopied}
+                  />
+                }
+                descriptionActions={
+                  <div className="flex flex-wrap gap-2">
                     <CopyButton
-                      text={result.title}
+                      text={result.fullDescription}
                       copyLabel={copy.copy}
                       copiedLabel={copy.copied}
                       onCopied={notifyCopied}
                     />
+                    <button
+                      type="button"
+                      onClick={handleDownloadPdf}
+                      disabled={isDownloadingPdf}
+                      className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    >
+                      {isDownloadingPdf ? `${copy.pdfShort}…` : copy.pdfShort}
+                    </button>
                   </div>
-                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                    {result.title}
-                  </h3>
-                </div>
-                {result.summary.length > 0 && (
-                  <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
-                    <p className="mb-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                      {copy.summaryLabel}
-                    </p>
-                    <ul className="list-disc space-y-1 pl-5 text-sm text-zinc-800 dark:text-zinc-200">
-                      {result.summary.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                      {copy.fullDescriptionLabel}
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      <CopyButton
-                        text={result.fullDescription}
-                        copyLabel={copy.copy}
-                        copiedLabel={copy.copied}
-                        onCopied={notifyCopied}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleDownloadPdf}
-                        disabled={isDownloadingPdf}
-                        className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                      >
-                        {isDownloadingPdf ? `${copy.pdfShort}…` : copy.pdfShort}
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
-                    {result.fullDescription}
-                  </p>
-                  {furnishingDisclaimerText ? (
-                    <div className="mt-3">
-                      <StagingDisclaimerFooter text={furnishingDisclaimerText} />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
+                }
+              />
             ) : result && previewTab === "location" ? (
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                    {copy.locationLabel}
-                  </span>
+              <PreviewLocationPanel
+                copy={formCopy}
+                locationDescription={result.locationDescription}
+                onChange={(locationDescription) => updateResult({ locationDescription })}
+                furnishingDisclaimerText={furnishingDisclaimerText}
+                actions={
                   <CopyButton
                     text={result.locationDescription}
                     copyLabel={copy.copy}
                     copiedLabel={copy.copied}
                     onCopied={notifyCopied}
                   />
-                </div>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
-                  {result.locationDescription}
-                </p>
-                {furnishingDisclaimerText ? (
-                  <div className="mt-3">
-                    <StagingDisclaimerFooter text={furnishingDisclaimerText} />
-                  </div>
-                ) : null}
-              </div>
+                }
+              />
             ) : result && previewTab === "social" ? (
               <ul className="space-y-4">
                 {(

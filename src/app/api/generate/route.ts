@@ -348,12 +348,16 @@ export async function POST(request: Request) {
 
   const descriptionWordRange = images.length > 0 ? "280-380" : "250-350";
   const locationWordRange = images.length > 0 ? "90-140" : "80-120";
+  const generationNotes = body.generationNotes?.trim();
+  const generationNotesBlock = generationNotes
+    ? `\nAdditional agent notes (weave naturally into the first draft where relevant; do not list verbatim as a separate section unless appropriate):\n${generationNotes}\n`
+    : "";
 
   const userText = `You are creating a multi-page real estate exposé and social pack.
 
 Property data (JSON):
 ${JSON.stringify(propertyPayload, null, 2)}
-${photoVisionNote}
+${photoVisionNote}${generationNotesBlock}
 Write ALL output exclusively in ${outputLanguage}.
 
 Return JSON with:

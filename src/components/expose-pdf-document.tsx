@@ -1113,6 +1113,25 @@ export function ExposePdfDocument(props: BrochurePdfProps) {
             ))}
           </View>
 
+          {(props.customSections ?? [])
+            .filter((section) => section.title.trim() && section.body.trim())
+            .map((section) => {
+              const paragraphs = splitPdfParagraphs(section.body);
+              return (
+                <View key={section.id} style={s.sectionBlock} wrap={false}>
+                  <Text style={s.h2}>{section.title.trim()}</Text>
+                  {paragraphs.map((paragraph, i) => (
+                    <Text
+                      key={i}
+                      style={[s.body, { marginBottom: i === paragraphs.length - 1 ? 0 : RHYTHM_SM }]}
+                    >
+                      {paragraph}
+                    </Text>
+                  ))}
+                </View>
+              );
+            })}
+
           {props.energyLines.length > 0 ? (
             <View style={s.sectionBlock} wrap={false}>
               <Text style={s.h2}>Energy certificate</Text>

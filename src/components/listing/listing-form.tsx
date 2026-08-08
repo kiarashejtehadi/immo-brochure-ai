@@ -251,6 +251,8 @@ export type ListingFormProps = {
   onGenerate: () => void;
   onDownloadPdf: () => void;
   onSelectPreviewTab?: (tab: "story" | "location" | "social" | "reel") => void;
+  generationNotes: string;
+  onGenerationNotes: (value: string) => void;
 };
 
 export function ListingForm(props: ListingFormProps) {
@@ -329,6 +331,8 @@ export function ListingForm(props: ListingFormProps) {
     onGenerate,
     onDownloadPdf,
     onSelectPreviewTab,
+    generationNotes,
+    onGenerationNotes,
   } = props;
 
   const epcDetailsVisible = energy.certificateType !== "na";
@@ -1629,6 +1633,20 @@ export function ListingForm(props: ListingFormProps) {
               </div>
             </div>
           ) : null}
+
+          <div>
+            <label htmlFor="generationNotes" className={labelClassName()}>
+              {copy.generationNotesLabel}
+            </label>
+            <textarea
+              id="generationNotes"
+              rows={3}
+              value={generationNotes}
+              onChange={(e) => onGenerationNotes(e.target.value)}
+              placeholder={copy.generationNotesPlaceholder}
+              className={cn(inputClassName(), "resize-y")}
+            />
+          </div>
 
           {generateError ? (
             <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">

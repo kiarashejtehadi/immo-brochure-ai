@@ -42,8 +42,14 @@ export function buildGeneratePayload(input: {
   agent: GenerateRequestPayload["agent"];
   images: { base64: string; mimeType: string }[];
   floorPlan?: { base64: string; mimeType: string };
+  generationNotes?: string;
 }): GenerateRequestPayload {
-  return { ...input, energy: sanitizeEnergyForPayload(input.energy) };
+  const { generationNotes, ...rest } = input;
+  return {
+    ...rest,
+    energy: sanitizeEnergyForPayload(input.energy),
+    ...(generationNotes?.trim() ? { generationNotes: generationNotes.trim() } : {}),
+  };
 }
 
 export function buildBrochurePdfProps(input: {
@@ -156,6 +162,9 @@ export function buildBrochurePdfProps(input: {
     summary: input.result.summary,
     fullDescription: input.result.fullDescription,
     locationDescription: input.result.locationDescription,
+    customSections: (input.result.customSections ?? []).filter(
+      (section) => section.title.trim() && section.body.trim(),
+    ),
     energyLines,
     agent: input.agent,
     legalDisclaimerFallback: input.form.defaultLegalDisclaimer,

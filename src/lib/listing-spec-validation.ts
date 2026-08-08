@@ -173,6 +173,10 @@ export function collectGenerateModerationText(body: GenerateRequestPayload): str
     body.agent?.legalDisclaimer,
   ];
 
+  if (body.generationNotes?.trim()) {
+    parts.push(body.generationNotes);
+  }
+
   return parts
     .filter((part): part is string => typeof part === "string")
     .map((part) => part.trim())

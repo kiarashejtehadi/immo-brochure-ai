@@ -134,6 +134,7 @@ export type GenerateRequestPayload = {
   agent: AgentFormData;
   images: { base64: string; mimeType: string }[];
   floorPlan?: { base64: string; mimeType: string };
+  generationNotes?: string;
 };
 
 export type SocialCaptions = {
@@ -142,12 +143,19 @@ export type SocialCaptions = {
   facebook: string;
 };
 
+export type PreviewCustomSection = {
+  id: string;
+  title: string;
+  body: string;
+};
+
 export type GenerateResult = {
   title: string;
   summary: string[];
   fullDescription: string;
   locationDescription: string;
   socialCaptions: SocialCaptions;
+  customSections?: PreviewCustomSection[];
   /** Set when billing consumed a trial-only credit — PDF should be watermarked. */
   watermarkPdf?: boolean;
 };

@@ -108,6 +108,14 @@ export type FormCopy = {
   socialLinkedin: string;
   socialFacebook: string;
   fullDescriptionLabel: string;
+  generationNotesLabel: string;
+  generationNotesPlaceholder: string;
+  previewHighlightsPlaceholder: string;
+  stagingDisclaimerLabel: string;
+  addCustomNote: string;
+  customNoteTitlePlaceholder: string;
+  customNoteBodyPlaceholder: string;
+  removeCustomNote: string;
   defaultLegalDisclaimer: string;
   furnishingStatus: string;
   furnishingUnfurnished: string;
@@ -292,6 +300,15 @@ const en: FormCopy = {
   socialLinkedin: "LinkedIn",
   socialFacebook: "Facebook / WhatsApp",
   fullDescriptionLabel: "Full description",
+  generationNotesLabel: "Additional Notes / Custom Details (Optional)",
+  generationNotesPlaceholder:
+    "e.g., Seller prefers quiet inquiries, recent roof renovation in 2023, special parking rules...",
+  previewHighlightsPlaceholder: "One highlight per line",
+  stagingDisclaimerLabel: "Staging disclaimer",
+  addCustomNote: "+ Add Custom Note",
+  customNoteTitlePlaceholder: "Note from Agent",
+  customNoteBodyPlaceholder: "Custom paragraph or bullet points for the PDF…",
+  removeCustomNote: "Remove note",
   defaultLegalDisclaimer:
     "All information is provided without guarantee. This exposé does not constitute a binding offer. Agent and agency details apply per local imprint requirements.",
   furnishingStatus: "Furnishing status",
@@ -479,6 +496,15 @@ const de: Partial<FormCopy> = {
   summaryLabel: "Highlights",
   locationLabel: "Lage & Umgebung",
   fullDescriptionLabel: "Ausführliche Beschreibung",
+  generationNotesLabel: "Zusätzliche Hinweise / Details (Optional)",
+  generationNotesPlaceholder:
+    "z. B. Verkäufer wünscht diskrete Anfragen, Dachsanierung 2023, besondere Stellplatzregelung …",
+  previewHighlightsPlaceholder: "Ein Highlight pro Zeile",
+  stagingDisclaimerLabel: "Staging-Hinweis",
+  addCustomNote: "+ Eigene Notiz hinzufügen",
+  customNoteTitlePlaceholder: "Hinweis vom Makler",
+  customNoteBodyPlaceholder: "Eigener Absatz oder Stichpunkte für das PDF …",
+  removeCustomNote: "Notiz entfernen",
   defaultLegalDisclaimer:
     "Alle Angaben ohne Gewähr. Dieses Exposé stellt kein bindendes Angebot dar. Angaben zu Makler und Firma gemäß Impressum.",
   furnishingStatus: "Möblierungsstatus",
