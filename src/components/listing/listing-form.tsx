@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { CreditPackUsage } from "@/components/billing/credit-pack-usage";
 import { FormGrid, inputClassName, labelClassName } from "@/components/listing/form-ui";
 import { FormStepNav, FormStepPanel, FormStepper } from "@/components/listing/form-stepper";
 import { CommissionField } from "@/components/listing/commission-field";
-import { OpenImmoImportDropzone } from "@/components/listing/openimmo-import-dropzone";
+import { QuickAutofillBanner } from "@/components/listing/quick-autofill-banner";
 import { MarketConfigBar } from "@/components/listing/market-config-bar";
+import { autofillHighlightClass, type AutofillFieldKey } from "@/lib/listing/autofill-fields";
+import type { UiLocale } from "@/lib/i18n";
 import type { BillingStatusResponse } from "@/types/billing";
 import type { FormCopy } from "@/lib/i18n-form";
 import type { WorkflowUiCopy } from "@/lib/i18n-workflow";
@@ -141,6 +143,7 @@ function NumericField({
   allowDecimal = true,
   placeholder,
   hint,
+  highlighted,
 }: {
   id: string;
   label: string;
@@ -149,6 +152,7 @@ function NumericField({
   allowDecimal?: boolean;
   placeholder?: string;
   hint?: React.ReactNode;
+  highlighted?: boolean;
 }) {
   return (
     <div>
@@ -165,7 +169,7 @@ function NumericField({
         value={value}
         onKeyDown={(e) => blockNonNumericKey(e, allowDecimal)}
         onChange={(e) => onChange(sanitizeNumericInput(e.target.value, allowDecimal))}
-        className={inputClassName()}
+        className={cn(inputClassName(), autofillHighlightClass(Boolean(highlighted)))}
       />
       {hint}
     </div>
@@ -187,6 +191,10 @@ export type ListingFormProps = {
   onFillDemoDach?: () => void;
   onOpenImmoImport?: (file: File) => Promise<void>;
   openImmoImportAppliedTick?: number;
+  locale: UiLocale;
+  autofillFieldCount?: number | null;
+  highlightedFields?: AutofillFieldKey[];
+  onVoiceAutofill?: (result: { fields: import("@/types/voice-parse").VoiceParseResult; transcript?: string }) => void;
   transactionType: TransactionType;
   onTransactionType: (type: TransactionType) => void;
   property: PropertyDetails;
@@ -259,6 +267,10 @@ export function ListingForm(props: ListingFormProps) {
     onFillDemoDach,
     onOpenImmoImport,
     openImmoImportAppliedTick,
+    locale,
+    autofillFieldCount,
+    highlightedFields = [],
+    onVoiceAutofill,
     transactionType,
     onTransactionType,
     property,
@@ -317,9 +329,19 @@ export function ListingForm(props: ListingFormProps) {
 
   const epcDetailsVisible = energy.certificateType !== "na";
   const isDach = targetMarket === "dach";
+  const highlightSet = useMemo(() => new Set(highlightedFields), [highlightedFields]);
+  const isHighlighted = useCallback(
+    (key: AutofillFieldKey) => highlightSet.has(key),
+    [highlightSet],
+  );
 
   const transactionToggle = (
-    <div className="flex gap-1 rounded-lg bg-indigo-50/80 p-1 dark:bg-indigo-950/40">
+    <div
+      className={cn(
+        "flex gap-1 rounded-lg bg-indigo-50/80 p-1 dark:bg-indigo-950/40",
+        autofillHighlightClass(isHighlighted("transactionType")),
+      )}
+    >
       <button
         type="button"
         onClick={() => onTransactionType("rent")}
@@ -496,9 +518,14 @@ export function ListingForm(props: ListingFormProps) {
             onUserRole={onUserRole}
           />
 
-          {onOpenImmoImport ? (
-            <OpenImmoImportDropzone copy={copy} onImport={handleOpenImmoImport} />
-          ) : null}
+          <QuickAutofillBanner
+            copy={copy}
+            locale={locale}
+            transactionType={transactionType}
+            autofillCount={autofillFieldCount ?? null}
+            onOpenImmoImport={onOpenImmoImport ? handleOpenImmoImport : undefined}
+            onVoiceParsed={onVoiceAutofill ?? (() => {})}
+          />
 
           {transactionToggle}
 
@@ -512,7 +539,7 @@ export function ListingForm(props: ListingFormProps) {
             onChange={(e) =>
               onProperty({ propertyType: e.target.value as PropertyType | "" })
             }
-            className={inputClassName()}
+            className={cn(inputClassName(), autofillHighlightClass(isHighlighted("propertyType")))}
           >
             <option value="">—</option>
             {PROPERTY_TYPES.map((type) => (
@@ -533,7 +560,7 @@ export function ListingForm(props: ListingFormProps) {
               placeholder={copy.streetAddressPlaceholder}
               value={address.streetAddress ?? ""}
               onChange={(e) => onAddress({ streetAddress: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("streetAddress")))}
             />
           </div>
           <div>
@@ -545,7 +572,7 @@ export function ListingForm(props: ListingFormProps) {
               placeholder={copy.houseNumberPlaceholder}
               value={address.houseNumber ?? ""}
               onChange={(e) => onAddress({ houseNumber: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("houseNumber")))}
             />
           </div>
           <div>
@@ -557,7 +584,7 @@ export function ListingForm(props: ListingFormProps) {
               placeholder={copy.postalCodePlaceholder}
               value={address.postalCode ?? ""}
               onChange={(e) => onAddress({ postalCode: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("postalCode")))}
             />
           </div>
           <div>
@@ -569,7 +596,7 @@ export function ListingForm(props: ListingFormProps) {
               placeholder={copy.cityPlaceholder}
               value={address.city ?? ""}
               onChange={(e) => onAddress({ city: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("city")))}
             />
           </div>
           <div>
@@ -580,7 +607,7 @@ export function ListingForm(props: ListingFormProps) {
               id="country"
               value={address.country}
               onChange={(e) => onAddress({ country: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("country")))}
             >
               {LISTING_COUNTRY_OPTIONS.map((country) => (
                 <option key={country} value={country}>
@@ -622,6 +649,7 @@ export function ListingForm(props: ListingFormProps) {
             value={size}
             onChange={onSize}
             placeholder="85"
+            highlighted={isHighlighted("size")}
           />
           <NumericField
             id="rooms"
@@ -629,6 +657,7 @@ export function ListingForm(props: ListingFormProps) {
             value={rooms}
             onChange={onRooms}
             placeholder="3"
+            highlighted={isHighlighted("rooms")}
           />
           {!isDach ? (
             <>
@@ -638,6 +667,7 @@ export function ListingForm(props: ListingFormProps) {
                 value={bedrooms}
                 onChange={onBedrooms}
                 placeholder="2"
+                highlighted={isHighlighted("bedrooms")}
               />
               <NumericField
                 id="bathrooms"
@@ -646,6 +676,7 @@ export function ListingForm(props: ListingFormProps) {
                 onChange={onBathrooms}
                 placeholder="1"
                 allowDecimal
+                highlighted={isHighlighted("bathrooms")}
               />
             </>
           ) : (
@@ -658,7 +689,7 @@ export function ListingForm(props: ListingFormProps) {
                 placeholder={copy.floorLevelPlaceholder}
                 value={property.floorLevel}
                 onChange={(e) => onProperty({ floorLevel: e.target.value })}
-                className={inputClassName()}
+                className={cn(inputClassName(), autofillHighlightClass(isHighlighted("floorLevel")))}
               />
             </div>
           )}
@@ -671,6 +702,7 @@ export function ListingForm(props: ListingFormProps) {
                   label={`${copy.netColdRent} (€)`}
                   value={rent.netColdRent}
                   onChange={(v) => onRent({ netColdRent: v })}
+                  highlighted={isHighlighted("netColdRent")}
                   hint={
                     <PriceHint
                       amount={rent.netColdRent}
@@ -685,6 +717,7 @@ export function ListingForm(props: ListingFormProps) {
                   label={`${copy.utilityCharges} (€)`}
                   value={rent.utilityCharges}
                   onChange={(v) => onRent({ utilityCharges: v })}
+                  highlighted={isHighlighted("utilityCharges")}
                   hint={
                     <PriceHint
                       amount={rent.utilityCharges}
@@ -699,6 +732,7 @@ export function ListingForm(props: ListingFormProps) {
                   label={`${copy.totalRent} (€)`}
                   value={rent.totalRent}
                   onChange={(v) => onRent({ totalRent: v })}
+                  highlighted={isHighlighted("totalRent")}
                   hint={
                     <PriceHint
                       amount={rent.totalRent}
@@ -717,7 +751,7 @@ export function ListingForm(props: ListingFormProps) {
                     placeholder="3 Monatskaltmieten"
                     value={rent.securityDeposit}
                     onChange={(e) => onRent({ securityDeposit: e.target.value })}
-                    className={inputClassName()}
+                    className={cn(inputClassName(), autofillHighlightClass(isHighlighted("securityDeposit")))}
                   />
                 </div>
               </>
@@ -728,6 +762,7 @@ export function ListingForm(props: ListingFormProps) {
                   label={`${copy.purchasePrice} (€)`}
                   value={sale.purchasePrice}
                   onChange={(v) => onSale({ purchasePrice: v })}
+                  highlighted={isHighlighted("purchasePrice")}
                   hint={
                     <PriceHint
                       amount={sale.purchasePrice}
@@ -742,6 +777,7 @@ export function ListingForm(props: ListingFormProps) {
                   label={copy.dachHouseFee}
                   value={sale.hoaFee}
                   onChange={(v) => onSale({ hoaFee: v })}
+                  highlighted={isHighlighted("hoaFee")}
                   hint={
                     <PriceHint
                       amount={sale.hoaFee}
@@ -759,6 +795,7 @@ export function ListingForm(props: ListingFormProps) {
               label={`${copy.globalPrice} (${currency})`}
               value={rent.totalRent || rent.netColdRent}
               onChange={(v) => onRent({ totalRent: v, netColdRent: v })}
+              highlighted={isHighlighted("totalRent") || isHighlighted("netColdRent")}
               hint={
                 <PriceHint
                   amount={rent.totalRent || rent.netColdRent}
@@ -774,6 +811,7 @@ export function ListingForm(props: ListingFormProps) {
               label={`${copy.globalPrice} (${currency})`}
               value={sale.purchasePrice}
               onChange={(v) => onSale({ purchasePrice: v })}
+              highlighted={isHighlighted("purchasePrice")}
               hint={
                 <PriceHint
                   amount={sale.purchasePrice}
@@ -843,7 +881,7 @@ export function ListingForm(props: ListingFormProps) {
                         onEnergy({ certificateType });
                       }
                     }}
-                    className={inputClassName()}
+                    className={cn(inputClassName(), autofillHighlightClass(isHighlighted("energyCertificate")))}
                   >
                     <option value="consumption">{copy.certConsumption}</option>
                     <option value="demand">{copy.certDemand}</option>
@@ -862,7 +900,7 @@ export function ListingForm(props: ListingFormProps) {
                         onChange={(e) =>
                           onEnergy({ energyClass: e.target.value as EnergyClass | "" })
                         }
-                        className={inputClassName()}
+                        className={cn(inputClassName(), autofillHighlightClass(isHighlighted("energyClass")))}
                       >
                         <option value="">—</option>
                         {ENERGY_CLASSES.map((cls) => (
@@ -879,6 +917,7 @@ export function ListingForm(props: ListingFormProps) {
                       onChange={(v) => onEnergy({ energyValue: v })}
                       allowDecimal
                       placeholder="120"
+                      highlighted={isHighlighted("energyValue")}
                     />
                   </>
                 ) : null}
@@ -894,7 +933,7 @@ export function ListingForm(props: ListingFormProps) {
                         heatingSource: e.target.value as HeatingSource | "",
                       })
                     }
-                    className={inputClassName()}
+                    className={cn(inputClassName(), autofillHighlightClass(isHighlighted("heatingSource")))}
                   >
                     <option value="">—</option>
                     {HEATING_SOURCES.map((src) => (
@@ -911,6 +950,7 @@ export function ListingForm(props: ListingFormProps) {
                   onChange={(v) => onEnergy({ constructionYear: v })}
                   allowDecimal={false}
                   placeholder="1998"
+                  highlighted={isHighlighted("constructionYear")}
                 />
                 <div>
                   <label htmlFor="condition" className={labelClassName()}>
@@ -922,7 +962,7 @@ export function ListingForm(props: ListingFormProps) {
                     onChange={(e) =>
                       onProperty({ condition: e.target.value as PropertyCondition | "" })
                     }
-                    className={inputClassName()}
+                    className={cn(inputClassName(), autofillHighlightClass(isHighlighted("condition")))}
                   >
                     <option value="">—</option>
                     {CONDITIONS.map((value) => (
@@ -945,7 +985,7 @@ export function ListingForm(props: ListingFormProps) {
                   onChange={(e) =>
                     onProperty({ parking: e.target.value as ParkingType | "" })
                   }
-                  className={inputClassName()}
+                  className={cn(inputClassName(), autofillHighlightClass(isHighlighted("parking")))}
                 >
                   <option value="">—</option>
                   {PARKING_TYPES.map((type) => (
@@ -960,6 +1000,7 @@ export function ListingForm(props: ListingFormProps) {
                 label={`${copy.parkingFee} (€)`}
                 value={property.parkingFee}
                 onChange={(v) => onProperty({ parkingFee: v })}
+                highlighted={isHighlighted("parkingFee")}
                 hint={
                   <PriceHint
                     amount={property.parkingFee}
@@ -984,7 +1025,7 @@ export function ListingForm(props: ListingFormProps) {
                   onChange={(e) =>
                     onProperty({ parking: e.target.value as ParkingType | "" })
                   }
-                  className={inputClassName()}
+                  className={cn(inputClassName(), autofillHighlightClass(isHighlighted("parking")))}
                 >
                   <option value="">—</option>
                   {PARKING_TYPES.map((type) => (
@@ -999,6 +1040,7 @@ export function ListingForm(props: ListingFormProps) {
                 label={`${copy.parkingFee} (${currency})`}
                 value={property.parkingFee}
                 onChange={(v) => onProperty({ parkingFee: v })}
+                highlighted={isHighlighted("parkingFee")}
                 hint={
                   <PriceHint
                     amount={property.parkingFee}
@@ -1018,7 +1060,7 @@ export function ListingForm(props: ListingFormProps) {
                   onChange={(e) =>
                     onProperty({ condition: e.target.value as PropertyCondition | "" })
                   }
-                  className={inputClassName()}
+                  className={cn(inputClassName(), autofillHighlightClass(isHighlighted("condition")))}
                 >
                   <option value="">—</option>
                   {CONDITIONS.map((value) => (
@@ -1057,7 +1099,7 @@ export function ListingForm(props: ListingFormProps) {
                           onEnergy({ certificateType });
                         }
                       }}
-                      className={inputClassName()}
+                      className={cn(inputClassName(), autofillHighlightClass(isHighlighted("energyCertificate")))}
                     >
                       <option value="consumption">{copy.certConsumption}</option>
                       <option value="demand">{copy.certDemand}</option>
@@ -1073,6 +1115,7 @@ export function ListingForm(props: ListingFormProps) {
                         onChange={(v) => onEnergy({ energyValue: v })}
                         allowDecimal
                         placeholder="120"
+                        highlighted={isHighlighted("energyValue")}
                       />
                       <div>
                         <label htmlFor="energyClassGlobal" className={labelClassName()}>
@@ -1084,7 +1127,7 @@ export function ListingForm(props: ListingFormProps) {
                           onChange={(e) =>
                             onEnergy({ energyClass: e.target.value as EnergyClass | "" })
                           }
-                          className={inputClassName()}
+                          className={cn(inputClassName(), autofillHighlightClass(isHighlighted("energyClass")))}
                         >
                           <option value="">—</option>
                           {ENERGY_CLASSES.map((cls) => (
@@ -1108,7 +1151,7 @@ export function ListingForm(props: ListingFormProps) {
                           heatingSource: e.target.value as HeatingSource | "",
                         })
                       }
-                      className={inputClassName()}
+                      className={cn(inputClassName(), autofillHighlightClass(isHighlighted("heatingSource")))}
                     >
                       <option value="">—</option>
                       {HEATING_SOURCES.map((src) => (
@@ -1125,6 +1168,7 @@ export function ListingForm(props: ListingFormProps) {
                     onChange={(v) => onEnergy({ constructionYear: v })}
                     allowDecimal={false}
                     placeholder="1998"
+                    highlighted={isHighlighted("constructionYear")}
                   />
                   <NumericField
                     id="heatingInstallYearGlobal"
@@ -1133,6 +1177,7 @@ export function ListingForm(props: ListingFormProps) {
                     onChange={(v) => onEnergy({ heatingInstallYear: v })}
                     allowDecimal={false}
                     placeholder="2015"
+                    highlighted={isHighlighted("heatingInstallYear")}
                   />
                 </FormGrid>
               </div>
@@ -1169,7 +1214,12 @@ export function ListingForm(props: ListingFormProps) {
             ))}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div
+          className={cn(
+            "grid grid-cols-2 gap-3 sm:grid-cols-3",
+            autofillHighlightClass(isHighlighted("features")),
+          )}
+        >
           {FEATURE_KEYS.map((feature) => {
             const active = features.includes(feature);
             return (
@@ -1461,7 +1511,7 @@ export function ListingForm(props: ListingFormProps) {
               id="agentName"
               value={agent.name}
               onChange={(e) => onAgent({ name: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("agentName")))}
             />
           </div>
           <div>
@@ -1472,7 +1522,7 @@ export function ListingForm(props: ListingFormProps) {
               id="agency"
               value={agent.agency}
               onChange={(e) => onAgent({ agency: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("agency")))}
             />
           </div>
           {isDach ? (
@@ -1484,7 +1534,7 @@ export function ListingForm(props: ListingFormProps) {
                 id="companyAddress"
                 value={agent.companyAddress}
                 onChange={(e) => onAgent({ companyAddress: e.target.value })}
-                className={inputClassName()}
+                className={cn(inputClassName(), autofillHighlightClass(isHighlighted("companyAddress")))}
               />
             </div>
           ) : null}
@@ -1497,7 +1547,7 @@ export function ListingForm(props: ListingFormProps) {
               type="tel"
               value={agent.phone}
               onChange={(e) => onAgent({ phone: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("agentPhone")))}
             />
           </div>
           <div>
@@ -1509,7 +1559,7 @@ export function ListingForm(props: ListingFormProps) {
               type="email"
               value={agent.email}
               onChange={(e) => onAgent({ email: e.target.value })}
-              className={inputClassName()}
+              className={cn(inputClassName(), autofillHighlightClass(isHighlighted("agentEmail")))}
             />
           </div>
           {isDach ? (
@@ -1522,7 +1572,7 @@ export function ListingForm(props: ListingFormProps) {
                 value={agent.licenseId}
                 onChange={(e) => onAgent({ licenseId: e.target.value })}
                 placeholder="§ 34c GewO — …"
-                className={inputClassName()}
+                className={cn(inputClassName(), autofillHighlightClass(isHighlighted("licenseId")))}
               />
             </div>
           ) : null}

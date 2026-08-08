@@ -160,6 +160,14 @@ export type FormCopy = {
   dachConditionRenovated: string;
   dachConditionMaintained: string;
   dachConditionNeedsRenovation: string;
+  quickAutofillTitle: string;
+  quickAutofillSubtitle: string;
+  quickAutofillDropLabel: string;
+  quickAutofillBrowse: string;
+  quickAutofillVoiceCta: string;
+  quickAutofillVoiceHint: string;
+  quickAutofillTranscriptLabel: string;
+  quickAutofillSuccessBadge: string;
   openImmoImportLabel: string;
   openImmoImportHint: string;
   openImmoImporting: string;
@@ -336,6 +344,15 @@ const en: FormCopy = {
   dachConditionRenovated: "Renovated (Saniert)",
   dachConditionMaintained: "Well maintained (Gepflegt)",
   dachConditionNeedsRenovation: "Needs renovation (Renovierungsbedürftig)",
+  quickAutofillTitle: "Speed up creation with auto-fill",
+  quickAutofillSubtitle:
+    "Upload an OpenImmo export or dictate details with your voice to pre-fill the form.",
+  quickAutofillDropLabel: "Drop OpenImmo XML/ZIP here",
+  quickAutofillBrowse: "Browse files",
+  quickAutofillVoiceCta: "Dictate property details",
+  quickAutofillVoiceHint: "Tap the microphone and describe the property — we'll fill matching fields.",
+  quickAutofillTranscriptLabel: "Transcript preview",
+  quickAutofillSuccessBadge: "✓ {count} fields auto-filled. Please verify below.",
   openImmoImportLabel: "📁 Import OpenImmo XML / ZIP (1-Click)",
   openImmoImportHint: "Drop an OpenImmo export (.xml or .zip) to auto-fill the form.",
   openImmoImporting: "Importing OpenImmo file…",
@@ -513,6 +530,16 @@ const de: Partial<FormCopy> = {
   dachConditionRenovated: "Saniert",
   dachConditionMaintained: "Gepflegt",
   dachConditionNeedsRenovation: "Renovierungsbedürftig",
+  quickAutofillTitle: "Schneller starten mit Auto-Ausfüllen",
+  quickAutofillSubtitle:
+    "OpenImmo-Export hochladen oder Details per Sprache diktieren, um das Formular vorzubefüllen.",
+  quickAutofillDropLabel: "OpenImmo XML/ZIP hier ablegen",
+  quickAutofillBrowse: "Dateien durchsuchen",
+  quickAutofillVoiceCta: "Objektdetails diktieren",
+  quickAutofillVoiceHint:
+    "Mikrofon tippen und Objekt beschreiben — passende Felder werden ausgefüllt.",
+  quickAutofillTranscriptLabel: "Transkript-Vorschau",
+  quickAutofillSuccessBadge: "✓ {count} Felder automatisch ausgefüllt. Bitte unten prüfen.",
   openImmoImportLabel: "📁 OpenImmo XML / ZIP importieren (1-Klick)",
   openImmoImportHint: "OpenImmo-Export (.xml oder .zip) ablegen, um das Formular automatisch auszufüllen.",
   openImmoImporting: "OpenImmo-Datei wird importiert…",

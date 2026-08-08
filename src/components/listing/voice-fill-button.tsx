@@ -71,8 +71,8 @@ export function VoiceFillButton({
       return;
     }
 
-    await toggle(async (fields) => {
-      onParsed(fields);
+    await toggle(async (result) => {
+      onParsed(result.fields);
       if (billingActive) {
         window.dispatchEvent(new Event(BILLING_REFRESH_EVENT));
         await refresh();

@@ -13,6 +13,11 @@ type ParseVoiceResponse = {
   error?: string;
 };
 
+export type VoiceFillParseResult = {
+  fields: VoiceParseResult;
+  transcript?: string;
+};
+
 function pickRecorderMimeType(): string | undefined {
   if (typeof MediaRecorder === "undefined") return undefined;
   const candidates = [
@@ -28,11 +33,14 @@ export function useVoiceFill(currentListingType: TransactionType) {
   const [state, setState] = useState<VoiceFillState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState(false);
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const currentListingTypeRef = useRef(currentListingType);
+  const recordingStartedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     currentListingTypeRef.current = currentListingType;
@@ -55,7 +63,24 @@ export function useVoiceFill(currentListingType: TransactionType) {
     };
   }, [cleanupStream]);
 
-  const stopRecording = useCallback(async (): Promise<VoiceParseResult | null> => {
+  useEffect(() => {
+    if (state !== "recording" || !recordingStartedAtRef.current) {
+      setRecordingSeconds(0);
+      return;
+    }
+
+    const tick = () => {
+      const started = recordingStartedAtRef.current;
+      if (!started) return;
+      setRecordingSeconds(Math.floor((Date.now() - started) / 1000));
+    };
+
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [state]);
+
+  const stopRecording = useCallback(async (): Promise<VoiceFillParseResult | null> => {
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state === "inactive") {
       setState("idle");
@@ -91,10 +116,13 @@ export function useVoiceFill(currentListingType: TransactionType) {
         throw new Error(data.error ?? "Failed to parse voice input");
       }
 
+      setTranscript(data.transcript?.trim() || null);
       setState("idle");
-      return data.fields;
+      recordingStartedAtRef.current = null;
+      return { fields: data.fields, transcript: data.transcript?.trim() };
     } catch (err) {
       setState("idle");
+      recordingStartedAtRef.current = null;
       setError(err instanceof Error ? err.message : "Failed to parse voice input");
       return null;
     }
@@ -119,21 +147,23 @@ export function useVoiceFill(currentListingType: TransactionType) {
     };
 
     mediaRecorderRef.current = recorder;
+    recordingStartedAtRef.current = Date.now();
     recorder.start();
     setState("recording");
   }, [supported]);
 
   const toggle = useCallback(
-    async (onParsed: (fields: VoiceParseResult) => void) => {
+    async (onParsed: (result: VoiceFillParseResult) => void) => {
       if (state === "processing") return;
 
       if (state === "recording") {
-        const fields = await stopRecording();
-        if (fields) onParsed(fields);
+        const result = await stopRecording();
+        if (result) onParsed(result);
         return;
       }
 
       try {
+        setTranscript(null);
         await startRecording();
       } catch (err) {
         setState("idle");
@@ -152,9 +182,11 @@ export function useVoiceFill(currentListingType: TransactionType) {
     }
     mediaRecorderRef.current = null;
     chunksRef.current = [];
+    recordingStartedAtRef.current = null;
     cleanupStream();
     setState("idle");
     setError(null);
+    setRecordingSeconds(0);
   }, [cleanupStream]);
 
   return {
@@ -165,5 +197,7 @@ export function useVoiceFill(currentListingType: TransactionType) {
     cancel,
     isRecording: state === "recording",
     isProcessing: state === "processing",
+    transcript,
+    recordingSeconds,
   };
 }

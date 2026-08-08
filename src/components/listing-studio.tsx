@@ -11,7 +11,6 @@ import { hasProReelAccess } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
 import { OpenImmoPropertyPickerModal } from "@/components/listing/openimmo-property-picker-modal";
-import { useRegisterVoiceFill } from "@/components/listing/voice-fill-context";
 import { FreeTrialFormBanner } from "@/components/free-trial-form-banner";
 import { getMarketingCopy } from "@/lib/i18n-marketing";
 import { fetchDemoPhotos, getDemoListingContent } from "@/lib/demo-listing";
@@ -79,6 +78,11 @@ import { getBrowserAuthEmail } from "@/lib/supabase/client-session";
 import { resolveShowPdfWatermark } from "@/lib/pdf-watermark";
 import { getFurnishingDisclaimerText } from "@/lib/furnishing-guardrail";
 import { applyVoiceParseResult } from "@/lib/voice/apply-voice-parse";
+import {
+  collectOpenImmoAutofillFields,
+  collectVoiceAutofillFields,
+  type AutofillFieldKey,
+} from "@/lib/listing/autofill-fields";
 import type { VoiceParseResult } from "@/types/voice-parse";
 import { StagingDisclaimerFooter } from "@/components/listing/staging-disclaimer";
 import { CopyToastProvider, useCopyToast } from "@/components/ui/copy-toast";
@@ -544,6 +548,8 @@ function ListingStudioContent() {
   const [openImmoPickerOpen, setOpenImmoPickerOpen] = useState(false);
   const [openImmoPickerProperties, setOpenImmoPickerProperties] = useState<OpenImmoImportResult[]>([]);
   const [openImmoImportAppliedTick, setOpenImmoImportAppliedTick] = useState(0);
+  const [autofillFieldCount, setAutofillFieldCount] = useState<number | null>(null);
+  const [highlightedFields, setHighlightedFields] = useState<AutofillFieldKey[]>([]);
   const openImmoPickerPropertiesRef = useRef<OpenImmoImportResult[]>([]);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const { status: billingStatus, loading: billingLoading, refresh: refreshBilling } = useBillingStatus();
@@ -955,36 +961,28 @@ function ListingStudioContent() {
         onProperty: (patch) => setProperty((current) => ({ ...current, ...patch })),
         onRent: (patch) => setRent((current) => ({ ...current, ...patch })),
       });
+      const fields = collectVoiceAutofillFields(parsedData, transactionType);
+      setHighlightedFields(fields);
+      setAutofillFieldCount(fields.length);
     },
     [transactionType],
   );
 
-  const voiceFillConfig = useMemo(
-    () => ({
-      locale: routeLocale,
-      copy: {
-        voiceFillButton: copy.voiceFillButton,
-        voiceFillButtonTrial: copy.voiceFillButtonTrial,
-        voiceFillListening: copy.voiceFillListening,
-        voiceFillProcessing: copy.voiceFillProcessing,
-        voiceFillUnsupported: copy.voiceFillUnsupported,
-      },
-      transactionType,
-      onParsed: handleVoiceParsed,
-    }),
-    [
-      routeLocale,
-      copy.voiceFillButton,
-      copy.voiceFillButtonTrial,
-      copy.voiceFillListening,
-      copy.voiceFillProcessing,
-      copy.voiceFillUnsupported,
-      transactionType,
-      handleVoiceParsed,
-    ],
+  const handleVoiceAutofill = useCallback(
+    (result: { fields: VoiceParseResult; transcript?: string }) => {
+      handleVoiceParsed(result.fields);
+    },
+    [handleVoiceParsed],
   );
 
-  useRegisterVoiceFill(voiceFillConfig);
+  useEffect(() => {
+    if (autofillFieldCount == null || autofillFieldCount === 0) return;
+    const id = window.setTimeout(() => {
+      setHighlightedFields([]);
+      setAutofillFieldCount(null);
+    }, 12000);
+    return () => window.clearTimeout(id);
+  }, [autofillFieldCount]);
 
   const socialHashtags = useMemo(
     () =>
@@ -1153,6 +1151,9 @@ function ListingStudioContent() {
       };
 
       const merged = buildImportedFormState(currentState, rawData, importDefaults);
+      const autofillFields = collectOpenImmoAutofillFields(currentState, merged);
+      setHighlightedFields(autofillFields);
+      setAutofillFieldCount(autofillFields.length);
       const importedType = merged.transactionType ?? transactionType;
 
       const commissionTerms =
@@ -1641,6 +1642,10 @@ function ListingStudioContent() {
             onFillDemoDach={loadDachDemoListing}
             onOpenImmoImport={handleOpenImmoImport}
             openImmoImportAppliedTick={openImmoImportAppliedTick}
+            locale={routeLocale}
+            autofillFieldCount={autofillFieldCount}
+            highlightedFields={highlightedFields}
+            onVoiceAutofill={handleVoiceAutofill}
             transactionType={transactionType}
             onTransactionType={handleTransactionTypeChange}
             property={property}
