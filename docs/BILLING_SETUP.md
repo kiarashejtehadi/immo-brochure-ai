@@ -74,4 +74,4 @@ Redeploy after changing env vars.
 
 ## 5. Beta gate
 
-If `BETA_PASSWORD` is set, `/auth/callback` is allowed without a beta cookie so magic links still work.
+If the beta gate is enabled (`BETA_GATE_ENABLED=true` and `BETA_PASSWORD` set), `/auth/callback` is allowed without a beta cookie so magic links still work.
