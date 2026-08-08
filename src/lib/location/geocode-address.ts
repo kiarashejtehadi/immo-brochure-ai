@@ -5,6 +5,71 @@ import { formatListingAddress } from "@/lib/location/format-address";
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
 
+const COUNTRY_ISO2: Record<string, string> = {
+  germany: "de",
+  deutschland: "de",
+  austria: "at",
+  österreich: "at",
+  switzerland: "ch",
+  schweiz: "ch",
+  france: "fr",
+  italy: "it",
+  italien: "it",
+  spain: "es",
+  españa: "es",
+  netherlands: "nl",
+  poland: "pl",
+};
+
+function countryToIso2(country: string): string | undefined {
+  const key = country.trim().toLowerCase();
+  return COUNTRY_ISO2[key];
+}
+
+function parseHit(hit: NominatimResult): GeocodedAddress | null {
+  const lat = Number(hit.lat);
+  const lon = Number(hit.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+  return {
+    lat,
+    lon,
+    displayName: hit.display_name,
+    ...parseNominatimAddress(hit.address),
+  };
+}
+
+function geocodeMatchesListingAddress(
+  geocoded: GeocodedAddress,
+  address: ListingAddress,
+): boolean {
+  const expectedPostcode = address.postalCode.trim();
+  if (expectedPostcode && geocoded.postcode && geocoded.postcode !== expectedPostcode) {
+    return false;
+  }
+
+  const expectedCity = address.city.trim().toLowerCase();
+  const hitCity = geocoded.city?.trim().toLowerCase() ?? "";
+  if (expectedCity && hitCity && !hitCity.includes(expectedCity) && !expectedCity.includes(hitCity)) {
+    return false;
+  }
+
+  const countryCode = countryToIso2(address.country);
+  if (countryCode && geocoded.displayName) {
+    const displayLower = geocoded.displayName.toLowerCase();
+    const countryLower = address.country.trim().toLowerCase();
+    const countryMatches =
+      displayLower.includes(countryLower) ||
+      (countryCode === "de" && displayLower.includes("deutschland")) ||
+      (countryCode === "at" && displayLower.includes("österreich")) ||
+      (countryCode === "ch" &&
+        (displayLower.includes("schweiz") || displayLower.includes("switzerland")));
+    if (!countryMatches) return false;
+  }
+
+  return true;
+}
+
 type NominatimResult = {
   lat: string;
   lon: string;
@@ -64,16 +129,48 @@ export async function geocodeAddress(
   const hit = data[0];
   if (!hit) return null;
 
-  const lat = Number(hit.lat);
-  const lon = Number(hit.lon);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return parseHit(hit);
+}
 
-  return {
-    lat,
-    lon,
-    displayName: hit.display_name,
-    ...parseNominatimAddress(hit.address),
-  };
+/** Structured Nominatim lookup — constrains results to the listing country/city. */
+async function geocodeListingStructured(
+  address: ListingAddress,
+  timeoutMs: number,
+): Promise<GeocodedAddress | null> {
+  const streetLine = [address.streetAddress.trim(), address.houseNumber.trim()]
+    .filter(Boolean)
+    .join(" ");
+  if (!streetLine && !address.postalCode.trim() && !address.city.trim()) return null;
+
+  const url = new URL(NOMINATIM_URL);
+  if (streetLine) url.searchParams.set("street", streetLine);
+  if (address.postalCode.trim()) url.searchParams.set("postalcode", address.postalCode.trim());
+  if (address.city.trim()) url.searchParams.set("city", address.city.trim());
+  if (address.country.trim()) url.searchParams.set("country", address.country.trim());
+
+  const countryCode = countryToIso2(address.country);
+  if (countryCode) url.searchParams.set("countrycodes", countryCode);
+
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("addressdetails", "1");
+
+  const res = await fetchWithTimeout(url.toString(), {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    next: { revalidate: 86400 },
+    timeoutMs,
+  });
+
+  if (!res.ok) return null;
+
+  const data = (await res.json()) as NominatimResult[];
+  const hit = data[0];
+  if (!hit) return null;
+
+  const parsed = parseHit(hit);
+  if (!parsed) return null;
+
+  return geocodeMatchesListingAddress(parsed, address) ? parsed : null;
 }
 
 type NominatimReverseResult = {
@@ -162,13 +259,41 @@ export async function geocodeListingAddress(
   address: ListingAddress,
   timeoutMs = 5_000,
 ): Promise<GeocodedAddress | null> {
+  const structured = await geocodeListingStructured(address, timeoutMs);
+  if (structured) return structured;
+
   const fullQuery = formatListingAddress(address);
-  const geocoded = await geocodeAddress(fullQuery, timeoutMs);
-  if (geocoded) return geocoded;
+  const freeText = await geocodeAddress(fullQuery, timeoutMs);
+  if (freeText && geocodeMatchesListingAddress(freeText, address)) return freeText;
 
   const postalCityQuery = formatPostalCityQuery(address);
-  if (postalCityQuery.length >= 6 && postalCityQuery !== fullQuery) {
-    return geocodeAddress(postalCityQuery, timeoutMs);
+  if (postalCityQuery.length >= 6) {
+    const countryCode = countryToIso2(address.country);
+    const url = new URL(NOMINATIM_URL);
+    url.searchParams.set("postalcode", address.postalCode.trim());
+    url.searchParams.set("city", address.city.trim());
+    if (address.country.trim()) url.searchParams.set("country", address.country.trim());
+    if (countryCode) url.searchParams.set("countrycodes", countryCode);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("limit", "1");
+    url.searchParams.set("addressdetails", "1");
+
+    const res = await fetchWithTimeout(url.toString(), {
+      headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+      next: { revalidate: 86400 },
+      timeoutMs,
+    }).catch(() => null);
+
+    if (res?.ok) {
+      const data = (await res.json()) as NominatimResult[];
+      const parsed = data[0] ? parseHit(data[0]) : null;
+      if (parsed && geocodeMatchesListingAddress(parsed, address)) return parsed;
+    }
+
+    if (postalCityQuery !== fullQuery) {
+      const postalOnly = await geocodeAddress(postalCityQuery, timeoutMs);
+      if (postalOnly && geocodeMatchesListingAddress(postalOnly, address)) return postalOnly;
+    }
   }
 
   return null;

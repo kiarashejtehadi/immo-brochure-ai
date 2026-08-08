@@ -1026,19 +1026,30 @@ function ListingStudioContent() {
   const PDF_PREP_WATCHDOG_MS = 60_000;
 
   const buildPdfImagesFingerprint = useCallback((): string => {
+    const addressKey = [
+      address.streetAddress,
+      address.houseNumber,
+      address.postalCode,
+      address.city,
+      address.country,
+    ].join("|");
+    const coordsKey = locationCoordsRef.current
+      ? `${locationCoordsRef.current.lat},${locationCoordsRef.current.lon}`
+      : "";
     const photoKey = photos
       .map((p) => `${p.file.name}:${p.file.size}:${p.file.lastModified}`)
       .join("|");
     const floorKey = floorPlanFile
       ? `${floorPlanFile.name}:${floorPlanFile.size}:${floorPlanFile.lastModified}`
       : "";
-    return `${photoKey}::${floorKey}`;
-  }, [photos, floorPlanFile]);
+    return `${addressKey}::${coordsKey}::${photoKey}::${floorKey}`;
+  }, [photos, floorPlanFile, address]);
 
   useEffect(() => {
     pdfReadyImagesRef.current = null;
     pdfImagesFingerprintRef.current = "";
-  }, [photos, floorPlanFile]);
+    cachedMapDataUrlRef.current = undefined;
+  }, [photos, floorPlanFile, address]);
 
   useEffect(() => {
     if (!isDownloadingPdf) return;
@@ -1626,9 +1637,7 @@ function ListingStudioContent() {
       const [logoDataUrl, avatarDataUrl, mapDataUrl] = await Promise.all([
         brand.logoUrl ? brandingUrlToPdfDataUrl(brand.logoUrl) : Promise.resolve(undefined),
         brand.avatarUrl ? brandingUrlToPdfDataUrl(brand.avatarUrl) : Promise.resolve(undefined),
-        cachedMapDataUrlRef.current
-          ? Promise.resolve(cachedMapDataUrlRef.current)
-          : fetchMapForPdf(address, locationCoordsRef.current),
+        fetchMapForPdf(address, locationCoordsRef.current),
       ]);
 
       if (mapDataUrl) {
@@ -1697,6 +1706,8 @@ function ListingStudioContent() {
           mapDataUrl: readyImages.mapDataUrl,
           logoDataUrl: readyImages.logoDataUrl,
           avatarDataUrl: readyImages.avatarDataUrl,
+          listingAddress: address,
+          locationCoords: locationCoordsRef.current,
         }),
         50_000,
         "PDF render timed out",

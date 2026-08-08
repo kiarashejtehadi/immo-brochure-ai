@@ -144,6 +144,7 @@ export function buildBrochurePdfProps(input: {
     transactionBadge: badge,
     title: input.result.title,
     address: formatPublicListingAddress(input.address),
+    listingAddress: input.address,
     size: input.size,
     rooms: input.rooms,
     currency: input.currency,

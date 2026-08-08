@@ -1,5 +1,5 @@
 import type { CurrencyCode } from "@/lib/currency";
-import type { PreviewCustomSection, TransactionType } from "@/types/listing";
+import type { ListingAddress, PreviewCustomSection, TransactionType } from "@/types/listing";
 import type { BrandFontFamily, PDFBrandingProps } from "@/types/branding";
 
 export type BrochurePdfProps = {
@@ -40,6 +40,9 @@ export type BrochurePdfProps = {
   floorPlanDataUrl?: string;
   /** Static map preview for the location section (data URL). */
   mapDataUrl?: string;
+  /** Structured address for server-side map geocoding (authoritative over mapDataUrl). */
+  listingAddress?: ListingAddress;
+  locationCoords?: { lat: number; lon: number } | null;
   /** @deprecated Prefer primaryColor */
   brandColor?: string;
   primaryColor?: string;

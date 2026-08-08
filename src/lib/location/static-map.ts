@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
-import { geocodeAddress } from "@/lib/location/geocode-address";
+import { geocodeAddress, geocodeListingAddress } from "@/lib/location/geocode-address";
+import type { ListingAddress } from "@/types/listing";
 
 /** 16:9 map tile dimensions (pt-equivalent pixels for sharp rendering). */
 const MAP_HEIGHT = 260;
@@ -70,6 +71,24 @@ export function buildStaticMapUrl(lat: number, lon: number): string | null {
   return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
 }
 
+async function drawMapPinOverlay(mapBuffer: Buffer): Promise<Buffer> {
+  const pinWidth = 28;
+  const pinHeight = 40;
+  const pinSvg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${pinWidth}" height="${pinHeight}" viewBox="0 0 28 40">
+    <path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.3 21.7 0 14 0z" fill="#dc2626"/>
+    <circle cx="14" cy="14" r="6" fill="#ffffff"/>
+  </svg>`);
+
+  const pin = await sharp(pinSvg).png().toBuffer();
+  const left = Math.round(MAP_WIDTH / 2 - pinWidth / 2);
+  const top = Math.round(MAP_HEIGHT / 2 - pinHeight + 4);
+
+  return sharp(mapBuffer)
+    .composite([{ input: pin, left, top }])
+    .png()
+    .toBuffer();
+}
+
 async function composeOsmStaticMap(lat: number, lon: number): Promise<Buffer> {
   const zoom = 15;
   const center = lonLatToWorldPixel(lon, lat, zoom);
@@ -101,7 +120,7 @@ async function composeOsmStaticMap(lat: number, lon: number): Promise<Buffer> {
     top: Math.round(tileY * TILE_SIZE - topLeft.y),
   }));
 
-  return sharp({
+  const baseMap = await sharp({
     create: {
       width: MAP_WIDTH,
       height: MAP_HEIGHT,
@@ -112,6 +131,8 @@ async function composeOsmStaticMap(lat: number, lon: number): Promise<Buffer> {
     .composite(composites)
     .png()
     .toBuffer();
+
+  return drawMapPinOverlay(baseMap);
 }
 
 /** Fetch a static map image and return a data URL suitable for @react-pdf/renderer. */
@@ -144,35 +165,72 @@ export async function fetchStaticMapAsDataUrl(
     const png = await composeOsmStaticMap(lat, lon);
     return `data:image/png;base64,${png.toString("base64")}`;
   } catch (err) {
-    console.warn("[static-map] fetchStaticMapAsDataUrl failed", err);
+    console.warn("[static-map] fetchStaticMapAsDataUrl failed", { lat, lon, err });
     return null;
   }
 }
 
-/** Resolve a PDF-safe map data URL from an existing value or by geocoding the address. */
-export async function resolvePdfMapDataUrl(
-  mapDataUrl: string | undefined,
-  addressQuery: string,
-): Promise<string | undefined> {
-  if (mapDataUrl?.trim() && /^data:image\//i.test(mapDataUrl.trim())) {
-    return mapDataUrl.trim();
+async function geocodeForMapResolution(
+  listingAddress?: ListingAddress,
+  addressQuery?: string,
+): Promise<{ lat: number; lon: number } | null> {
+  if (listingAddress) {
+    const geocoded = await geocodeListingAddress(listingAddress, 8_000).catch(() => null);
+    if (geocoded) return { lat: geocoded.lat, lon: geocoded.lon };
   }
 
-  const query = addressQuery.trim();
-  if (query.length < 6) return undefined;
+  const query = addressQuery?.trim();
+  if (!query || query.length < 6) return null;
 
   let geocoded = await geocodeAddress(query, 8_000).catch(() => null);
   if (!geocoded) {
-    const postalMatch = query.match(/\b(\d{4,5})\s+([A-Za-zÀ-ÿÄÖÜäöüß\-]+(?:\s+[A-Za-zÀ-ÿÄÖÜäöüß\-]+)*)/);
+    const postalMatch = query.match(
+      /\b(\d{4,5})\s+([A-Za-zÀ-ÿÄÖÜäöüß\-]+(?:\s+[A-Za-zÀ-ÿÄÖÜäöüß\-]+)*)/,
+    );
     if (postalMatch) {
       geocoded = await geocodeAddress(
-        `${postalMatch[1]} ${postalMatch[2].trim()}`,
+        `${postalMatch[1]} ${postalMatch[2].trim()}, Germany`,
         8_000,
       ).catch(() => null);
     }
   }
-  if (!geocoded) return undefined;
 
-  const resolved = await fetchStaticMapAsDataUrl(geocoded.lat, geocoded.lon);
+  return geocoded ? { lat: geocoded.lat, lon: geocoded.lon } : null;
+}
+
+/**
+ * Always geocode the listing address and fetch a fresh map for PDF rendering.
+ * Ignores any client-supplied mapDataUrl to prevent stale/wrong-location tiles.
+ */
+export async function resolvePdfMapDataUrl(input: {
+  listingAddress?: ListingAddress;
+  addressQuery?: string;
+  locationCoords?: { lat: number; lon: number } | null;
+}): Promise<string | undefined> {
+  let coords = input.locationCoords ?? null;
+
+  if (coords) {
+    const geocoded = await geocodeForMapResolution(input.listingAddress, input.addressQuery);
+    if (geocoded) {
+      const latDiff = Math.abs(geocoded.lat - coords.lat);
+      const lonDiff = Math.abs(geocoded.lon - coords.lon);
+      if (latDiff > 0.05 || lonDiff > 0.05) {
+        console.warn("[static-map] Ignoring stale locationCoords; re-geocoding address", {
+          cached: coords,
+          geocoded,
+        });
+        coords = geocoded;
+      }
+    }
+  } else {
+    coords = await geocodeForMapResolution(input.listingAddress, input.addressQuery);
+  }
+
+  if (!coords) {
+    console.warn("[static-map] Could not geocode address for PDF map", input.addressQuery);
+    return undefined;
+  }
+
+  const resolved = await fetchStaticMapAsDataUrl(coords.lat, coords.lon);
   return resolved ?? undefined;
 }

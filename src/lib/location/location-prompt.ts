@@ -118,8 +118,8 @@ export function dachConnectivityHint(
 
   if (isBerlin && postalCode.startsWith("140")) {
     return isGerman
-      ? "Berlin-Charlottenburg: hervorragende Anbindung an den S-Bahn-Ring, zahlreiche Buslinien (z. B. M45) sowie die Stadtautobahn A100 — schnelle Wege in alle Teile Berlins."
-      : "Berlin-Charlottenburg: excellent S-Bahn Ring access, frequent bus lines (e.g. M45), and the A100 city motorway for swift connections across Berlin.";
+      ? "Berlin-Charlottenburg (14059): hervorragende Anbindung an S-Bahn Westend, U-Bahn Richard-Wagner-Platz / Mierendorffplatz, Bus M45, Schloss Charlottenburg, Schlosspark, Spreeufer und Stadtautobahn A100."
+      : "Berlin-Charlottenburg (14059): excellent links to S-Bahn Westend, U-Bahn Richard-Wagner-Platz / Mierendorffplatz, bus M45, Charlottenburg Palace, Schlosspark, Spree riverfront, and the A100 motorway.";
   }
 
   if (isBerlin && postalCode.startsWith("101")) {
@@ -220,6 +220,32 @@ function marketingToneRule(): string {
 - Highlight lifestyle factors smoothly: urban convenience, local amenities, public transport, and nearby green spaces.
 - NEVER use defensive, cautious, or negative phrases such as "no specific connections verified", "not verified", "limited data", "information unavailable", "could not be retrieved", "unfortunately", or similar disclaimers.
 - Focus on lifestyle appeal, connectivity, and neighborhood quality — always in a confident, inviting tone.`;
+}
+
+function antiBoilerplateRule(outputLanguage: OutputLanguage): string {
+  const bannedEn = [
+    "Nestled in the vibrant district",
+    "rich blend of cultural landmarks",
+    "offers an exceptional urban lifestyle",
+    "everything you need is at your fingertips",
+    "prime location for those seeking",
+    "dynamic district",
+    "rich cultural heritage and modern conveniences",
+    "making this a prime location",
+  ];
+  const bannedDe = [
+    "Mitten im lebendigen Viertel",
+    "reiche Mischung aus kulturellen Sehenswürdigkeiten",
+    "Außergewöhnlicher urbaner Lebensstil",
+    "Alles, was Sie brauchen, ist griffbereit",
+  ];
+  const banned = outputLanguage === "German" ? bannedDe : bannedEn;
+
+  return `HYPER-LOCAL COPY — BANNED BOILERPLATE (STRICT):
+- Write ONLY about the actual district/street area from locationContext — never generic city-level filler.
+- FORBIDDEN phrases (and close paraphrases): ${banned.map((p) => `"${p}"`).join(", ")}.
+- When nearbyLandmarks, Nearby Transit, or Parks/Recreation lists are non-empty, you MUST name at least 3 specific entries with proximityText (walking minutes).
+- Include district name (e.g. Charlottenburg, Mitte) and postal code area naturally once.`;
 }
 
 function outputCleanlinessRule(outputLanguage: OutputLanguage): string {
@@ -398,6 +424,8 @@ Property: ${locationLine || "this property"}
 
 ${outputCleanlinessRule(outputLanguage)}
 
+${antiBoilerplateRule(outputLanguage)}
+
 ${marketingToneRule()}
 
 ${missingStreetLocationRule(address, locationContext.districtContext, outputLanguage)}
@@ -426,6 +454,23 @@ const GENERIC_TRANSIT_FALLBACK_EN =
   /public transportation connections and major roadways are easily accessible/i;
 const GENERIC_TRANSIT_FALLBACK_DE =
   /die anbindung an das öffentliche verkehrsnetz sowie an die umliegenden hauptverkehrsadern ist hervorragend/i;
+const GENERIC_BOILERPLATE_EN =
+  /nestled in the vibrant district|rich blend of cultural landmarks|offers an exceptional urban lifestyle|everything you need is at your fingertips|prime location for those seeking|dynamic district of|rich cultural heritage and modern conveniences/i;
+const GENERIC_BOILERPLATE_DE =
+  /mitten im lebendigen viertel|reiche mischung aus kulturellen|außergewöhnlicher urbaner lebensstil|alles, was sie brauchen, ist griffbereit/i;
+
+function isGenericLocationDescription(text: string, outputLanguage: OutputLanguage): boolean {
+  if (outputLanguage === "German") {
+    return (
+      GENERIC_TRANSIT_FALLBACK_DE.test(text) ||
+      GENERIC_BOILERPLATE_DE.test(text)
+    );
+  }
+  return (
+    GENERIC_TRANSIT_FALLBACK_EN.test(text) ||
+    GENERIC_BOILERPLATE_EN.test(text)
+  );
+}
 
 /** Ensure generated copy cites nearby POIs when enrichment provided them but the model stayed generic. */
 export function enhanceLocationDescriptionWithPois(
@@ -459,12 +504,19 @@ export function enhanceLocationDescriptionWithPois(
   const alreadySpecific = citedNames.some((name) =>
     locationDescription.toLowerCase().includes(name.toLowerCase()),
   );
-  if (alreadySpecific) return locationDescription;
+  if (alreadySpecific && !isGenericLocationDescription(locationDescription, outputLanguage)) {
+    return locationDescription;
+  }
 
+  const districtLabel = enrichment.districtContext.trim();
   const vicinityLine =
     outputLanguage === "German"
-      ? `In der Nähe: ${poiSentences.join("; ")}.`
-      : `Nearby: ${poiSentences.join("; ")}.`;
+      ? `${districtLabel ? `In ${districtLabel}: ` : "In der Nähe: "}${poiSentences.join("; ")}.`
+      : `${districtLabel ? `In ${districtLabel}: ` : "Nearby: "}${poiSentences.join("; ")}.`;
+
+  if (isGenericLocationDescription(locationDescription, outputLanguage)) {
+    return vicinityLine;
+  }
 
   const genericPattern =
     outputLanguage === "German" ? GENERIC_TRANSIT_FALLBACK_DE : GENERIC_TRANSIT_FALLBACK_EN;

@@ -30,7 +30,11 @@ function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
 
 /** Render the exposé PDF on the server into a Node buffer. */
 export async function renderExposePdfBuffer(props: BrochurePdfProps): Promise<Buffer> {
-  const mapDataUrl = await resolvePdfMapDataUrl(props.mapDataUrl, props.address);
+  const mapDataUrl = await resolvePdfMapDataUrl({
+    listingAddress: props.listingAddress,
+    addressQuery: props.address,
+    locationCoords: props.locationCoords,
+  });
   const propsWithMap = mapDataUrl ? { ...props, mapDataUrl } : props;
 
   ensurePdfFontsReady(propsWithMap.fontFamily);
