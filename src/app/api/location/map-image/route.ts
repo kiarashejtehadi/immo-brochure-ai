@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { geocodeAddress, geocodeListingAddress } from "@/lib/location/geocode-address";
+import { geocodeListingAddress } from "@/lib/location/geocode-address";
 import {
-  formatListingAddress,
   normalizeListingAddress,
 } from "@/lib/location/format-address";
 import { fetchStaticMapAsDataUrl } from "@/lib/location/static-map";
@@ -26,11 +25,6 @@ async function buildMapImageResponse(body: MapImageRequest) {
 
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
     const address = normalizeListingAddress(body.address);
-    const query =
-      typeof body.query === "string" && body.query.trim()
-        ? body.query.trim()
-        : formatListingAddress(address);
-
     const geocoded = await geocodeListingAddress(address, 8_000);
     if (!geocoded) {
       return { mapDataUrl: null, lat: null, lon: null };

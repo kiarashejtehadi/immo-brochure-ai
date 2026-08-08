@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { ExposePdfDocument } from "@/components/expose-pdf-document";
 import { ensurePdfFontsReady } from "@/lib/pdf-fonts";
+import { resolvePdfMapDataUrl } from "@/lib/location/static-map";
 import type { BrochurePdfProps } from "@/types/brochure-pdf";
 
 type PdfInstance = ReturnType<typeof pdf>;
@@ -29,8 +30,11 @@ function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
 
 /** Render the exposé PDF on the server into a Node buffer. */
 export async function renderExposePdfBuffer(props: BrochurePdfProps): Promise<Buffer> {
-  ensurePdfFontsReady(props.fontFamily);
-  const instance = pdf(createElement(ExposePdfDocument, props));
+  const mapDataUrl = await resolvePdfMapDataUrl(props.mapDataUrl, props.address);
+  const propsWithMap = mapDataUrl ? { ...props, mapDataUrl } : props;
+
+  ensurePdfFontsReady(propsWithMap.fontFamily);
+  const instance = pdf(createElement(ExposePdfDocument, propsWithMap));
   await waitForPdfDocument(instance);
   const stream = await instance.toBuffer();
   return streamToBuffer(stream);

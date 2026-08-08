@@ -421,3 +421,56 @@ When specific names are absent from the payload, rely on positive general phrasi
 
 ${distanceFormattingRules(outputLanguage)}`;
 }
+
+const GENERIC_TRANSIT_FALLBACK_EN =
+  /public transportation connections and major roadways are easily accessible/i;
+const GENERIC_TRANSIT_FALLBACK_DE =
+  /die anbindung an das öffentliche verkehrsnetz sowie an die umliegenden hauptverkehrsadern ist hervorragend/i;
+
+/** Ensure generated copy cites nearby POIs when enrichment provided them but the model stayed generic. */
+export function enhanceLocationDescriptionWithPois(
+  locationDescription: string,
+  enrichment: LocationEnrichment | null,
+  outputLanguage: OutputLanguage,
+): string {
+  if (!enrichment) return locationDescription;
+
+  const poiSentences: string[] = [];
+  for (const poi of enrichment.transit.slice(0, 2)) {
+    const { text } = formatDistanceForLanguage(poi.distanceMeters, outputLanguage);
+    poiSentences.push(`${poi.name} (${text})`);
+  }
+  for (const park of enrichment.parks.slice(0, 1)) {
+    const { text } = formatDistanceForLanguage(park.distanceMeters, outputLanguage);
+    poiSentences.push(`${park.name} (${text})`);
+  }
+  for (const landmark of enrichment.nearbyLandmarks.slice(0, 1)) {
+    const { text } = formatDistanceForLanguage(landmark.distanceMeters, outputLanguage);
+    poiSentences.push(`${landmark.name} (${text})`);
+  }
+
+  if (poiSentences.length === 0) return locationDescription;
+
+  const citedNames = [
+    ...enrichment.transit.slice(0, 3).map((p) => p.name),
+    ...enrichment.parks.slice(0, 2).map((p) => p.name),
+    ...enrichment.nearbyLandmarks.slice(0, 3).map((p) => p.name),
+  ];
+  const alreadySpecific = citedNames.some((name) =>
+    locationDescription.toLowerCase().includes(name.toLowerCase()),
+  );
+  if (alreadySpecific) return locationDescription;
+
+  const vicinityLine =
+    outputLanguage === "German"
+      ? `In der Nähe: ${poiSentences.join("; ")}.`
+      : `Nearby: ${poiSentences.join("; ")}.`;
+
+  const genericPattern =
+    outputLanguage === "German" ? GENERIC_TRANSIT_FALLBACK_DE : GENERIC_TRANSIT_FALLBACK_EN;
+  if (genericPattern.test(locationDescription)) {
+    return locationDescription.replace(genericPattern, vicinityLine).trim();
+  }
+
+  return `${locationDescription.trim()} ${vicinityLine}`.trim();
+}

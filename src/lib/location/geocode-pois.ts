@@ -334,7 +334,7 @@ out center tags;
       "User-Agent": USER_AGENT,
     },
     body: `data=${encodeURIComponent(query)}`,
-    timeoutMs: 6_000,
+    timeoutMs: 10_000,
   });
 
   if (!res.ok) return [];
@@ -437,7 +437,6 @@ async function fetchTransitFallback(
     `U-Bahn ${districtContext}`,
     `S-Bahn ${districtContext}`,
     `Bahnhof ${cityQuery}`,
-    `Bus ${districtContext}`,
   ];
 
   const seen = new Set<string>();
@@ -501,8 +500,13 @@ export async function fetchLocationEnrichment(
 
   let allPois = initialPois;
   let nearbyLandmarks = buildNearbyLandmarks(allPois);
+  const initialTransit = allPois.filter((p) => p.category === "transit");
+  const initialParks = allPois.filter((p) => p.category === "parks");
+  const hasEnoughPois =
+    initialTransit.length >= 2 &&
+    (initialParks.length >= 1 || nearbyLandmarks.length >= 2);
 
-  if (nearbyLandmarks.length === 0) {
+  if (!hasEnoughPois && nearbyLandmarks.length === 0) {
     const widerPois = await fetchOverpassPois(
       geocoded.lat,
       geocoded.lon,
@@ -525,7 +529,7 @@ export async function fetchLocationEnrichment(
     MAX_POIS_PER_CATEGORY,
   );
 
-  if (transit.length === 0) {
+  if (transit.length === 0 && !hasEnoughPois) {
     transit = dedupeAndLimit(
       await fetchTransitFallback(geocoded.lat, geocoded.lon, districtContext),
       MAX_POIS_PER_CATEGORY,

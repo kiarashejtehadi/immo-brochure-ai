@@ -1,13 +1,17 @@
 import sharp from "sharp";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+import { geocodeAddress } from "@/lib/location/geocode-address";
 
 /** 16:9 map tile dimensions (pt-equivalent pixels for sharp rendering). */
 const MAP_HEIGHT = 260;
 const MAP_WIDTH = Math.round((MAP_HEIGHT * 16) / 9);
 const TILE_SIZE = 256;
-const OSM_TILE_URL = "https://tile.openstreetmap.org";
+const OSM_TILE_SOURCES = [
+  "https://tile.openstreetmap.org",
+  "https://tile.openstreetmap.de",
+];
 const USER_AGENT = "immo-brochure-ai/1.0 (real-estate-expose-generator)";
-const TILE_FETCH_TIMEOUT_MS = 1_500;
+const TILE_FETCH_TIMEOUT_MS = 5_000;
 
 function lonLatToWorldPixel(
   lon: number,
@@ -29,15 +33,25 @@ async function fetchOsmTile(z: number, x: number, y: number): Promise<Buffer> {
     throw new Error("Tile y out of bounds");
   }
 
-  const url = `${OSM_TILE_URL}/${z}/${wrappedX}/${y}.png`;
-  const res = await fetchWithTimeout(url, {
-    headers: { "User-Agent": USER_AGENT, Accept: "image/png" },
-    timeoutMs: TILE_FETCH_TIMEOUT_MS,
-  });
-  if (!res.ok) {
-    throw new Error(`Tile fetch failed: ${res.status}`);
+  let lastError: unknown;
+  for (const baseUrl of OSM_TILE_SOURCES) {
+    const url = `${baseUrl}/${z}/${wrappedX}/${y}.png`;
+    try {
+      const res = await fetchWithTimeout(url, {
+        headers: { "User-Agent": USER_AGENT, Accept: "image/png" },
+        timeoutMs: TILE_FETCH_TIMEOUT_MS,
+      });
+      if (!res.ok) {
+        lastError = new Error(`Tile fetch failed: ${res.status}`);
+        continue;
+      }
+      return Buffer.from(await res.arrayBuffer());
+    } catch (err) {
+      lastError = err;
+    }
   }
-  return Buffer.from(await res.arrayBuffer());
+
+  throw lastError instanceof Error ? lastError : new Error("Tile fetch failed");
 }
 
 /** Build a static map URL with a pin at the given coordinates (Google Maps only). */
@@ -112,7 +126,7 @@ export async function fetchStaticMapAsDataUrl(
       const res = await fetchWithTimeout(googleUrl, {
         headers: { "User-Agent": USER_AGENT, Accept: "image/*" },
         next: { revalidate: 86400 },
-        timeoutMs: 1_500,
+        timeoutMs: 8_000,
       });
       if (res.ok) {
         const buffer = Buffer.from(await res.arrayBuffer());
@@ -129,7 +143,36 @@ export async function fetchStaticMapAsDataUrl(
 
     const png = await composeOsmStaticMap(lat, lon);
     return `data:image/png;base64,${png.toString("base64")}`;
-  } catch {
+  } catch (err) {
+    console.warn("[static-map] fetchStaticMapAsDataUrl failed", err);
     return null;
   }
+}
+
+/** Resolve a PDF-safe map data URL from an existing value or by geocoding the address. */
+export async function resolvePdfMapDataUrl(
+  mapDataUrl: string | undefined,
+  addressQuery: string,
+): Promise<string | undefined> {
+  if (mapDataUrl?.trim() && /^data:image\//i.test(mapDataUrl.trim())) {
+    return mapDataUrl.trim();
+  }
+
+  const query = addressQuery.trim();
+  if (query.length < 6) return undefined;
+
+  let geocoded = await geocodeAddress(query, 8_000).catch(() => null);
+  if (!geocoded) {
+    const postalMatch = query.match(/\b(\d{4,5})\s+([A-Za-zÀ-ÿÄÖÜäöüß\-]+(?:\s+[A-Za-zÀ-ÿÄÖÜäöüß\-]+)*)/);
+    if (postalMatch) {
+      geocoded = await geocodeAddress(
+        `${postalMatch[1]} ${postalMatch[2].trim()}`,
+        8_000,
+      ).catch(() => null);
+    }
+  }
+  if (!geocoded) return undefined;
+
+  const resolved = await fetchStaticMapAsDataUrl(geocoded.lat, geocoded.lon);
+  return resolved ?? undefined;
 }

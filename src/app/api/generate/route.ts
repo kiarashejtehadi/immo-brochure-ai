@@ -23,7 +23,8 @@ import {
 } from "@/lib/location/format-address";
 import { buildAddressPrivacyInstructions } from "@/lib/location/address-privacy-prompt";
 import { fetchLocationEnrichment } from "@/lib/location/geocode-pois";
-import { buildLocationPromptInstructions, buildLocationContextPayload } from "@/lib/location/location-prompt";
+import { geocodeListingAddress } from "@/lib/location/geocode-address";
+import { buildLocationPromptInstructions, buildLocationContextPayload, enhanceLocationDescriptionWithPois } from "@/lib/location/location-prompt";
 import { fetchStaticMapAsDataUrl } from "@/lib/location/static-map";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
@@ -43,15 +44,6 @@ import {
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
-
-const LOCATION_ENRICHMENT_BUDGET_MS = 18_000;
-
-function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
-  ]);
-}
 
 function ensureHashtags(caption: string, tags: string[]): string {
   let text = caption.trim();
@@ -281,19 +273,21 @@ export async function POST(request: Request) {
     return null;
   });
 
+  let enrichment: Awaited<ReturnType<typeof fetchLocationEnrichment>> = null;
   try {
-    await moderateTexts(openai, [collectGenerateModerationText(body)]).catch((err) => {
-      if (err instanceof ModerationBlockedError) throw err;
-      console.warn("[api/generate] moderation skipped", err);
-    });
+    [, enrichment] = await Promise.all([
+      moderateTexts(openai, [collectGenerateModerationText(body)]).catch((err) => {
+        if (err instanceof ModerationBlockedError) throw err;
+        console.warn("[api/generate] moderation skipped", err);
+      }),
+      enrichmentTask,
+    ]);
   } catch (err) {
     if (err instanceof ModerationBlockedError) {
       return NextResponse.json({ error: CONTENT_FLAGGED_ERROR }, { status: 400 });
     }
     throw err;
   }
-
-  const enrichment = await withTimeout(enrichmentTask, LOCATION_ENRICHMENT_BUDGET_MS, null);
   const locationContext = buildLocationContextPayload(
     listingAddress,
     enrichment,
@@ -413,8 +407,18 @@ Schema:
 
   const systemContent = `Expert multilingual real estate copywriter. Return valid JSON only. Language: ${outputLanguage}.`;
 
-  const mapFetchPromise = enrichment
-    ? fetchStaticMapAsDataUrl(enrichment.lat, enrichment.lon).catch(() => null)
+  let locationCoords = enrichment
+    ? { lat: enrichment.lat, lon: enrichment.lon }
+    : null;
+  if (!locationCoords) {
+    const geocoded = await geocodeListingAddress(listingAddress, 8_000).catch(() => null);
+    if (geocoded) {
+      locationCoords = { lat: geocoded.lat, lon: geocoded.lon };
+    }
+  }
+
+  const mapFetchPromise = locationCoords
+    ? fetchStaticMapAsDataUrl(locationCoords.lat, locationCoords.lon).catch(() => null)
     : Promise.resolve(null);
 
   try {
@@ -439,11 +443,18 @@ Schema:
     if (!content) throw new Error("Empty response from OpenAI");
 
     const locationMeta = {
-      locationCoords: enrichment
-        ? { lat: enrichment.lat, lon: enrichment.lon }
-        : null,
+      locationCoords,
       mapDataUrl: mapDataUrl ?? null,
     };
+
+    const finalizeParsed = (parsed: GenerateResult): GenerateResult => ({
+      ...parsed,
+      locationDescription: enhanceLocationDescriptionWithPois(
+        parsed.locationDescription,
+        enrichment,
+        outputLanguage,
+      ),
+    });
 
     if (billingUserId) {
       if (useCreditForGeneration) {
@@ -457,7 +468,7 @@ Schema:
           );
         }
         await logGeneration(billingUserId, true);
-        const parsed = parseGenerateResult(content, instagramTags);
+        const parsed = finalizeParsed(parseGenerateResult(content, instagramTags));
         return NextResponse.json({
           ...parsed,
           ...locationMeta,
@@ -467,7 +478,7 @@ Schema:
       await logGeneration(billingUserId, false);
     }
 
-    const parsed = parseGenerateResult(content, instagramTags);
+    const parsed = finalizeParsed(parseGenerateResult(content, instagramTags));
     return NextResponse.json({
       ...parsed,
       ...locationMeta,
