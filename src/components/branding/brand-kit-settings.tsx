@@ -13,6 +13,7 @@ import {
   type BrandFontFamily,
   type UserBrandingProfile,
 } from "@/types/branding";
+import { BRANDING_REFRESH_EVENT } from "@/lib/branding/asset-url";
 import { readJsonResponse } from "@/lib/http/read-json-response";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +104,7 @@ export function BrandKitSettings({
         ),
       );
       onMessage(field === "logoUrl" ? copy.logoUploaded : copy.avatarUploaded);
+      window.dispatchEvent(new Event(BRANDING_REFRESH_EVENT));
     } catch (err) {
       onError(err instanceof Error ? err.message : copy.uploadFailed);
     } finally {
@@ -140,6 +142,7 @@ export function BrandKitSettings({
         onBrandingChange({ [field]: null });
       }
       onMessage(field === "logoUrl" ? copy.logoRemoved : copy.avatarRemoved);
+      window.dispatchEvent(new Event(BRANDING_REFRESH_EVENT));
     } catch (err) {
       onError(err instanceof Error ? err.message : copy.uploadFailed);
     } finally {

@@ -161,7 +161,7 @@ export async function fileToPdfDataUrl(file: File): Promise<string> {
 /** Fetch a remote branding asset, rasterize to JPEG (SVG-safe), for react-pdf. */
 export async function urlToPdfDataUrl(url: string): Promise<string | undefined> {
   try {
-    const res = await fetchWithTimeout(url, { timeoutMs: 5_000 });
+    const res = await fetchWithTimeout(url, { timeoutMs: 5_000, cache: "no-store" });
     if (!res.ok) return undefined;
     const blob = await res.blob();
     return blobToPdfJpegDataUrl(blob, PDF_BRANDING_MAX_EDGE, PDF_BRANDING_JPEG_QUALITY);

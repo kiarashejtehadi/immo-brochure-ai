@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { AccountBar } from "@/components/billing/account-bar";
 import { BillingNeedPlanBanner } from "@/components/billing/billing-need-plan-banner";
 import { BILLING_REFRESH_EVENT, useBillingStatus } from "@/hooks/use-billing-status";
+import { BRANDING_REFRESH_EVENT } from "@/lib/branding/asset-url";
 import { hasProReelAccess } from "@/lib/billing/client-access";
 import { AuthEmailModal } from "@/components/billing/auth-email-modal";
 import { ListingForm } from "@/components/listing/listing-form";
@@ -683,6 +684,28 @@ function ListingStudioContent() {
   }, [billingStatus?.email]);
 
   useEffect(() => {
+    if (!billingStatus?.email) return;
+    const refreshBranding = () => {
+      void fetch("/api/branding/profile", { credentials: "same-origin" })
+        .then(async (res) => {
+          if (!res.ok) return;
+          const data = (await res.json()) as { branding?: UserBrandingProfile };
+          if (data.branding) setBrandingProfile(data.branding);
+        })
+        .catch(() => undefined);
+    };
+    window.addEventListener(BRANDING_REFRESH_EVENT, refreshBranding);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshBranding();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener(BRANDING_REFRESH_EVENT, refreshBranding);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [billingStatus?.email]);
+
+  useEffect(() => {
     if (!brandingProfile || brandingAutoFillDone.current) return;
     setAgent((current) => {
       const patch = agentDefaultsFromBranding(brandingProfile, current);
@@ -1050,14 +1073,18 @@ function ListingStudioContent() {
     const floorKey = floorPlanFile
       ? `${floorPlanFile.name}:${floorPlanFile.size}:${floorPlanFile.lastModified}`
       : "";
-    return `${addressKey}::${coordsKey}::${photoKey}::${floorKey}`;
-  }, [photos, floorPlanFile, address]);
+    const brandingKey = [
+      brandingProfile?.logoUrl ?? "",
+      brandingProfile?.agentAvatarUrl ?? "",
+    ].join("|");
+    return `${addressKey}::${coordsKey}::${brandingKey}::${photoKey}::${floorKey}`;
+  }, [photos, floorPlanFile, address, brandingProfile?.logoUrl, brandingProfile?.agentAvatarUrl]);
 
   useEffect(() => {
     pdfReadyImagesRef.current = null;
     pdfImagesFingerprintRef.current = "";
     cachedMapDataUrlRef.current = undefined;
-  }, [photos, floorPlanFile, address]);
+  }, [photos, floorPlanFile, address, brandingProfile?.logoUrl, brandingProfile?.agentAvatarUrl]);
 
   useEffect(() => {
     if (!isDownloadingPdf) return;

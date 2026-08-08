@@ -88,6 +88,7 @@ export function BrandUploadDropzone({
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
+              key={imageUrl}
               src={imageUrl}
               alt={alt}
               className={cn(

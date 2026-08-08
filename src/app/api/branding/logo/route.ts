@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAuthUser } from "@/lib/billing/access";
 import { getActiveSubscription } from "@/lib/billing/repository";
 import { deleteBrandingStorageAsset } from "@/lib/branding/delete-storage-asset";
+import { versionedBrandingAssetUrl } from "@/lib/branding/asset-url";
 import { updateUserBranding } from "@/lib/branding/repository";
 import { BRAND_LOGOS_BUCKET } from "@/lib/branding/constants";
 import { fileExtensionForMime, inferImageMimeType } from "@/lib/branding/upload-mime";
@@ -51,10 +52,12 @@ export async function POST(request: Request) {
     const path = `${user.id}/logo.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    await deleteBrandingStorageAsset(user.id, "logo");
+
     const supabase = createSupabaseServiceClient();
     const { error: uploadError } = await supabase.storage
       .from(BRAND_LOGOS_BUCKET)
-      .upload(path, buffer, { contentType: mime, upsert: true });
+      .upload(path, buffer, { contentType: mime, upsert: true, cacheControl: "3600" });
 
     if (uploadError) {
       console.error("[branding/logo]", uploadError);
@@ -62,8 +65,9 @@ export async function POST(request: Request) {
     }
 
     const { data: publicUrl } = supabase.storage.from(BRAND_LOGOS_BUCKET).getPublicUrl(path);
-    const branding = await updateUserBranding(user.id, { logoUrl: publicUrl.publicUrl });
-    return NextResponse.json({ logoUrl: publicUrl.publicUrl, branding });
+    const logoUrl = versionedBrandingAssetUrl(publicUrl.publicUrl);
+    const branding = await updateUserBranding(user.id, { logoUrl });
+    return NextResponse.json({ logoUrl, branding });
   } catch (err) {
     console.error("[branding/logo]", err);
     const message = err instanceof Error ? err.message : "Upload failed.";
