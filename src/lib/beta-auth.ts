@@ -4,12 +4,14 @@ export const BETA_ACCESS_COOKIE = "beta_access";
 
 const TOKEN_PREFIX = "beta-v1:";
 
-/** Beta gate is opt-in only — set BETA_GATE_ENABLED=true alongside BETA_PASSWORD to enable. */
+/** TEMPORARY: set to false to re-enable the beta password gate. */
+const BETA_GATE_LIFTED = true;
+
 export function isBetaProtectionEnabled(): boolean {
-  return (
-    process.env.BETA_GATE_ENABLED === "true" &&
-    Boolean(process.env.BETA_PASSWORD?.trim())
-  );
+  if (BETA_GATE_LIFTED || process.env.BETA_GATE_DISABLED === "true") {
+    return false;
+  }
+  return Boolean(process.env.BETA_PASSWORD?.trim());
 }
 
 export function isBetaPublicPath(pathname: string): boolean {
