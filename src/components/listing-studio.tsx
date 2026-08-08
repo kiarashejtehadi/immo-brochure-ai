@@ -408,13 +408,16 @@ function ListingStudioContent() {
     if (targetMarket === "global") {
       setTargetLanguage(outputLanguageFromLocale(routeLocale));
     }
-    const defaultDisclaimer = getFormCopy(routeLocale).defaultLegalDisclaimer;
+  }, [routeLocale, targetMarket]);
+
+  useEffect(() => {
     setAgent((prev) => {
       if (!isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)) return prev;
-      if (prev.legalDisclaimer === defaultDisclaimer) return prev;
-      return { ...prev, legalDisclaimer: defaultDisclaimer };
+      const next = getFormCopy(exposeLocale).defaultLegalDisclaimer;
+      if (prev.legalDisclaimer === next) return prev;
+      return { ...prev, legalDisclaimer: next };
     });
-  }, [routeLocale, targetMarket]);
+  }, [exposeLocale]);
 
   const [currency, setCurrency] = useState<CurrencyCode>("EUR");
   const activeCurrency =
@@ -461,7 +464,7 @@ function ListingStudioContent() {
   const [energy, setEnergy] = useState<EnergyFormData>({ ...DEFAULT_ENERGY });
   const [agent, setAgent] = useState<AgentFormData>(() => ({
     ...DEFAULT_AGENT,
-    legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
+    legalDisclaimer: getFormCopy("de").defaultLegalDisclaimer,
   }));
 
   const handleRentPatch = useCallback((patch: Partial<RentFormData>) => {
@@ -585,6 +588,11 @@ function ListingStudioContent() {
 
   function handleExposeLanguageChange(lang: OutputLanguage) {
     setTargetLanguage(lang);
+    const locale = localeFromTargetLanguage(lang);
+    setAgent((prev) => {
+      if (!isKnownDefaultLegalDisclaimer(prev.legalDisclaimer)) return prev;
+      return { ...prev, legalDisclaimer: getFormCopy(locale).defaultLegalDisclaimer };
+    });
   }
 
   const agentForLocale = useMemo(
@@ -722,7 +730,7 @@ function ListingStudioContent() {
     setEnergy({ ...DEFAULT_ENERGY });
     setAgent({
       ...DEFAULT_AGENT,
-      legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
+      legalDisclaimer: getFormCopy("de").defaultLegalDisclaimer,
     });
     setTargetLanguage("German");
     setIncludeLegalDisclaimer(true);
@@ -772,7 +780,7 @@ function ListingStudioContent() {
     } else {
       setAgent({
         ...DEFAULT_AGENT,
-        legalDisclaimer: getFormCopy(routeLocale).defaultLegalDisclaimer,
+        legalDisclaimer: getFormCopy(exposeLocale).defaultLegalDisclaimer,
       });
     }
     setResult(null);
@@ -783,7 +791,7 @@ function ListingStudioContent() {
     locationCoordsRef.current = null;
     cachedMapDataUrlRef.current = undefined;
     clearListingStudioDraft();
-  }, [brandingProfile, routeLocale]);
+  }, [brandingProfile, exposeLocale]);
 
   const canResetListingForm = useMemo(
     () =>
@@ -1877,7 +1885,7 @@ function ListingStudioContent() {
             onTargetLanguage={handleExposeLanguageChange}
             includeLegalDisclaimer={includeLegalDisclaimer}
             onIncludeLegalDisclaimer={setIncludeLegalDisclaimer}
-            defaultLegalDisclaimer={formCopy.defaultLegalDisclaimer}
+            defaultLegalDisclaimer={exposeFormCopy.defaultLegalDisclaimer}
             generateError={generateError}
             billingHint={billingHint}
             onOpenAuth={() => setAuthOpen(true)}
@@ -2025,11 +2033,11 @@ function ListingStudioContent() {
               </div>
             ) : result && previewTab === "story" ? (
               <PreviewStoryPanel
-                copy={formCopy}
+                copy={exposeFormCopy}
                 result={result}
                 onUpdateResult={updateResult}
                 includeLegalDisclaimer={includeLegalDisclaimer}
-                legalDisclaimer={agent.legalDisclaimer}
+                legalDisclaimer={agentForLocale.legalDisclaimer}
                 onLegalDisclaimerChange={(legalDisclaimer) => setAgent((current) => ({ ...current, legalDisclaimer }))}
                 furnishingDisclaimerText={furnishingDisclaimerText}
                 headlineActions={
