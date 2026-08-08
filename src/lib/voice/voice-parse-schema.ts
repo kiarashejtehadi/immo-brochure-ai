@@ -1,5 +1,16 @@
 import type { TransactionType } from "@/types/listing";
 import type { VoiceListingType, VoiceParseResult } from "@/types/voice-parse";
+import {
+  VOICE_AMENITY_KEYS,
+  VOICE_FURNISHING_STATUSES,
+  VOICE_PARKING_KEYS,
+  VOICE_PARSE_MULTILINGUAL_INSTRUCTIONS,
+  VOICE_PROPERTY_TYPES,
+  normalizeVoiceAmenities,
+  normalizeVoiceFurnishing,
+  normalizeVoiceParkingOptions,
+  normalizeVoicePropertyType,
+} from "@/lib/voice/voice-parse-normalize";
 
 export function parseNullableNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -34,6 +45,10 @@ export function parseVoiceParseResult(raw: string): VoiceParseResult {
     floorLevel: parseNullableString(parsed.floorLevel),
     netRent: parseNullableNumber(parsed.netRent),
     utilityCharges: parseNullableNumber(parsed.utilityCharges),
+    propertyType: normalizeVoicePropertyType(parsed.propertyType),
+    furnishingStatus: normalizeVoiceFurnishing(parsed.furnishing),
+    amenities: normalizeVoiceAmenities(parsed.amenities),
+    parking: normalizeVoiceParkingOptions(parsed.parking),
   };
 }
 
@@ -49,6 +64,22 @@ export const VOICE_PARSE_JSON_SCHEMA = {
     floorLevel: { type: ["string", "null"] },
     netRent: { type: ["number", "null"] },
     utilityCharges: { type: ["number", "null"] },
+    propertyType: {
+      type: ["string", "null"],
+      enum: [...VOICE_PROPERTY_TYPES, null],
+    },
+    furnishing: {
+      type: ["string", "null"],
+      enum: [...VOICE_FURNISHING_STATUSES, null],
+    },
+    amenities: {
+      type: "array",
+      items: { type: "string", enum: [...VOICE_AMENITY_KEYS] },
+    },
+    parking: {
+      type: "array",
+      items: { type: "string", enum: [...VOICE_PARKING_KEYS] },
+    },
   },
   required: [
     "listingType",
@@ -60,6 +91,10 @@ export const VOICE_PARSE_JSON_SCHEMA = {
     "floorLevel",
     "netRent",
     "utilityCharges",
+    "propertyType",
+    "furnishing",
+    "amenities",
+    "parking",
   ],
   additionalProperties: false,
 } as const;
@@ -79,13 +114,20 @@ export const VOICE_PARSE_EXTRACTION_PROMPT = `Extract structured real estate lis
 - rooms: number | null
 - floorLevel: string | null
 - netRent: number | null (monthly net cold rent, no currency symbols)
-- utilityCharges: number | null (monthly utilities, no currency symbols)`;
+- utilityCharges: number | null (monthly utilities, no currency symbols)
+- propertyType: UPPERCASE enum or null (APARTMENT | HOUSE | COMMERCIAL | LAND | GARAGE)
+- furnishing: UPPERCASE enum or null (FULLY_FURNISHED | PARTIALLY_FURNISHED | UNFURNISHED)
+- amenities: string[] of UPPERCASE amenity keys (ELEVATOR | BALCONY | TERRACE | GARDEN | BASEMENT | FITTED_KITCHEN), or []
+- parking: string[] of UPPERCASE parking keys (GARAGE | UNDERGROUND | CARPORT | OUTDOOR), or []`;
 
 export const VOICE_PARSE_SYSTEM_PROMPT = `You extract structured real estate listing details from spoken transcripts.
 Map values to the schema keys only when clearly stated or strongly implied.
-Use null for any field not mentioned.
+Use null for any scalar field not mentioned.
+Use [] for amenities and parking when not mentioned.
 Return numeric fields (size, rooms, netRent, utilityCharges) as JSON numbers without units or currency symbols.
 For floorLevel, preserve natural phrasing (e.g. "3rd floor", "EG", "ground floor") using professional real estate terminology.
+
+${VOICE_PARSE_MULTILINGUAL_INSTRUCTIONS}
 
 ${LISTING_TYPE_INSTRUCTIONS}`;
 

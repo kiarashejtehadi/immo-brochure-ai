@@ -39,6 +39,7 @@ export type AutofillFieldKey =
   | "condition"
   | "parking"
   | "parkingFee"
+  | "furnishingStatus"
   | "features"
   | "agentName"
   | "agentEmail"
@@ -162,6 +163,10 @@ export function collectVoiceAutofillFields(
   if (parsed.size != null) fields.push("size");
   if (parsed.rooms != null) fields.push("rooms");
   if (parsed.floorLevel?.trim()) fields.push("floorLevel");
+  if (parsed.propertyType) fields.push("propertyType");
+  if (parsed.furnishingStatus) fields.push("furnishingStatus");
+  if (parsed.parking) fields.push("parking");
+  if (parsed.amenities.length > 0) fields.push("features");
 
   if (activeType === "rent") {
     if (parsed.netRent != null) fields.push("netColdRent");

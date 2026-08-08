@@ -3,6 +3,7 @@ import {
   validateRoomsValue,
   validateSizeValue,
 } from "@/lib/listing-spec-validation";
+import type { FeatureKey } from "@/lib/i18n";
 import type { ListingAddress, PropertyDetails, RentFormData, TransactionType } from "@/types/listing";
 import type { VoiceParseResult } from "@/types/voice-parse";
 
@@ -27,6 +28,7 @@ export function applyVoiceParseResult(
     onRooms: (value: string) => void;
     onProperty: (patch: Partial<PropertyDetails>) => void;
     onRent: (patch: Partial<RentFormData>) => void;
+    onFeatures?: (features: FeatureKey[]) => void;
   },
 ): number {
   let applied = 0;
@@ -50,6 +52,19 @@ export function applyVoiceParseResult(
     applied += Object.keys(addressPatch).length;
   }
 
+  const propertyPatch: Partial<PropertyDetails> = {};
+  if (parsed.propertyType) propertyPatch.propertyType = parsed.propertyType;
+  if (parsed.furnishingStatus) propertyPatch.furnishingStatus = parsed.furnishingStatus;
+  if (parsed.parking) propertyPatch.parking = parsed.parking;
+
+  const floorLevel = pickString(parsed.floorLevel);
+  if (floorLevel) propertyPatch.floorLevel = floorLevel;
+
+  if (Object.keys(propertyPatch).length > 0) {
+    handlers.onProperty(propertyPatch);
+    applied += Object.keys(propertyPatch).length;
+  }
+
   const size = numberToFormValue(parsed.size);
   if (size && parsed.size !== null && validateSizeValue(parsed.size) !== null) {
     handlers.onSize(size);
@@ -62,10 +77,9 @@ export function applyVoiceParseResult(
     applied += 1;
   }
 
-  const floorLevel = pickString(parsed.floorLevel);
-  if (floorLevel) {
-    handlers.onProperty({ floorLevel });
-    applied += 1;
+  if (parsed.amenities.length > 0) {
+    handlers.onFeatures?.(parsed.amenities);
+    applied += parsed.amenities.length;
   }
 
   if (activeTransactionType === "rent") {

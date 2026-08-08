@@ -1207,7 +1207,7 @@ export function ListingForm(props: ListingFormProps) {
                 furnishingStatus: e.target.value as FurnishingStatus,
               })
             }
-            className={inputClassName()}
+            className={cn(inputClassName(), autofillHighlightClass(isHighlighted("furnishingStatus")))}
           >
             {FURNISHING_STATUSES.map((status) => (
               <option key={status} value={status}>

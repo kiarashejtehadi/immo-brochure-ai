@@ -134,6 +134,10 @@ export function sanitizeVoiceParseResult(fields: VoiceParseResult): VoiceParseRe
     floorLevel: fields.floorLevel,
     netRent: validatedNetRent,
     utilityCharges: validatedUtilityCharges,
+    propertyType: fields.propertyType,
+    furnishingStatus: fields.furnishingStatus,
+    amenities: fields.amenities,
+    parking: fields.parking,
   };
 }
 

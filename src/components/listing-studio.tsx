@@ -1093,6 +1093,11 @@ function ListingStudioContent() {
         onRooms: setRooms,
         onProperty: (patch) => setProperty((current) => ({ ...current, ...patch })),
         onRent: (patch) => setRent((current) => ({ ...current, ...patch })),
+        onFeatures: (incoming) =>
+          setFeatures((current) => {
+            const merged = new Set([...current, ...incoming]);
+            return [...merged];
+          }),
       });
       const fields = collectVoiceAutofillFields(parsedData, transactionType);
       setHighlightedFields(fields);
